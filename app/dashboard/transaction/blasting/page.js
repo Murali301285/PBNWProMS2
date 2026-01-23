@@ -76,30 +76,17 @@ export default function BlastingPage() {
     };
 
     const handleDelete = async (id) => {
-        const record = data.find(item => item.SlNo === id);
-        if (!record) return;
-
-        // Permission Check
-        const isSuperUser = ['Admin', 'SuperAdmin', 'Administrator'].includes(userRole);
-        if (!isSuperUser) {
-            const created = new Date(record.CreatedDate);
-            const today = new Date();
-            if (created.toDateString() !== today.toDateString()) {
-                toast.error("You can only delete records created today.");
-                return;
-            }
-        }
-
-        if (!confirm("Are you sure you want to delete this record?")) return;
-
         try {
             const res = await fetch(`/api/transaction/blasting/${id}`, { method: 'DELETE' });
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.error);
-            toast.success("Record deleted");
-            fetchData();
-        } catch (err) {
-            toast.error(err.message || "Delete failed");
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
+            }
+        } catch (e) {
+            toast.error('Network error');
         }
     };
 
@@ -148,7 +135,7 @@ export default function BlastingPage() {
                             fontWeight: 500,
                             alignSelf: 'center'
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Blasting :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
                     <button className={styles.addNew} onClick={() => router.push('/dashboard/transaction/blasting/add')}>
@@ -182,6 +169,7 @@ export default function BlastingPage() {
                 onDelete={handleDelete}
                 onEdit={handleEdit}
                 userRole={userRole}
+                title="Transactions"
             />
         </div>
     );

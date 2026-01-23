@@ -7,6 +7,7 @@ import TransactionTable from '@/components/TransactionTable';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Plus, RotateCcw } from 'lucide-react';
 import styles from './page.module.css';
+import { toast } from 'sonner';
 
 export default function LoadingFromMinesPage() {
     const router = useRouter();
@@ -113,9 +114,29 @@ export default function LoadingFromMinesPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this record?")) return;
-        // API Call for delete would go here (Not implemented yet as per previous context)
-        alert("Delete functionality pending API implementation.");
+        // Confirmation is handled by TransactionTable Modal now.
+        // This function is only called AFTER confirmation.
+
+        try {
+            setLoading(true); // Optimistic UI or Loading Block
+            const res = await fetch(`/api/transaction/loading-from-mines/${id}`, {
+                method: 'DELETE',
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                // Remove from local state immediately for speed
+                setData(prev => prev.filter(row => row.SlNo !== id));
+                toast.success('Record deleted successfully');
+            } else {
+                toast.error('Failed to delete: ' + result.message);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Error deleting record');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Shortcut for Add New
@@ -148,7 +169,7 @@ export default function LoadingFromMinesPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Loading Date: {new Date(lastEntry.LoadingDate).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} {new Date(lastEntry.CreatedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} | Loading Date: {new Date(lastEntry.LoadingDate).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
 
@@ -194,6 +215,7 @@ export default function LoadingFromMinesPage() {
                 onDelete={handleDelete}
                 userRole={userRole}
                 onEdit={(row) => router.push(`/dashboard/transaction/loading-from-mines/${row.SlNo}`)}
+                title="Transactions"
             />
         </div>
     );

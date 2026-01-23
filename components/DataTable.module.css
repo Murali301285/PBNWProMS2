@@ -103,15 +103,16 @@
 }
 
 .tableContainer {
-    flex: 1;
-    /* Fixed height logic identical to TransactionTable */
-    height: 380px;
-    overflow-y: auto;
-    overflow-x: auto;
+    /* Removed flex: 1 to prevent unbounded growth if parent allows it */
+    height: 450px;
+    /* Fixed height to ensure scrollbars are attached to this box */
+    overflow: auto;
+    /* Show scrollbars when needed */
     border: 1px solid #e2e8f0;
     background-color: transparent;
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100%;
 }
 
 .table {

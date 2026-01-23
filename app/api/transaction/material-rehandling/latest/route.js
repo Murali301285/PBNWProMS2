@@ -9,6 +9,7 @@ export async function GET() {
         const query = `
             SELECT TOP 1 
                 T.RehandlingDate as Date, 
+                T.CreatedDate,
                 T.CreatedBy,
                 ISNULL(U.EmpName, 'Unknown') as CreatedByName
             FROM [Trans].[TblMaterialRehandling] T

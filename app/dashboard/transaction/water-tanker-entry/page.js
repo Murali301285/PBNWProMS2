@@ -112,30 +112,14 @@ export default function WaterTankerEntryList() {
     };
 
     const handleDelete = async (id) => {
-        // Restriction: User can only delete same-day records (Logic handled in TransactionTable or component can enforce)
-        // Check local constraint if needed before API call
-        if (userRole !== 'Admin') {
-            const record = data.find(d => d.SlNo === id);
-            if (record) {
-                const created = new Date(record.CreatedDate || record.EntryDate).toDateString();
-                const now = new Date().toDateString();
-                if (created !== now) {
-                    toast.error('You can only delete records created today.');
-                    return;
-                }
-            }
-        }
-
-        if (!confirm('Are you sure you want to delete this record?')) return;
-
         try {
             const res = await fetch(`${config.apiEndpoint}/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 toast.success('Deleted successfully');
-                fetchData();
+                setData(prev => prev.filter(row => row.SlNo !== id));
             } else {
                 const json = await res.json();
-                toast.error(json.error || 'Delete failed');
+                toast.error(json.error || json.message || 'Delete failed');
             }
         } catch (e) {
             toast.error('Network error');

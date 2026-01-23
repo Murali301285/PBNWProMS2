@@ -113,7 +113,8 @@ export default function MasterTable({ config, title }) {
         const initial = {};
         config.columns.forEach(col => {
             const field = typeof col === 'string' ? col : col.accessor;
-            initial[field] = '';
+            // V19.3: Support defaultValue from config (e.g. for IsQtyTripMapping = 0/false)
+            initial[field] = (typeof col === 'object' && col.defaultValue !== undefined) ? col.defaultValue : '';
         });
         initial.IsActive = true;
         setErrors({});
@@ -156,8 +157,8 @@ export default function MasterTable({ config, title }) {
         setIsEditing(true);
     };
 
-    const handleDeleteClick = (id) => {
-        setDeleteId(id);
+    const handleDeleteClick = (row) => {
+        setDeleteId(row);
     };
 
     const confirmDelete = async () => {
@@ -170,7 +171,7 @@ export default function MasterTable({ config, title }) {
                 body: JSON.stringify({
                     table: config.table.replace('[Master].[', '').replace(']', ''),
                     action: 'delete',
-                    id: deleteId
+                    id: deleteId[config.idField] // Extract ID here
                 })
             });
             fetchData();
@@ -215,7 +216,7 @@ export default function MasterTable({ config, title }) {
         let firstErrorInput = null;
 
         for (const col of config.columns) {
-            if (typeof col === 'object' && col.required) {
+            if (typeof col === 'object' && col.required && !col.viewOnly) {
                 if (!formData[col.accessor] || formData[col.accessor].toString().trim() === '') {
                     newErrors[col.accessor] = true;
                     if (!firstErrorInput) {
@@ -396,7 +397,7 @@ export default function MasterTable({ config, title }) {
             render: (row) => (
                 <div className={styles.tdActions}>
                     <button onClick={() => handleEdit(row)} className={`${styles.actionBtn} ${styles.edit}`} title="Edit Record"><Edit size={16} /></button>
-                    <button onClick={() => handleDeleteClick(row[config.idField])} className={`${styles.actionBtn} ${styles.delete}`} title="Delete Record"><Trash2 size={16} /></button>
+                    <button onClick={() => handleDeleteClick(row)} className={`${styles.actionBtn} ${styles.delete}`} title="Delete Record"><Trash2 size={16} /></button>
                 </div>
             )
         }
@@ -484,7 +485,9 @@ export default function MasterTable({ config, title }) {
                 title="Confirm Delete"
             >
                 <div>
-                    <p style={{ marginBottom: '20px' }}>Are you sure you want to delete this record? This action cannot be undone.</p>
+                    <p style={{ marginBottom: '20px', color: '#374151' }}>
+                        Are you sure you want to delete <b>{deleteId ? deleteId[config.columns[1]?.accessor] || 'this record' : ''}</b>?
+                    </p>
                     <div className={styles.buttonGroup} style={{ justifyContent: 'flex-end' }}>
                         <button onClick={() => setDeleteId(null)} className={styles.btnSecondary}>Cancel</button>
                         <button onClick={confirmDelete} className={`${styles.btnPrimary}`} style={{ background: '#ef4444', color: 'white' }}>

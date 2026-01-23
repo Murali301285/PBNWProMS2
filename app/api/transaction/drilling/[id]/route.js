@@ -111,12 +111,16 @@ export async function DELETE(request, { params }) {
         const pool = await getDbConnection();
 
         // Soft delete logic with Audit
-        await pool.request()
+        const result = await pool.request()
             .input('Id', sql.BigInt, id)
             .input('UserId', sql.BigInt, user ? user.id : 1)
-            .query("UPDATE [Trans].[TblDrilling] SET IsDelete = 1, UpdatedBy = @UserId, UpdatedDate = GETDATE() WHERE SlNo = @Id");
+            .query("UPDATE [Trans].[TblDrilling] SET IsDelete = 1, UpdatedBy = @UserId, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @Id");
 
-        return NextResponse.json({ success: true, message: 'Record deleted successfully' });
+        if (result.recordset && result.recordset.length > 0) {
+            return NextResponse.json({ success: true, message: 'Record deleted successfully' });
+        } else {
+            return NextResponse.json({ success: false, message: 'Record not found or already deleted' }, { status: 404 });
+        }
 
     } catch (error) {
         console.error('Delete Drilling Error:', error);

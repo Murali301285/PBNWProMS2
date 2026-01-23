@@ -20,52 +20,32 @@ export default function DrillingBlasting() {
     const contentRef = useRef(null);
 
 
-    // REDESIGN: Enhanced Dummy Data with More Details
-    const DUMMY_DATA = {
-        drilling: {
-            shift: { MaxMeters: 145, EquipmentName: 'Drill-RX', ShiftName: 'Shift A' },
-            day: { MaxMeters: 410, EquipmentName: 'Drill-Y' },
-            month: { MaxMeters: 5200, EquipmentName: 'Drill-Z' },
-            recovery: [
-                { Category: 'Coal', TotalMeters: 2100 },
-                { Category: 'OB', TotalMeters: 4500 }
-            ],
-            // NEW: Detailed Drill List
-            performance: [
-                { EquipmentName: 'Drill-01', ShiftMeters: 45, DayMeters: 120, Target: 150, Achievement: 80 },
-                { EquipmentName: 'Drill-02', ShiftMeters: 55, DayMeters: 135, Target: 150, Achievement: 90 },
-                { EquipmentName: 'Drill-03', ShiftMeters: 20, DayMeters: 60, Target: 150, Achievement: 40 },
-                { EquipmentName: 'Drill-04', ShiftMeters: 65, DayMeters: 155, Target: 160, Achievement: 97 },
-                { EquipmentName: 'Drill-05', ShiftMeters: 0, DayMeters: 0, Target: 150, Achievement: 0, Remarks: 'Breakdown' },
-            ]
-        },
-        blasting: {
-            supplier: [
-                { SupplierName: 'Solar', MaterialType: 'Coal', TotalExplosive: 5000, PowderFactor: 0.45 },
-                { SupplierName: 'Solar', MaterialType: 'OB', TotalExplosive: 12000, PowderFactor: 0.65 },
-                { SupplierName: 'IDL', MaterialType: 'Coal', TotalExplosive: 3000, PowderFactor: 0.42 },
-                { SupplierName: 'IDL', MaterialType: 'OB', TotalExplosive: 7000, PowderFactor: 0.60 }
-            ],
-            explosive: { TotalSME: 15000, TotalLDE: 5000, TotalANFO: 3000, GrandTotal: 23000 },
-            // NEW: Blasting Details Table
-            details: [
-                { Location: 'Pit-1', Pattern: 'P-101', Holes: 45, Explosive: 4500, Type: 'SME', Supplier: 'Solar' },
-                { Location: 'Pit-2', Pattern: 'P-102', Holes: 32, Explosive: 3200, Type: 'SME', Supplier: 'IDL' },
-                { Location: 'Pit-3', Pattern: 'P-103', Holes: 20, Explosive: 1500, Type: 'LDE', Supplier: 'Solar' },
-                { Location: 'Pit-1', Pattern: 'P-104', Holes: 50, Explosive: 5000, Type: 'SME', Supplier: 'Solar' },
-            ]
-        }
-    };
-
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Simulate Network Delay
-            await new Promise(resolve => setTimeout(resolve, 800));
-            // const res = await fetch(`/api/dashboard/drilling?date=${date}`);
-            // if (!res.ok) throw new Error('Failed to fetch data');
-            // const json = await res.json();
-            setData(DUMMY_DATA);
+            const res = await fetch(`/api/dashboard/drilling-blasting?date=${date}`);
+            const json = await res.json();
+
+            if (json.success) {
+                // Map KPI Array to Objects (Assuming 'Period' column: Shift, Day, Month)
+                const kpis = json.drilling.kpis || [];
+                const shiftKPI = kpis.find(k => k.Period === 'Shift') || {};
+                const dayKPI = kpis.find(k => k.Period === 'Day') || {};
+                const monthKPI = kpis.find(k => k.Period === 'Month') || {};
+
+                setData({
+                    drilling: {
+                        shift: shiftKPI,
+                        day: dayKPI,
+                        month: monthKPI,
+                        recovery: json.drilling.recovery,
+                        performance: json.drilling.performance
+                    },
+                    blasting: json.blasting
+                });
+            } else {
+                toast.error(json.message || 'Failed to fetch data');
+            }
         } catch (error) {
             console.error(error);
             toast.error('Error loading dashboard data');
@@ -75,7 +55,7 @@ export default function DrillingBlasting() {
     };
 
     useEffect(() => {
-        fetchData();
+        if (date) fetchData();
     }, [date]);
 
     const handleDownloadPDF = async () => {

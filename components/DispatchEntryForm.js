@@ -241,12 +241,14 @@ export default function DispatchEntryForm({ mode = 'create', initialData = null 
     };
 
     const handleDeleteRecent = async (id) => {
-        if (!confirm("Are you sure?")) return;
+        // Confirm handled by Table
         try {
             const res = await fetch(`/api/transaction/dispatch-entry/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 toast.success("Deleted");
                 fetchRecentData();
+            } else {
+                toast.error("Delete failed");
             }
         } catch (e) { toast.error("Delete failed"); }
     };

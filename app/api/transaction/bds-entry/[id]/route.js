@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { executeQuery } from '@/lib/db';
+import { executeQuery, sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
@@ -7,7 +7,7 @@ export async function GET(req, { params }) {
     try {
         const { id } = await params;
         const query = `SELECT * FROM [Trans].[TblBDSEntry] WHERE SlNo = @id AND isDelete = 0`;
-        const data = await executeQuery(query, [{ name: 'id', value: id }]);
+        const data = await executeQuery(query, [{ name: 'id', type: sql.Int, value: id }]);
 
         if (data.length === 0) {
             return NextResponse.json({ success: false, message: 'Record not found' }, { status: 404 });
@@ -56,18 +56,18 @@ export async function PUT(req, { params }) {
         `;
 
         const sqlParams = [
-            { name: 'Date', value: Date },
-            { name: 'SMECategoryId', value: SMECategoryId },
-            { name: 'VehicleNo', value: VehicleNo },
-            { name: 'Weighment', value: Weighment },
-            { name: 'CounterReading', value: CounterReading },
-            { name: 'LoadingSheet', value: LoadingSheet },
-            { name: 'StandardDeduction', value: StandardDeduction },
-            { name: 'AcceptedQuantity', value: AcceptedQuantity },
-            { name: 'ChallanNo', value: ChallanNo },
-            { name: 'Remarks', value: Remarks },
-            { name: 'UpdatedBy', value: updatedBy },
-            { name: 'id', value: id }
+            { name: 'Date', type: sql.Date, value: Date },
+            { name: 'SMECategoryId', type: sql.Int, value: SMECategoryId },
+            { name: 'VehicleNo', type: sql.NVarChar, value: VehicleNo },
+            { name: 'Weighment', type: sql.Decimal(18, 3), value: Weighment },
+            { name: 'CounterReading', type: sql.Decimal(18, 3), value: CounterReading },
+            { name: 'LoadingSheet', type: sql.Decimal(18, 3), value: LoadingSheet },
+            { name: 'StandardDeduction', type: sql.Decimal(18, 3), value: StandardDeduction },
+            { name: 'AcceptedQuantity', type: sql.Decimal(18, 3), value: AcceptedQuantity },
+            { name: 'ChallanNo', type: sql.NVarChar, value: ChallanNo },
+            { name: 'Remarks', type: sql.NVarChar, value: Remarks },
+            { name: 'UpdatedBy', type: sql.Int, value: updatedBy },
+            { name: 'id', type: sql.Int, value: id }
         ];
 
         await executeQuery(query, sqlParams);
@@ -90,12 +90,17 @@ export async function DELETE(req, { params }) {
             if (decoded?.id) updatedBy = decoded.id;
         }
 
-        const query = `UPDATE [Trans].[TblBDSEntry] SET isDelete = 1, UpdatedBy = @UpdatedBy, UpdatedDate = GETDATE() WHERE SlNo = @id`;
-        await executeQuery(query, [
-            { name: 'UpdatedBy', value: updatedBy },
-            { name: 'id', value: id }
+        const query = `UPDATE [Trans].[TblBDSEntry] SET isDelete = 1, UpdatedBy = @UpdatedBy, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @id AND IsDelete = 0`;
+        const result = await executeQuery(query, [
+            { name: 'UpdatedBy', type: sql.Int, value: updatedBy },
+            { name: 'id', type: sql.Int, value: id }
         ]);
-        return NextResponse.json({ success: true, message: 'Entry Deleted Successfully' });
+
+        if (result && result.length > 0) {
+            return NextResponse.json({ success: true, message: 'Entry Deleted Successfully' });
+        } else {
+            return NextResponse.json({ success: false, message: 'Record not found or already deleted' }, { status: 404 });
+        }
     } catch (error) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }

@@ -7,6 +7,7 @@ export async function GET() {
         const query = `
             SELECT TOP 1 
                 T.CreatedDate, 
+                T.Date,
                  ISNULL(U.EmpName, 'Unknown') AS CreatedByName
             FROM [Trans].[TblEquipmentReading] T
             LEFT JOIN [Master].[TblUser_New] U ON T.CreatedBy = U.SlNo

@@ -1,43 +1,40 @@
 import { NextResponse } from 'next/server';
-import { getDbConnection } from '../../../../lib/db';
-import sql from 'mssql';
+import { executeStoredProcedure, sql } from '@/lib/db';
 
-export async function GET(request) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req) {
     try {
-        const { searchParams } = new URL(request.url);
-        const date = searchParams.get('date');
-        const zoneId = searchParams.get('zoneId') || null;
-        const pssId = searchParams.get('pssId') || null;
+        const { searchParams } = new URL(req.url);
+        const fromDate = searchParams.get('fromDate');
+        const toDate = searchParams.get('toDate');
 
-        if (!date) {
-            return NextResponse.json({ message: 'Date is required' }, { status: 400 });
+        if (!fromDate || !toDate) {
+            return NextResponse.json({ success: false, message: 'Date range required' }, { status: 400 });
         }
 
-        const pool = await getDbConnection();
+        console.log(`[DASH-CRUSHING] Fetching stats for ${fromDate} to ${toDate}`);
 
-        const result = await pool.request()
-            .input('Date', sql.Date, date)
-            .input('ZoneId', sql.Int, zoneId)
-            .input('PSSId', sql.Int, pssId)
-            .execute('ProMS2_SPDashboardCrushing');
+        const params = [
+            { name: 'FromDate', type: sql.Date, value: fromDate },
+            { name: 'ToDate', type: sql.Date, value: toDate }
+        ];
 
-        // Set 1: Shift Highest, Set 2: Day Highest, Set 3: Month Highest, Set 4: Stoppage Analysis
-        const shiftHigh = result.recordsets[0] || [];
-        const dayHigh = result.recordsets[1] || [];
-        const monthHigh = result.recordsets[2] || [];
-        const stoppages = result.recordsets[3] || [];
+        // Expecting multiple result sets:
+        // [0]: Transactions (Production List)
+        // [1]: Stoppages (Summary for Chart)
+        // [2]: Stoppage Log (Detailed)
+        const resultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetCrushingStats', params);
 
         return NextResponse.json({
-            production: {
-                shift: shiftHigh[0] || null,
-                day: dayHigh[0] || null,
-                month: monthHigh[0] || null
-            },
-            stoppages: stoppages
+            success: true,
+            transactions: resultSets[0] || [],
+            stoppages: resultSets[1] || [],
+            stoppageLog: resultSets[2] || []
         });
 
     } catch (error) {
-        console.error('Error fetching dashboard crushing data:', error);
-        return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
+        console.error("Crushing Dashboard API Error:", error);
+        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 }

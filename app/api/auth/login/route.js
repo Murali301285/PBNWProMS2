@@ -12,7 +12,7 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Username and Password are required' }, { status: 400 });
         }
 
-        const user = await verifyUser(username, password, process.env.DB_DATABASE || 'ProdMS2.0_test');
+        const user = await verifyUser(username, password, process.env.DB_DATABASE || 'ProMS2_Serv');
 
         if (!user) {
             return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
@@ -44,7 +44,7 @@ export async function POST(request) {
             path: '/',
         });
 
-        cookieStore.set('current_db', process.env.DB_DATABASE || 'ProdMS_live', { // Use Env Variable!
+        cookieStore.set('current_db', process.env.DB_DATABASE || 'ProMS2_Serv', { // Use Env Variable!
             httpOnly: true,
             secure: false, // process.env.NODE_ENV === 'production',
             sameSite: 'strict',

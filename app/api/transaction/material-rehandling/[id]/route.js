@@ -173,10 +173,14 @@ export async function DELETE(request, { params }) {
         const user = await authenticateUser(request);
         const { id } = await params;
 
-        await executeQuery(`UPDATE [Trans].[TblMaterialRehandling] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() WHERE SlNo = @id`, [
+        const result = await executeQuery(`UPDATE [Trans].[TblMaterialRehandling] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @id AND IsDelete = 0`, [
             { name: 'userId', type: sql.Int, value: user ? user.id : 1 },
             { name: 'id', type: sql.Int, value: id }
         ]);
+
+        if (!result || result.length === 0) {
+            return NextResponse.json({ success: false, message: 'Record not found or already deleted' }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true, message: 'Record deleted successfully' });
     } catch (error) {

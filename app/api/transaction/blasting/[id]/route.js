@@ -9,11 +9,16 @@ export async function DELETE(request, { params }) {
         const { id } = await params;
         const pool = await getDbConnection();
         // Use parameterized query
-        await pool.request()
-            .input('id', id) // Assuming default type or let driver handle it, previously used template literal ${id}
+        const result = await pool.request()
+            .input('id', id)
             .input('userId', user ? user.id : 1)
-            .query(`UPDATE [Trans].[TblBlasting] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() WHERE SlNo = @id`);
-        return NextResponse.json({ success: true });
+            .query(`UPDATE [Trans].[TblBlasting] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @id`);
+
+        if (result.recordset && result.recordset.length > 0) {
+            return NextResponse.json({ success: true });
+        } else {
+            return NextResponse.json({ error: 'Record not found or already deleted' }, { status: 404 });
+        }
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

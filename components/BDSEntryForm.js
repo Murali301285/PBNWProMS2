@@ -228,10 +228,16 @@ export default function BDSEntryForm({ mode = 'create', initialData = null }) {
     // Actions
     const handleEditRecent = (row) => router.push(`/dashboard/transaction/bds-entry/${row.SlNo}`);
     const handleDeleteRecent = async (id) => {
-        if (!confirm("Are you sure?")) return;
+        // Confirm handled by Table
         try {
             const res = await fetch(`/api/transaction/bds-entry/${id}`, { method: 'DELETE' });
-            if (res.ok) { toast.success("Deleted"); fetchRecentData(); }
+            const json = await res.json();
+            if (res.ok && json.success) {
+                toast.success("Deleted");
+                fetchRecentData();
+            } else {
+                toast.error(json.message || "Delete failed");
+            }
         } catch (e) { toast.error("Delete failed"); }
     };
 

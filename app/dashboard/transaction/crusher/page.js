@@ -76,28 +76,17 @@ export default function CrusherPage() {
     };
 
     const handleDelete = async (id) => {
-        const record = data.find(item => item.SlNo === id);
-        if (!record) return;
-
-        const isSuperUser = ['Admin', 'SuperAdmin', 'Administrator'].includes(userRole);
-        if (!isSuperUser) {
-            const created = new Date(record.CreatedDate);
-            const todayDate = new Date();
-            if (created.toDateString() !== todayDate.toDateString()) {
-                toast.error("You can only delete records created today.");
-                return;
-            }
-        }
-
-        if (!confirm("Are you sure you want to delete this record?")) return;
-
         try {
             const res = await fetch(`/api/transaction/crusher/${id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error("Delete failed");
-            toast.success("Record deleted");
-            fetchData();
-        } catch (err) {
-            toast.error(err.message);
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
+            }
+        } catch (e) {
+            toast.error('Network error');
         }
     };
 
@@ -145,7 +134,7 @@ export default function CrusherPage() {
                             fontWeight: 500,
                             alignSelf: 'center'
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Crusher :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
                     <button className={styles.addNew} onClick={() => router.push('/dashboard/transaction/crusher/add')}>
@@ -179,6 +168,7 @@ export default function CrusherPage() {
                 onDelete={handleDelete}
                 onEdit={handleEdit}
                 userRole={userRole}
+                title="Transactions"
             />
         </div>
     );

@@ -14,7 +14,9 @@ const SearchableSelect = forwardRef(({
     error,
     autoFocus,
     className,
-    multiple = false
+    multiple = false,
+    disabled = false,
+    closeOnSelect = false // V19.2: Optional Auto-Close for Multi-Select
 }, ref) => {
 
     const [isOpen, setIsOpen] = useState(false);
@@ -25,14 +27,19 @@ const SearchableSelect = forwardRef(({
     const listRef = useRef(null);
     const buttonRef = useRef(null);
 
+
+
     // Allow parent to focus this component
     useImperativeHandle(ref, () => ({
         focus: () => {
-            if (buttonRef.current) {
+            if (buttonRef.current && !disabled) {
                 buttonRef.current.focus();
             }
         }
     }));
+
+
+
 
     // Filter options based on search
     const safeOptions = Array.isArray(options) ? options : [];
@@ -69,8 +76,12 @@ const SearchableSelect = forwardRef(({
     }
 
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            inputRef.current.focus();
+        if (isOpen) {
+            // Use timeout to ensure rendering is complete and browser acknowledges focus
+            const timer = setTimeout(() => {
+                if (inputRef.current) inputRef.current.focus();
+            }, 100);
+            return () => clearTimeout(timer);
         }
     }, [isOpen]);
 
@@ -106,8 +117,16 @@ const SearchableSelect = forwardRef(({
                 newValue.push(option.id);
             }
             onChange({ target: { name, value: newValue } });
-            // Keep open for multiple choice
-            inputRef.current?.focus();
+
+            // Auto-Close if requested (V19.2)
+            if (closeOnSelect) {
+                setIsOpen(false);
+                setSearch('');
+                if (buttonRef.current) buttonRef.current.focus();
+            } else {
+                // Keep open for multiple choice (Default)
+                inputRef.current?.focus();
+            }
         } else {
             onChange({ target: { name, value: option.id } });
             setIsOpen(false);
@@ -118,6 +137,7 @@ const SearchableSelect = forwardRef(({
     };
 
     const handleKeyDown = (e) => {
+        if (disabled) return;
         if (!isOpen) {
             if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -200,17 +220,32 @@ const SearchableSelect = forwardRef(({
         return value == id;
     };
 
+    const handleBlur = (e) => {
+        // Close if focus moves outside the component
+        // e.relatedTarget is the element receiving focus
+        if (wrapperRef.current && !wrapperRef.current.contains(e.relatedTarget)) {
+            setIsOpen(false);
+            setSearch(''); // Optional: Reset search on close
+        }
+    };
+
     return (
-        <div className={styles.selectWrapper} ref={wrapperRef} style={{ position: 'relative' }}>
+        <div
+            className={styles.selectWrapper}
+            ref={wrapperRef}
+            style={{ position: 'relative' }}
+            onBlur={handleBlur}
+        >
             <button
                 ref={buttonRef}
                 type="button"
                 className={`${styles.input} ${error ? styles.errorBorder : ''} ${className || ''}`}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
                 id={id} // Bind ID
+                disabled={disabled}
                 data-searchable="true"
-                style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: disabled ? 'not-allowed' : 'pointer', background: disabled ? 'var(--muted)' : 'var(--background)', opacity: disabled ? 0.7 : 1 }}
                 autoFocus={autoFocus}
             >
                 <span style={{ opacity: (multiple ? value?.length : value) ? 1 : 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
@@ -293,6 +328,7 @@ const SearchableSelect = forwardRef(({
                             placeholder="Search..."
                             className={styles.input}
                             style={{ padding: '6px', fontSize: '0.85rem' }}
+                            autoFocus
                         />
                     </div>
                     <div ref={listRef}>
@@ -307,7 +343,11 @@ const SearchableSelect = forwardRef(({
                                         color: index === highlightindex ? 'var(--primary-foreground)' : 'var(--foreground)',
                                         fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                                     }}
-                                    onClick={() => handleSelect(opt)}
+                                    onMouseDown={(e) => {
+                                        // Prevent input blur to keep focus flow logic intact, or just ensuring execute before blur
+                                        e.preventDefault();
+                                        handleSelect(opt);
+                                    }}
                                     onMouseEnter={() => setHighlightIndex(index)}
                                 >
                                     <span>{opt.name}</span>

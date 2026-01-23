@@ -100,18 +100,17 @@ export default function DispatchEntryList() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm("Are you sure you want to delete this record?")) return;
         try {
             const res = await fetch(`/api/transaction/dispatch-entry/${id}`, { method: 'DELETE' });
-            const result = await res.json();
-            if (result.success) {
-                toast.success("Deleted Successfully");
-                fetchData();
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setData(prev => prev.filter(row => row.SlNo !== id));
             } else {
-                toast.error(result.message);
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
             }
-        } catch (err) {
-            toast.error("Delete Failed");
+        } catch (e) {
+            toast.error('Network error');
         }
     };
 
@@ -212,6 +211,7 @@ export default function DispatchEntryList() {
                 onDelete={handleDelete}
                 onEdit={handleEdit}
                 userRole={userRole}
+                title="Transactions"
             />
         </div>
     );

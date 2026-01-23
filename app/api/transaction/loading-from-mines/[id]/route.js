@@ -10,12 +10,29 @@ export async function DELETE(request, { params }) {
         const user = await authenticateUser(request);
         const { id } = await params;
 
-        await executeQuery(`UPDATE [Trans].[TblLoading] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() WHERE SlNo = @id`, [
-            { name: 'userId', type: sql.Int, value: user ? user.id : 1 },
-            { name: 'id', type: sql.Int, value: id }
-        ]);
+        console.log(`🗑️ [DELETE-MINES] Attempting to Delete ID: ${id} by User: ${user?.id || 1}`);
 
-        return NextResponse.json({ success: true, message: 'Record deleted successfully' });
+        // Use OUTPUT INSERTED.SlNo to confirm if a row was actually updated
+        const result = await executeQuery(
+            `UPDATE [Trans].[TblLoading] 
+             SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() 
+             OUTPUT INSERTED.SlNo
+             WHERE SlNo = @id AND IsDelete = 0`,
+            [
+                { name: 'userId', type: sql.Int, value: user ? user.id : 1 },
+                { name: 'id', type: sql.Int, value: id }
+            ]
+        );
+
+        console.log(`🗑️ [DELETE-MINES] Result:`, result);
+
+        if (result && result.length > 0) {
+            return NextResponse.json({ success: true, message: 'Record deleted successfully' });
+        } else {
+            console.warn(`⚠️ [DELETE-MINES] ID ${id} not found or already deleted.`);
+            return NextResponse.json({ success: false, message: 'Record not found or already deleted' }, { status: 404 });
+        }
+
     } catch (error) {
         console.error('Delete Error:', error);
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });

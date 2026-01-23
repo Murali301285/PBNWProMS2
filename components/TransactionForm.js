@@ -24,6 +24,9 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
     const haulerRef = useRef(null); // Added Ref for Hauler
     const loadingMachineRef = useRef(null); // Added Ref for Loading M/C
     const prevDateRef = useRef(new Date().toISOString().split('T')[0]);
+    const prevShiftIdRef = useRef('');
+    const remarksRef = useRef(null);
+    const saveBtnRef = useRef(null);
 
     // Initial Form State
     const today = new Date().toISOString().split('T')[0];
@@ -85,6 +88,7 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
 
     // State for User Info (Title)
     const [userName, setUserName] = useState('');
+    const [isContextLocked, setIsContextLocked] = useState(false); // New State for Locking Context Fields
 
     // Initial Data Load (Dropdowns & Edit Data & User Info)
     useEffect(() => {
@@ -182,7 +186,13 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
     // Auto-Fill Last Context
     useEffect(() => {
         const isDateChange = prevDateRef.current !== formData.Date;
+        const isShiftCleared = !isDateChange && prevShiftIdRef.current && !formData.ShiftId;
+
         prevDateRef.current = formData.Date;
+        prevShiftIdRef.current = formData.ShiftId;
+
+        // Prevent auto-refill if user explicitly cleared Shift
+        if (isShiftCleared) return;
 
         const loadLast = async () => {
             try {
@@ -200,83 +210,83 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                     body: JSON.stringify(payload)
                 }).then(r => r.json());
 
-                // If Result Found -> Apply
-                if (res.success && res.data) {
-                    console.log("✅ [SmartContext] Valid Data Found:", res.data);
-                    console.log("   -> Load Factors via Context:", res.data.ManagementQtyTrip, res.data.NTPCQtyTrip);
-                    console.log("   -> Unit via Context:", res.data.UnitId);
+                // Logic: 
+                // 1. Data Found (Either History or Specific Context) -> Lock Fields & Populate
+                // 2. No Data Found (Specific Context Empty) -> Unlock Fields & Clear
 
+                if (res.success && res.data) {
+                    console.log("✅ [SmartContext] Data Found (Locking).", res.data);
 
                     // Parse Date
                     const newDate = res.data.LoadingDate ? new Date(res.data.LoadingDate).toISOString().split('T')[0] : '';
-
                     const isDefaultDate = formData.Date === new Date().toISOString().split('T')[0];
 
                     setFormData(prev => ({
                         ...prev,
-                        // If current date is default (Today) and API returned a different date (History), switch to History
-                        // Otherwise keep existing date (if user manually picked something else, or if same)
-                        // FIX: If user explicit cleared date (isDateChange && !formData.Date), keep it empty.
+                        // Date Logic: If user cleared date, keep empty. If default date, update to history date.
                         Date: (isDateChange && !formData.Date) ? '' :
                             ((isDefaultDate && newDate) ? newDate : (prev.Date || newDate)),
 
                         ShiftId: res.data.ShiftId || prev.ShiftId,
+
+                        // LOCKED FIELDS (Populate from Context/History)
                         ShiftInchargeId: res.data.ShiftInchargeId || '',
                         MidScaleInchargeId: res.data.MidScaleInchargeId || '',
                         RelayId: res.data.RelayId || '',
-                        SourceId: res.data.SourceId || '',
                         ManPower: res.data.ManPower || '',
 
-                        // Smart Context: Pre-Load these from history (User Request)
+                        // Other Context Fields (Not Locked, but Pre-filled)
+                        SourceId: res.data.SourceId || '',
                         DestinationId: res.data.DestinationId || '',
                         MaterialId: res.data.MaterialId || '',
                         HaulerId: res.data.HaulerId || '',
-                        Unit: res.data.UnitId || (options.materials?.find(m => m.id == res.data.MaterialId)?.UnitId) || '', // Auto-fill Unit (Context or Master)
+                        // Unit derived from Material or Context
+                        Unit: res.data.UnitId || (options.materials?.find(m => m.id == res.data.MaterialId)?.UnitId) || '',
 
-                        // Explicitly Clear Transactional Fields
+                        // Clear Transactional Fields
                         LoadingMachineId: '',
                         NoOfTrips: '',
-                        MangQtyTrip: res.data.ManagementQtyTrip ?? '', // Pre-load Load Factor
-                        NTPCQtyTrip: res.data.NTPCQtyTrip ?? '',       // Pre-load Load Factor
+                        MangQtyTrip: res.data.ManagementQtyTrip ?? '',
+                        NTPCQtyTrip: res.data.NTPCQtyTrip ?? '',
                         MangTotalQty: '',
                         NTPCTotalQty: '',
                         Remarks: ''
                     }));
 
-                    // Prevent duplicate toasts (simple implementation: Use refined toast ID or just trust Effect cleanup)
-                    // Better: Only toast if it's a "New" context load (e.g. not just a refresh)
-                    toast.info("Context Loaded from Last Entry", { id: 'ctx-load' }); // Singleton toast
+                    // Lock Context Fields
+                    setIsContextLocked(true);
+                    toast.info("Context Loaded & Locked", { id: 'ctx-load' });
 
-                    // Auto Focus Logic (Hauler Present -> Focus Loader, Else -> Focus Hauler)
+                    // Auto Focus
                     setTimeout(() => {
-                        // Check if Hauler was pre-loaded (and not just clearing)
-                        const hasHauler = res.data.HaulerId;
-                        if (hasHauler && loadingMachineRef.current) {
+                        if (res.data.HaulerId && loadingMachineRef.current) {
                             loadingMachineRef.current.focus();
                         } else if (haulerRef.current) {
                             haulerRef.current.focus();
                         }
                     }, 300);
 
-                } else {
-                    // NO DATA FOUND -> Clear Transactional Fields
-                    console.log("ℹ️ [SmartContext] No previous data found.");
 
-                    // Don't clear Date/Shift if just Date changed, but if Shift changed maybe?
-                    // User Request: "Reset to default for other fields like Dest, Mat..."
+                } else {
+                    // NO DATA FOUND -> Unlock & Reset Locked Fields
+                    console.log("ℹ️ [SmartContext] No Data. Resetting Locked Fields.");
+
+                    setIsContextLocked(false);
 
                     setFormData(prev => ({
                         ...prev,
-                        // Keep Date, Shift (if selected), 
+                        // Clear Locked Fields
                         ShiftInchargeId: '',
                         MidScaleInchargeId: '',
                         RelayId: '',
+                        ManPower: '',
+
+                        // Clear Other Context? User requested "reset other fields"
                         SourceId: '',
                         DestinationId: '',
                         MaterialId: '',
                         HaulerId: '',
                         LoadingMachineId: '',
-                        ManPower: '',
                         Unit: '',
                         NoOfTrips: '',
                         MangQtyTrip: '',
@@ -404,7 +414,7 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                 DestinationId: formData.DestinationId,
                 MaterialId: formData.MaterialId,
                 HaulerId: formData.HaulerId,
-                LoadingMachineId: formData.LoadingMachineId,
+                // LoadingMachineId: formData.LoadingMachineId, // Removed Filter (User Request)
                 skip,
                 take
             };
@@ -439,8 +449,8 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
         formData.SourceId,
         formData.DestinationId,
         formData.MaterialId,
-        formData.HaulerId,
-        formData.LoadingMachineId
+        formData.HaulerId
+        // formData.LoadingMachineId  // Removed Dependency
         // Removed 'page' dependency to prevent infinite reset loop
     ]);
 
@@ -588,6 +598,10 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                 } else {
                     // Reset Row 3 ONLY (Keep Context)
                     // Reset Logic as per User Request
+
+                    // LOCK Context Fields (Since we just saved a valid entry, context is now established)
+                    setIsContextLocked(true);
+
                     setFormData(prev => ({
                         ...prev,
                         // Retain: Date, Shift, Incharge, ManPower, Relay, Source
@@ -627,6 +641,16 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
         }
     };
 
+    // Smart Tab Jump (NoOfTrips -> Remarks -> Save)
+    const handleSmartJump = (e, targetRef) => {
+        if (e.key === 'Tab' && !e.shiftKey) {
+            e.preventDefault();
+            if (targetRef && targetRef.current) {
+                targetRef.current.focus();
+            }
+        }
+    };
+
     // Keyboard Shortcuts
     useEffect(() => {
         const handleKd = (e) => {
@@ -641,13 +665,28 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
 
     if (pageLoading) return <div className="p-8 text-center"><Loader2 className="animate-spin inline mr-2" /> Loading...</div>;
 
+    const handleDelete = async (id) => {
+        try {
+            const res = await fetch(`/api/transaction/${moduleType}/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setFilteredTableData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
+            }
+        } catch (e) {
+            toast.error('Network error');
+        }
+    };
+
     return (
         <div className={styles.container}>
             {/* Header: Left (Back), Center (Title), Right (Save) */}
             {/* Header: Left (Back + Scope), Center (Title), Right (Save) */}
             <div className={styles.header}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <button onClick={() => router.push('/dashboard/transaction/loading-from-mines')} className={styles.backBtn}>
+                    <button onClick={() => router.push(`/dashboard/transaction/${moduleType}`)} className={styles.backBtn}>
                         <ArrowLeft size={18} /> Back
                     </button>
 
@@ -660,36 +699,7 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                 </h1>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                        onClick={async () => {
-                            if (confirm('Reset form to defaults?')) {
-                                // Step 1: Reset to "Fresh" state with EMPTY Date
-                                // This causes useEffect to fire -> fetch "latest user context" -> fill Date/Shift/etc
-                                setFormData({
-                                    SlNo: 0, LoadingId: 0,
-                                    Date: '', // Let Effect Fill this
-                                    ShiftId: '',
-                                    ShiftInchargeId: '', MidScaleInchargeId: '',
-                                    RelayId: '',
-                                    SourceId: '', DestinationId: '', MaterialId: '', HaulerId: '', LoadingMachineId: '',
-                                    NoOfTrips: '', MangQtyTrip: '', NTPCQtyTrip: '', Unit: '', MangTotalQty: '', NTPCTotalQty: '',
-                                    Remarks: '', ManPower: '', CreatedBy: 0, CreatedDate: ''
-                                });
-                                setErrors({});
-
-                                toast.info("Resetting...");
-                            }
-                        }}
-                        className={styles.saveBtn}
-                        title="Reset Form"
-                        type="button"
-                    >
-                        <RotateCcw size={18} />
-                    </button>
-                    <button onClick={handleSubmit} disabled={isLoading} className={styles.saveBtn}>
-                        {isLoading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-                        {isEdit ? 'Update (F2)' : 'Save (F2)'}
-                    </button>
+                    {/* Buttons Moved to Form Grid (Row 4) */}
                 </div>
             </div>
 
@@ -748,6 +758,7 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                             placeholder="Large Scale"
                             className={styles.select}
                             error={errors.ShiftInchargeId}
+                            disabled={isContextLocked || isLoading} // Lock if Context
                         />
                         {errors.ShiftInchargeId && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -763,6 +774,7 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                             placeholder="Mid Scale"
                             className={styles.select}
                             error={errors.MidScaleInchargeId}
+                            disabled={isContextLocked || isLoading} // Lock if Context
                         />
                         {errors.MidScaleInchargeId && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -774,6 +786,8 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                             type="text" name="ManPower" value={formData.ManPower}
                             onChange={handleChange} className={`${styles.input} ${errors.ManPower ? styles.errorBorder : ''}`}
                             onKeyDown={handleEnter} placeholder="Man Power"
+                            disabled={isContextLocked || isLoading} // Lock if Context
+                            style={isContextLocked ? { backgroundColor: 'var(--muted)', cursor: 'not-allowed' } : {}}
                         />
                         {errors.ManPower && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -789,6 +803,7 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                             placeholder="Select Relay"
                             className={styles.select}
                             error={errors.RelayId}
+                            disabled={isContextLocked || isLoading} // Lock if Context
                         />
                         {errors.RelayId && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -876,14 +891,19 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                     </div>
 
 
-                    {/* --- Row 3 --- */}
-
                     {/* No of Trips: R3 C1 */}
                     <div className={styles.group} style={{ gridColumn: '1 / span 1' }}>
                         <label>No of Trips <span style={{ color: 'red' }}>*</span></label>
                         <input
                             type="text" name="NoOfTrips" value={formData.NoOfTrips}
-                            onChange={handleChange} onKeyDown={handleEnter}
+                            onChange={handleChange}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Tab' && !e.shiftKey) {
+                                    handleSmartJump(e, remarksRef);
+                                } else {
+                                    handleEnter(e);
+                                }
+                            }}
                             className={`${styles.input} ${errors.NoOfTrips ? styles.errorBorder : ''}`} placeholder="Enter No of Trips"
                         />
                         {errors.NoOfTrips && <div className={styles.errorMsg}>Required</div>}
@@ -933,15 +953,65 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
 
                     {/* --- Row 4 --- */}
 
-                    {/* Remarks: R4 C1-C6 (Span 6) */}
-                    <div className={styles.group} style={{ gridColumn: '1 / span 6' }}>
+                    {/* Remarks: R4 C1-C6 (Span 4) */}
+                    <div className={styles.group} style={{ gridColumn: '1 / span 4' }}>
                         <label>Remarks</label>
                         <input
+                            ref={remarksRef}
                             type="text"
                             name="Remarks" value={formData.Remarks}
-                            onChange={handleChange} onKeyDown={handleEnter}
+                            onChange={handleChange}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Tab' && !e.shiftKey) {
+                                    handleSmartJump(e, saveBtnRef);
+                                } else {
+                                    handleEnter(e);
+                                }
+                            }}
                             className={styles.input} placeholder="Any Remarks..."
                         />
+                    </div>
+
+                    {/* Reset Button: R4 C7 */}
+                    <div style={{ gridColumn: '7 / span 1', display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (confirm('Reset form to defaults?')) {
+                                    setFormData({
+                                        SlNo: 0, LoadingId: 0,
+                                        Date: '',
+                                        ShiftId: '',
+                                        ShiftInchargeId: '', MidScaleInchargeId: '',
+                                        RelayId: '',
+                                        SourceId: '', DestinationId: '', MaterialId: '', HaulerId: '', LoadingMachineId: '',
+                                        NoOfTrips: '', MangQtyTrip: '', NTPCQtyTrip: '', Unit: '', MangTotalQty: '', NTPCTotalQty: '',
+                                        Remarks: '', ManPower: '', CreatedBy: 0, CreatedDate: ''
+                                    });
+                                    setErrors({});
+                                    toast.info("Resetting...");
+                                }
+                            }}
+                            className={styles.saveBtn}
+                            style={{ width: '100%', background: '#64748b' }} // Gray for Reset
+                            title="Reset Form"
+                        >
+                            <RotateCcw size={18} /> Reset
+                        </button>
+                    </div>
+
+                    {/* Save Button: R4 C8 */}
+                    <div style={{ gridColumn: '8 / span 1', display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            ref={saveBtnRef}
+                            onClick={handleSubmit}
+                            disabled={isLoading}
+                            className={styles.saveBtn}
+                            style={{ width: '100%' }}
+                        >
+                            {isLoading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                            {isEdit ? 'Update' : 'Save'}
+                        </button>
                     </div>
 
                 </div>
@@ -976,14 +1046,17 @@ export default function TransactionForm({ initialData = null, isEdit = false, mo
                             { accessor: 'TotalQty', label: 'Mang Total', width: 100, type: 'number' },
                             { accessor: 'TotalNtpcQty', label: 'NTPC Total', width: 100, type: 'number' },
                             { accessor: 'CreatedByName', label: 'Created By', width: 100 },
-                            { accessor: 'CreatedDate', label: 'Created', type: 'datetime', width: 130 }
+                            { accessor: 'CreatedDate', label: 'Created', type: 'datetime', width: 130 },
+                            { accessor: 'UpdatedByName', label: 'Updated By', width: 100 },
+                            { accessor: 'UpdatedDate', label: 'Updated', type: 'datetime', width: 130 }
                         ],
                         idField: 'SlNo',
                         defaultSort: 'SlNo'
                     }}
                     data={filteredTableData}
                     isLoading={tableLoading && page === 0}
-                    onEdit={(row) => router.push(`/dashboard/transaction/loading-from-mines/edit/${row.SlNo}`)}
+                    onEdit={(row) => router.push(`/dashboard/transaction/${moduleType}/${row.SlNo}`)}
+                    onDelete={handleDelete}
                     userRole="User"
                 />
 

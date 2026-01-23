@@ -22,11 +22,15 @@ export default function LoginPage() {
         try {
             const res = await fetch('/api/setup/db-list');
             const data = await res.json();
-            setDbList(data);
-            // Default select the first one or logic to check current
-            if (data.length > 0) setSelectedDb(data[0]);
+            if (Array.isArray(data)) {
+                setDbList(data);
+                if (data.length > 0) setSelectedDb(data[0]);
+            } else {
+                setDbList([]);
+            }
         } catch (error) {
             console.error("Failed to load DBs", error);
+            setDbList([]);
         }
     };
 
@@ -179,7 +183,7 @@ export default function LoginPage() {
                     <div style={{ textAlign: 'center' }}>
                         <p style={{ fontWeight: '500' }}>ProMS 2.0 © 2026</p>
                         <p style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--primary)', marginTop: '0.25rem' }}>
-                            Version : {process.env.NEXT_PUBLIC_APP_VERSION} , Last Updated on : {process.env.NEXT_PUBLIC_LAST_UPDATED}
+                            Version : 2.5.0 , Last Updated on : 22-Jan-2026
                         </p>
                     </div>
                 </div>

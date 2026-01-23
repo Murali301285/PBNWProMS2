@@ -112,34 +112,17 @@ export default function DrillingPage() {
     };
 
     const handleDelete = async (id) => {
-        // Implement logic for Delete Restriction Check
-        const record = data.find(item => item.SlNo === id);
-        if (!record) return;
-
-        // Restriction: Normal User can only delete Same Day Created
-        if (userRole !== 'Admin') {
-            const createdDate = new Date(record.CreatedDate).toISOString().split('T')[0];
-            const todayDate = new Date().toISOString().split('T')[0];
-            if (createdDate !== todayDate) {
-                toast.error("You can only delete records created today.");
-                return;
-            }
-        }
-
-        if (!window.confirm("Are you sure you want to delete this record?")) return;
-
         try {
-            const res = await fetch(`/api/transaction/drilling/${id}`, {
-                method: 'DELETE'
-            });
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.error || 'Failed to delete');
-
-            toast.success("Record deleted successfully");
-            fetchData(); // Refresh list
-        } catch (err) {
-            console.error(err);
-            toast.error(err.message);
+            const res = await fetch(`/api/transaction/drilling/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
+            }
+        } catch (e) {
+            toast.error('Network error');
         }
     };
 
@@ -186,7 +169,7 @@ export default function DrillingPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Drilling :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
 
@@ -235,6 +218,7 @@ export default function DrillingPage() {
                 onDelete={handleDelete}
                 userRole={userRole}
                 onEdit={handleEdit}
+                title="Transactions"
             />
         </div>
     );

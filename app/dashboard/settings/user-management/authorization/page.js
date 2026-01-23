@@ -214,10 +214,10 @@ export default function RoleAuthorizationPage() {
                     </tr>
 
                     {/* Page Rows */}
-                    {isExpanded && group.items.map(page => {
+                    {isExpanded && group.items.map((page, idx) => {
                         const isRestrictedModule = group.moduleName.toLowerCase().includes('report') || group.moduleName.toLowerCase().includes('dashboard');
                         return (
-                            <tr key={page.AllocationId} style={{ borderBottom: '1px solid #eee' }}>
+                            <tr key={`${page.AllocationId}_${idx}`} style={{ borderBottom: '1px solid #eee' }}>
                                 <td style={{ paddingLeft: '3.5rem', color: '#555', paddingTop: '8px', paddingBottom: '8px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                                         <span>{page.PageName}</span>

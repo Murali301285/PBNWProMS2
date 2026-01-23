@@ -93,14 +93,18 @@ export default function BDSEntryList() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm("Are you sure?")) return;
         try {
             const res = await fetch(`/api/transaction/bds-entry/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                toast.success("Deleted Successfully");
-                fetchData();
+                toast.success('Record deleted successfully');
+                setData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
             }
-        } catch (err) { toast.error("Delete Failed"); }
+        } catch (e) {
+            toast.error('Network error');
+        }
     };
 
     const handleEdit = (row) => {
@@ -190,9 +194,9 @@ export default function BDSEntryList() {
                 config={config}
                 data={data}
                 isLoading={loading}
-                onDelete={handleDelete}
                 onEdit={handleEdit}
                 userRole={userRole}
+                title="Transactions"
             />
         </div>
     );

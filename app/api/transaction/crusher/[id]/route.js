@@ -148,7 +148,13 @@ export async function DELETE(request, { params }) {
         req.input('userId', sql.Int, user ? user.id : 1);
 
         // Soft Delete with Audit
-        await req.query(`UPDATE [Trans].[TblCrusher] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() WHERE SlNo = @id`);
+        const result = await req.query(`UPDATE [Trans].[TblCrusher] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @id`);
+
+        if (result.recordset && result.recordset.length > 0) {
+            return NextResponse.json({ success: true, message: 'Deleted Successfully' });
+        } else {
+            return NextResponse.json({ success: false, message: 'Record not found or already deleted' }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true, message: 'Deleted Successfully' });
     } catch (error) {

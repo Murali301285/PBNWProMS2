@@ -15,18 +15,17 @@ export async function POST(req) {
             SELECT 
                 T.SlNo, 
                 T.Date,
-                sh.ShiftName,
-                -- Incharges
+                sh.ShiftName as ShiftDisplay,
                 -- Incharges
                 incL.OperatorName as ShiftInchargeName,
                 incM.OperatorName as MidScaleInchargeName,
                 
-                -- Operator/Driver (Multiple)
-                (SELECT STUFF((SELECT ', ' + O.OperatorName + ' (' + CAST(O.OperatorId AS VARCHAR) + ')' 
+                -- Operator/Driver (Multiple) with Fallback
+                COALESCE((SELECT STUFF((SELECT ', ' + O.OperatorName + ' (' + CAST(O.OperatorId AS VARCHAR) + ')' 
                  FROM [Trans].[TblEquipmentReadingOperator] ERO 
                  JOIN [Master].[TblOperator] O ON ERO.OperatorId = O.SlNo 
                  WHERE ERO.EquipmentReadingId = T.SlNo 
-                 FOR XML PATH('')), 1, 2, '')) AS OperatorName,
+                 FOR XML PATH('')), 1, 2, '')), OMain.OperatorName + ' (' + CAST(OMain.OperatorId AS VARCHAR) + ')') AS OperatorName,
                 
                 -- Master Names (Fixing Aliases)
                 r.Name as RelayName,
@@ -54,11 +53,15 @@ export async function POST(req) {
                 T.IdleHr,
 
                 T.Remarks,
-                T.CreatedDate
+                CU.EmpName AS CreatedByName,
+                T.CreatedDate,
+                UU.EmpName AS UpdatedByName,
+                T.UpdatedDate
             FROM [Trans].[TblEquipmentReading] T
             LEFT JOIN [Master].[TblShift] sh ON T.ShiftId = sh.SlNo
             LEFT JOIN [Master].[TblOperator] incL ON T.ShiftInchargeId = incL.SlNo
             LEFT JOIN [Master].[TblOperator] incM ON T.MidScaleInchargeId = incM.SlNo
+            LEFT JOIN [Master].[TblOperator] OMain ON T.OperatorId = OMain.SlNo
 
             -- LEFT JOIN [Master].[TblOperator] op ON T.OperatorId = op.SlNo (Removed for Multi-Select)
             
@@ -69,6 +72,10 @@ export async function POST(req) {
             LEFT JOIN [Master].[TblSector] sec ON T.SectorId = sec.SlNo
             LEFT JOIN [Master].[TblPatch] p ON T.PatchId = p.SlNo
             LEFT JOIN [Master].[TblMethod] m ON T.MethodId = m.SlNo
+
+            -- Audit Users
+            LEFT JOIN [Master].[TblUser_New] CU ON T.CreatedBy = CU.SlNo
+            LEFT JOIN [Master].[TblUser_New] UU ON T.UpdatedBy = UU.SlNo
             
             WHERE T.IsDelete = 0
         `;
@@ -80,10 +87,11 @@ export async function POST(req) {
             request.input('LoadDate', LoadDate);
         }
 
-        if (user) {
-            query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
-            request.input('UserId', user.id);
-        }
+        // User scoping removed
+        // if (user) {
+        //     query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
+        //     request.input('UserId', user.id);
+        // }
 
         query += ` ORDER BY T.CreatedDate DESC OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY`;
         request.input('skip', skip);

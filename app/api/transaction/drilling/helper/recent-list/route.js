@@ -75,7 +75,7 @@ export async function POST(request) {
             LEFT JOIN [Master].[TblUser_New] u ON t.CreatedBy = u.SlNo
             LEFT JOIN [Master].[TblUser_New] u2 ON t.UpdatedBy = u2.SlNo
             WHERE t.IsDelete = 0 
-            AND (t.CreatedBy = @userId OR t.UpdatedBy = @userId)
+            -- AND (t.CreatedBy = @userId OR t.UpdatedBy = @userId) -- Removed User Scope
         `;
 
         const params = [{ name: 'userId', type: sql.Int, value: session.id }];

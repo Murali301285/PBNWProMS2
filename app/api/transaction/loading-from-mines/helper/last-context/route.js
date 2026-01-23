@@ -20,6 +20,7 @@ export async function POST(req) {
         let query = `
             SELECT TOP 1 
                 T.LoadingDate, 
+                T.CreatedDate,
                 T.ShiftId, 
                 T.ShiftInchargeId,
                 T.MidScaleInchargeId,
@@ -43,11 +44,11 @@ export async function POST(req) {
                                                      AND M.IsActive = 1 
                                                      AND M.IsDelete = 0
             WHERE T.IsDelete = 0 
-            AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)
+           -- AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId) -- Removed global user scope
         `;
 
-        // Clone query for History Fallback
-        let queryHistory = query + ` ORDER BY T.CreatedDate DESC`;
+        // Clone query for History Fallback (ALWAYS User Scoped)
+        let queryHistory = query + ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId) ORDER BY T.CreatedDate DESC`;
 
         // Apply Date Filter to Primary Query
         if (date) {
@@ -59,6 +60,9 @@ export async function POST(req) {
         if (ShiftId) {
             query += ` AND T.ShiftId = @ShiftId`;
             request.input('ShiftId', ShiftId);
+        } else {
+            // If NO Shift specified (e.g. Initial Load / Just Date), Keep it User Scoped
+            query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
         }
 
         query += ` ORDER BY T.CreatedDate DESC`;

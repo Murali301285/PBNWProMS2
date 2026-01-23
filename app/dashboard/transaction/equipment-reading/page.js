@@ -6,6 +6,7 @@ import { TRANSACTION_CONFIG } from '@/lib/transactionConfig';
 import TransactionTable from '@/components/TransactionTable';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Plus, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import styles from './page.module.css';
 
 export default function EquipmentReadingPage() {
@@ -106,19 +107,20 @@ export default function EquipmentReadingPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this record?")) return;
         try {
-            setLoading(true);
-            const res = await fetch(`${config.apiEndpoint}/${id}`, { method: 'DELETE' }).then(r => r.json());
-            if (res.success) {
-                // Remove from local state immediately
+            setLoading(true); // Retain loading state if desired, or remove for optimistic
+            const res = await fetch(`${config.apiEndpoint}/${id}`, { method: 'DELETE' });
+
+            if (res.ok) {
+                toast.success('Record deleted successfully');
                 setData(prev => prev.filter(row => row.SlNo !== id));
             } else {
-                alert(res.message || "Delete Failed");
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
             }
         } catch (e) {
             console.error(e);
-            alert("Delete Failed");
+            toast.error('Network error');
         } finally {
             setLoading(false);
         }
@@ -154,7 +156,7 @@ export default function EquipmentReadingPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Equipment Reading :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
 
@@ -202,6 +204,7 @@ export default function EquipmentReadingPage() {
                 onDelete={handleDelete}
                 userRole={userRole}
                 onEdit={(row) => router.push(`/dashboard/transaction/equipment-reading/${row.SlNo}`)}
+                title="Transactions"
             />
         </div>
     );

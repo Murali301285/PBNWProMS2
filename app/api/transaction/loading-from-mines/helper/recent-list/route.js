@@ -90,11 +90,11 @@ export async function POST(req) {
             request.input('LoadingMachineId', LoadingMachineId);
         }
 
-        // Add scoping to User
-        if (user) {
-            query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
-            request.input('UserId', user.id);
-        }
+        // User scoping removed as per request
+        // if (user) {
+        //     query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
+        //     request.input('UserId', user.id);
+        // }
 
         // Pagination
         query += ` ORDER BY T.CreatedDate DESC, T.SlNo DESC OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY`;

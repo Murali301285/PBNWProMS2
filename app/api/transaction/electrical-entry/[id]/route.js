@@ -156,12 +156,16 @@ export async function DELETE(request, { params }) {
 
         const pool = await getDbConnection();
 
-        await pool.request()
+        const result = await pool.request()
             .input('id', sql.BigInt, id)
             .input('userId', sql.Int, updatedBy)
-            .query(`UPDATE [Trans].[TblElectricalEntry] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() WHERE SlNo = @id`);
+            .query(`UPDATE [Trans].[TblElectricalEntry] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @id`);
 
-        return NextResponse.json({ success: true, message: "Deleted Successfully" });
+        if (result.recordset && result.recordset.length > 0) {
+            return NextResponse.json({ success: true, message: "Deleted Successfully" });
+        } else {
+            return NextResponse.json({ success: false, message: "Record not found or already deleted" }, { status: 404 });
+        }
     } catch (error) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }

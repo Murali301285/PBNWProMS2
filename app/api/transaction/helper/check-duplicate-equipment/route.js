@@ -12,8 +12,6 @@ export async function POST(req) {
             WHERE 
                 CAST([Date] AS DATE) = @date AND
                 ShiftId = @ShiftId AND
-                RelayId = @RelayId AND
-                ActivityId = @ActivityId AND
                 EquipmentId = @EquipmentId AND
                 IsDelete = 0
         `;
@@ -21,8 +19,6 @@ export async function POST(req) {
         const result = await executeQuery(query, [
             { name: 'date', type: sql.Date, value: date },
             { name: 'ShiftId', type: sql.Int, value: ShiftId },
-            { name: 'RelayId', type: sql.Int, value: RelayId },
-            { name: 'ActivityId', type: sql.Int, value: ActivityId },
             { name: 'EquipmentId', type: sql.Int, value: EquipmentId }
         ]);
 

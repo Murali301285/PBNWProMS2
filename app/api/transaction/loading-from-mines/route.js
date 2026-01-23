@@ -125,6 +125,9 @@ export async function GET(request) {
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
         `;
 
+        // console.log("🔍 [DEBUG-MINES] Executing Query:", query);
+        console.log("🔍 [DEBUG-MINES] Executing Query:", query);
+
         request.input('offset', sql.Int, offset);
         request.input('limit', sql.Int, limit);
 

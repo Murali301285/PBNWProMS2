@@ -18,6 +18,8 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
     // --- State ---
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState(null); // Added User State
+    const [isContextLocked, setIsContextLocked] = useState(true); // Context Locking State (Default True)
+    const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for History Refresh
     const [options, setOptions] = useState({
         shifts: [],
         relays: [],
@@ -96,13 +98,31 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
 
     // --- SMART CONTEXT LOGIC ---
-    // Ref to track previous date for change detection
-    const prevDateRef = useRef(formData.Date);
+    // Ref to track parameters to prevent duplicate calls if needed
+    // const prevParams = useRef({ date: formData.Date, shift: formData.ShiftId });
 
     useEffect(() => {
         const fetchContext = async () => {
-            // Only if Date Changed or Initial Load (Empty Date case handled by default today)
-            // User provided logic: "if No details found for the date -> get top 1 ... from tblLoading ... focus to Activity"
+            // Run when Date OR Shift is present. If Shift is empty, we might not want to run? 
+            // Logic: "If you select a Date & Shift for which..." -> So we need Shift.
+            // Run when Date OR Shift is present.
+            // If Shift is empty (cleared by user), we should RESET the form to clear stale context.
+            if (!formData.ShiftId) {
+                // Reset Fields (Logic matched with "No Data Found" else block below)
+                // STRICT LOCK: Always Locked (Empty)
+                setIsContextLocked(true);
+                setFormData(prev => ({
+                    ...prev,
+                    // Keep Date (Shift is already empty in formData if this triggers)
+                    ShiftInchargeId: '', MidScaleInchargeId: '', RelayId: '',
+                    ActivityId: '', EquipmentId: '', OperatorId: [],
+                    OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
+                    DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '', RunningBDMaintenanceHr: '',
+                    TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
+                    SectorId: '', PatchId: '', MethodId: '', Remarks: ''
+                }));
+                return;
+            }
 
             if (isEdit) return;
 
@@ -128,6 +148,8 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
                     toast.info(`Auto-filled from ${ctx.SourceOfContext || 'History'}`, { id: 'ctx-load-er' });
 
+                    const isFallback = ctx.SourceOfContext === 'LoadingFallback';
+
                     setFormData(prev => ({
                         ...prev,
                         Date: (isDefaultDate && newDate) ? newDate : (prev.Date || newDate),
@@ -135,7 +157,8 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                         ShiftInchargeId: ctx.ShiftInchargeId || '',
                         MidScaleInchargeId: ctx.MidScaleInchargeId || '',
                         RelayId: ctx.RelayId || '',
-                        ActivityId: ctx.ActivityId || '', // Pre-load Activity
+                        // If Fallback (Mines), Activity remains empty. If History, pre-load it.
+                        ActivityId: isFallback ? '' : (ctx.ActivityId || ''),
 
                         // REST OF FIELDS: RESET TO DEFAULT/EMPTY
                         EquipmentId: '',
@@ -146,42 +169,54 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                         SectorId: '', PatchId: '', MethodId: '', Remarks: ''
                     }));
 
-                    // Focus Equipment (Skip Activity as it is pre-loaded)
+                    // Focus Logic
                     setTimeout(() => {
-                        if (equipmentRef.current) equipmentRef.current.focus();
+                        if (isFallback) {
+                            // If Fallback, Start at Activity
+                            if (activityRef.current) activityRef.current.focus();
+                        } else {
+                            // If History (Activity Pre-filled), Go to Equipment
+                            if (equipmentRef.current) equipmentRef.current.focus();
+                        }
                     }, 100);
 
+                    // Context Locking: STRICT LOCK (Data Found)
+                    setIsContextLocked(true);
+
                 } else {
-                    // Reset if Date Changed and No Data
-                    if (prevDateRef.current !== formData.Date) {
-                        toast.info("No history. Resetting.");
-                        setFormData(prev => ({
-                            ...prev,
-                            ShiftId: '', ShiftInchargeId: '', MidScaleInchargeId: '', RelayId: '',
-                            ActivityId: '', EquipmentId: '', OperatorId: [],
-                            OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
-                            DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '', RunningBDMaintenanceHr: '',
-                            TotalWorkingHr: '', Remarks: ''
-                        }));
-                        // Focus Shift
-                        setTimeout(() => {
-                            const shiftInput = document.querySelector('select[name="ShiftId"]');
-                            if (shiftInput) shiftInput.focus();
-                        }, 100);
-                    }
+                    // Reset Logic: If No Data Found for this Date/Shift
+                    toast.info("No context found. Resetting fields.");
+
+                    // STRICT LOCK (No Data)
+                    setIsContextLocked(true);
+
+                    setFormData(prev => ({
+                        ...prev,
+                        // Keep Date & Shift
+                        ShiftInchargeId: '', MidScaleInchargeId: '', RelayId: '',
+                        ActivityId: '', EquipmentId: '', OperatorId: [],
+                        OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
+                        DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '', RunningBDMaintenanceHr: '',
+                        TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
+                        SectorId: '', PatchId: '', MethodId: '', Remarks: ''
+                    }));
+
+                    // Focus Incharge? No, maybe focus Shift or just leave it.
                 }
             } catch (e) { console.error(e); }
         };
 
         fetchContext();
-        prevDateRef.current = formData.Date;
+        // prevDateRef.current = formData.Date; // Removed ref
 
-    }, [formData.Date]);
+    }, [formData.Date, formData.ShiftId]);
     // Note: Dependencies need to be careful. If I add isEdit, make sure it doesn't loop.
 
     // Ref for focus management
     const activityRef = useRef(null);
     const equipmentRef = useRef(null);
+    const saveBtnRef = useRef(null);
+    const remarksRef = useRef(null);
 
     // --- 1. Init Data Loading ---
     useEffect(() => {
@@ -246,7 +281,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                 setOptions({
                     shifts: shifts.map(s => ({
                         id: s.id,
-                        name: s.FromTime && s.ToTime ? `${s.name} (${formatTime(s.FromTime)} - ${formatTime(s.ToTime)})` : s.name
+                        name: s.name
                     })),
                     relays: relays.map(s => ({ id: s.id, name: s.name })),
                     activities: activities.map(s => ({ id: s.id, name: s.name, isDetail: s.IsDetail })),
@@ -258,15 +293,70 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     patches: patches.map(s => ({ id: s.id, name: s.name })),
                     methods: methods.map(s => ({ id: s.id, name: s.name })),
                 });
+                setLoading(false);
             } catch (error) {
                 console.error(error);
                 toast.error("Failed to load master data");
-            } finally {
                 setLoading(false);
             }
         }
         loadMasters();
-    }, []);
+
+        // 1.1 Initial Context Load (Pre-Fill Form with Last Entry)
+        async function loadInitialContext() {
+            if (isEdit || initialData) return;
+
+            try {
+                // Determine if we should look for specific params? No, just get the very last entry.
+                // We'll use the same endpoint but without strict filters if supported, or a new 'last-entry-info' logic?
+                // The current 'last-context' API requires Date/Shift to be specific? 
+                // Let's check api logic. If I send nothing, what does it do?
+                // It likely needs params.
+                // Reverting to: '/api/transaction/equipment-reading/helper/last-entry-info' (If exists? No, I need to check).
+                // Assuming it's similar to LoadingFromMines.
+
+                // Let's use the 'main' context endpoint but we need a way to get "Latest" regardless of date.
+                // Actually, let's use the same behavior as LoadingFromMines which uses 'last-context' passing nothing?
+                // No, LoadingFromMines uses 'last-entry-info' for the label, but 'last-context' for auto-fill.
+
+                // USER REQUEST: "Initial loading -> load the last date, shift, incharges, relay, activity"
+                // Implementation: Fetch the absolutely last entered record by this user (or globally?) and fill it.
+
+                const res = await fetch('/api/transaction/equipment-reading/helper/last-context', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // No Filters -> Should return latest? Need to verify API.
+                }).then(r => r.json());
+
+                if (res.success && res.data) {
+                    const ctx = res.data;
+                    const newDate = ctx.Date ? new Date(ctx.Date).toISOString().split('T')[0] : today;
+
+                    // Set Form Data
+                    setFormData(prev => ({
+                        ...prev,
+                        Date: newDate,
+                        ShiftId: ctx.ShiftId || '',
+                        ShiftInchargeId: ctx.ShiftInchargeId || '',
+                        MidScaleInchargeId: ctx.MidScaleInchargeId || '',
+                        RelayId: ctx.RelayId || '',
+                        ActivityId: ctx.ActivityId || '',
+
+                        // Note: We don't fetch equipment/meters here, user flows: Date/Shift -> Context -> Activity -> Equipment
+                    }));
+
+                    // Focus Equipment?
+                    setTimeout(() => {
+                        if (equipmentRef.current) equipmentRef.current.focus();
+                    }, 500); // Slight delay for rendering
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Trigger if not Edit
+        if (!isEdit) loadInitialContext();
+
+    }, [isEdit, initialData]);
 
     // --- 1.1 Populate Form Data (Separate Effect) ---
     useEffect(() => {
@@ -372,7 +462,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
             // "visible -> if IsDetail = 0"
             if (!isDetailActivity) {
                 deduction += (parseFloat(prev.DevelopmentHrMining) || 0);
-                deduction += (parseFloat(prev.FaceMarchingHr) || 0);
+                // deduction += (parseFloat(prev.FaceMarchingHr) || 0); // V19.2: Removed per request
                 deduction += (parseFloat(prev.DevelopmentHrNonMining) || 0);
                 deduction += (parseFloat(prev.BlastingMarchingHr) || 0);
             }
@@ -499,11 +589,10 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     body: JSON.stringify(formData)
                 }).then(r => r.json());
 
-                if (dupRes.success && dupRes.exists) {
-                    if (!confirm(`Duplicate warning: Equipment "${dupRes.equipmentName}" already has an entry for this Date/Shift. Continue?`)) {
-                        setLoading(false);
-                        return;
-                    }
+                if (dupRes.exists) {
+                    toast.error("Duplicate Entry: This Equipment already has an entry for this Date & Shift.");
+                    setLoading(false);
+                    return;
                 }
             }
 
@@ -531,6 +620,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
             if (json.success) {
                 toast.success(isEdit ? "Updated Successfully" : "Saved Successfully");
+                setRefreshTrigger(prev => prev + 1); // Refresh History
 
                 if (isEdit) {
                     router.back();
@@ -569,6 +659,16 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
             toast.error(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Smart Tab Jump (Remarks -> Save)
+    const handleSmartJump = (e, targetRef) => {
+        if (e.key === 'Tab' && !e.shiftKey) {
+            e.preventDefault();
+            if (targetRef && targetRef.current) {
+                targetRef.current.focus();
+            }
         }
     };
 
@@ -681,26 +781,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                 <h1 className={styles.headerTitle}>{isEdit ? 'Update' : 'Create'} Equipment Reading</h1>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className={styles.refreshBtn} onClick={() => {
-                        if (confirm('Reset Form?')) {
-                            setFormData({
-                                ...formData,
-                                EquipmentId: '', OperatorId: [],
-                                OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
-                                DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '',
-                                RunningBDMaintenanceHr: '', TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
-                                SectorId: '', PatchId: '', MethodId: '', Remarks: ''
-                            });
-                            if (equipmentRef.current) equipmentRef.current.focus();
-                        }
-                    }} title="Reset Fields">
-                        <RotateCcw size={18} />
-                    </button>
-
-                    <button className={styles.saveBtn} onClick={handleSubmit} disabled={loading}>
-                        {loading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-                        {isEdit ? 'Update (F2)' : 'Save (F2)'}
-                    </button>
+                    {/* Buttons Moved to Form Grid (Row 6) */}
                 </div>
             </div>
 
@@ -751,6 +832,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                             }}
                             placeholder="Large Scale"
                             error={errors.ShiftInchargeId}
+                            disabled={loading || isContextLocked}
                         />
                         {errors.ShiftInchargeId && <div className={styles.errorMsg}>{errors.ShiftInchargeId}</div>}
                     </div>
@@ -769,6 +851,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                             }}
                             placeholder="Mid Scale"
                             error={errors.MidScaleInchargeId}
+                            disabled={loading || isContextLocked}
                         />
                         {errors.MidScaleInchargeId && <div className={styles.errorMsg}>{errors.MidScaleInchargeId}</div>}
                     </div>
@@ -783,6 +866,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                             onChange={(e) => setFormData({ ...formData, RelayId: e.target.value })}
                             placeholder="Select"
                             error={errors.RelayId}
+                            disabled={loading || isContextLocked}
                         />
                         {errors.RelayId && <div className={styles.errorMsg}>{errors.RelayId}</div>}
                     </div>
@@ -831,6 +915,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                             onChange={(e) => setFormData({ ...formData, OperatorId: e.target.value })}
                             placeholder="Select Driver(s)"
                             multiple={true}
+                            closeOnSelect={true} // V19.2: Auto-Close on Select
                             error={errors.OperatorId}
                         />
                         {errors.OperatorId && <div className={styles.errorMsg}>{errors.OperatorId}</div>}
@@ -862,7 +947,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     {/* Net HMR: C3 */}
                     <div className={styles.group} style={{ gridColumn: 'span 1' }}>
                         <label>Net HMR</label>
-                        <input type="number" readOnly
+                        <input type="number" readOnly tabIndex={-1}
                             className={`${styles.input} ${styles.readOnly} ${errors.NetHMR ? styles.errorBorder : ''}`}
                             value={formData.NetHMR}
                             onBlur={handleHMRBlur}
@@ -895,7 +980,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                             {/* Net KMR: C6 */}
                             <div className={styles.group} style={{ gridColumn: 'span 1' }}>
                                 <label>Net KMR</label>
-                                <input type="number" readOnly className={`${styles.input} ${styles.readOnly} ${errors.NetKMR ? styles.errorBorder : ''}`}
+                                <input type="number" readOnly tabIndex={-1} className={`${styles.input} ${styles.readOnly} ${errors.NetKMR ? styles.errorBorder : ''}`}
                                     value={formData.NetKMR}
                                     onBlur={handleKMRBlur}
                                 />
@@ -950,7 +1035,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     {/* Total Work: Next Col */}
                     <div className={styles.group} style={{ gridColumn: 'span 1' }}>
                         <label>Total Working Hr</label>
-                        <input type="number" readOnly className={`${styles.input} ${styles.readOnly} ${errors.TotalWorkingHr ? styles.errorBorder : ''}`}
+                        <input type="number" readOnly tabIndex={-1} className={`${styles.input} ${styles.readOnly} ${errors.TotalWorkingHr ? styles.errorBorder : ''}`}
                             value={formData.TotalWorkingHr} style={{ fontWeight: 'bold' }}
                         />
                         {errors.TotalWorkingHr && <div className={styles.errorMsg}>{errors.TotalWorkingHr}</div>}
@@ -980,7 +1065,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     {/* Idle Hr: C3 */}
                     <div className={styles.group} style={{ gridColumn: 'span 1' }}>
                         <label>Idle Hr</label>
-                        <input type="number" readOnly className={`${styles.input} ${styles.readOnly} ${errors.IdleHr ? styles.errorBorder : ''}`}
+                        <input type="number" readOnly tabIndex={-1} className={`${styles.input} ${styles.readOnly} ${errors.IdleHr ? styles.errorBorder : ''}`}
                             value={formData.IdleHr}
                         />
                         {errors.IdleHr && <div className={styles.errorMsg}>{errors.IdleHr}</div>}
@@ -1037,9 +1122,47 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     <div className={styles.group} style={{ gridColumn: 'span 4' }}>
                         <label>Remarks</label>
                         <input type="text" className={styles.input}
+                            ref={remarksRef}
                             value={formData.Remarks} onChange={e => setFormData({ ...formData, Remarks: e.target.value })}
                             placeholder="Remarks..."
+                            onKeyDown={(e) => handleSmartJump(e, saveBtnRef)}
                         />
+                    </div>
+
+                    {/* Buttons: C7-C8 (Span 2) - Reset & Save */}
+                    <div style={{ gridColumn: 'span 1', display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            type="button"
+                            className={styles.saveBtn}
+                            style={{ width: '100%', background: '#64748b' }}
+                            onClick={() => {
+                                if (confirm('Reset Form?')) {
+                                    setFormData({
+                                        ...formData,
+                                        EquipmentId: '', OperatorId: [],
+                                        OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
+                                        DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '',
+                                        RunningBDMaintenanceHr: '', TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
+                                        SectorId: '', PatchId: '', MethodId: '', Remarks: ''
+                                    });
+                                    if (equipmentRef.current) equipmentRef.current.focus();
+                                }
+                            }} title="Reset Fields">
+                            <RotateCcw size={18} /> Reset
+                        </button>
+                    </div>
+
+                    <div style={{ gridColumn: 'span 1', display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            ref={saveBtnRef}
+                            className={styles.saveBtn}
+                            style={{ width: '100%' }}
+                            onClick={handleSubmit}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                            {isEdit ? 'Update' : 'Save'}
+                        </button>
                     </div>
 
                 </div>
@@ -1053,6 +1176,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     shiftId={formData.ShiftId}
                     userRole={userRole}
                     title="Recent Transactions"
+                    refreshTrigger={refreshTrigger}
                 />
             </div>
         </div>
@@ -1060,7 +1184,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 }
 
 // Sub-component for auto-fetching history based on context
-function RecentHistory({ config, date, shiftId, userRole, title }) {
+function RecentHistory({ config, date, shiftId, userRole, title, refreshTrigger }) {
     const [data, setData] = useState([]);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -1112,7 +1236,7 @@ function RecentHistory({ config, date, shiftId, userRole, title }) {
 
     useEffect(() => {
         fetchHistory(false);
-    }, [date, shiftId]); // Reset on Date/Shift change. Note: fetchHistory depends on page, so we don't put it here to avoid loops.
+    }, [date, shiftId, refreshTrigger]); // Reset on Date/Shift change OR Trigger
 
     return (
         <>
@@ -1123,10 +1247,10 @@ function RecentHistory({ config, date, shiftId, userRole, title }) {
                 title={title}
                 userRole={userRole}
                 onEdit={(item) => router.push(`/dashboard/transaction/equipment-reading/${item.SlNo}`)}
-                onDelete={async (item) => {
-                    if (!confirm(`Are you sure you want to delete this record (SlNo: ${item.SlNo})?`)) return;
+                onDelete={async (id) => {
+                    // Confirm is handled by Table Component
                     try {
-                        const res = await fetch(`/api/transaction/equipment-reading/${item.SlNo}`, { method: 'DELETE' }).then(r => r.json());
+                        const res = await fetch(`/api/transaction/equipment-reading/${id}`, { method: 'DELETE' }).then(r => r.json());
                         if (res.success) {
                             toast.success("Deleted Successfully");
                             // Refresh Data

@@ -10,6 +10,7 @@ export async function GET() {
         const result = await pool.request().query(`
             SELECT TOP 1 
                 T.Date,
+                T.CreatedDate,
                 ISNULL(U.EmpName, 'Unknown') AS CreatedByName
             FROM [Trans].[TblCrusher] T
             LEFT JOIN [Master].[TblUser_New] U ON T.CreatedBy = U.SlNo

@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { executeQuery, sql } from '@/lib/db';
+import { executeQuery, sql, getDbConnection } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -190,13 +190,17 @@ export async function DELETE(request, { params }) {
         const { id } = await params;
         if (!id) return NextResponse.json({ success: false, message: 'ID missing' }, { status: 400 });
 
-        const query = `UPDATE [Trans].[TblEquipmentReading] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() WHERE SlNo = @id`;
-        await executeQuery(query, [
+        const query = `UPDATE [Trans].[TblEquipmentReading] SET IsDelete = 1, UpdatedBy = @userId, UpdatedDate = GETDATE() OUTPUT INSERTED.SlNo WHERE SlNo = @id AND IsDelete = 0`;
+        const result = await executeQuery(query, [
             { name: 'id', type: sql.Int, value: id },
             { name: 'userId', type: sql.Int, value: user ? user.id : 1 }
         ]);
 
-        return NextResponse.json({ success: true, message: 'Deleted Successfully' });
+        if (result && result.length > 0) {
+            return NextResponse.json({ success: true, message: 'Deleted Successfully' });
+        } else {
+            return NextResponse.json({ success: false, message: 'Record not found or already deleted' }, { status: 404 });
+        }
     } catch (error) {
         console.error("Delete Error:", error);
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });

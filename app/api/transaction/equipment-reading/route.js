@@ -49,8 +49,8 @@ export async function GET(request) {
         // Basic Columns
         query += "T.SlNo, T.[Date], ";
 
-        // Shift Logic: Name + (From - To)
-        query += "(S.ShiftName + ' (' + LEFT(CAST(S.FromTime AS VARCHAR), 5) + ' to ' + LEFT(CAST(S.ToTime AS VARCHAR), 5) + ')') as ShiftDisplay, ";
+        // Shift Logic: Name Only
+        query += "S.ShiftName as ShiftDisplay, ";
 
         // Join TblOperator twice for Incharges
         query += "SI1.OperatorName + ' (' + CAST(SI1.OperatorId AS VARCHAR) + ')' AS ShiftInchargeName, ";
@@ -60,8 +60,8 @@ export async function GET(request) {
         query += "Act.Name AS ActivityName, ";
         query += "Eq.EquipmentName AS EquipmentName, ";
 
-        // Complex Multi-Select: Operator/Driver
-        query += "(SELECT STUFF((SELECT ', ' + O.OperatorName + ' (' + CAST(O.OperatorId AS VARCHAR) + ')' FROM [Trans].[TblEquipmentReadingOperator] ERO JOIN [Master].[TblOperator] O ON ERO.OperatorId = O.SlNo WHERE ERO.EquipmentReadingId = T.SlNo FOR XML PATH('')), 1, 2, '')) AS OperatorName, ";
+        // Complex Multi-Select: Operator/Driver (Fallback to Main OperatorId)
+        query += "COALESCE((SELECT STUFF((SELECT ', ' + O.OperatorName + ' (' + CAST(O.OperatorId AS VARCHAR) + ')' FROM [Trans].[TblEquipmentReadingOperator] ERO JOIN [Master].[TblOperator] O ON ERO.OperatorId = O.SlNo WHERE ERO.EquipmentReadingId = T.SlNo FOR XML PATH('')), 1, 2, '')), OMain.OperatorName + ' (' + CAST(OMain.OperatorId AS VARCHAR) + ')') AS OperatorName, ";
 
         // Readings & Hours
         query += "T.OHMR, T.CHMR, T.NetHMR, ";
@@ -76,7 +76,6 @@ export async function GET(request) {
         query += "M.Name AS MethodName, ";
 
         // Metadata
-        // Metadata
         query += "T.Remarks, T.CreatedDate, T.UpdatedDate, ";
         query += "CU.EmpName AS CreatedByName, UU.EmpName AS UpdatedByName ";
 
@@ -86,6 +85,7 @@ export async function GET(request) {
         query += "LEFT JOIN [Master].[TblShift] S ON T.ShiftId = S.SlNo ";
         query += "LEFT JOIN [Master].[TblOperator] SI1 ON T.ShiftInchargeId = SI1.SlNo "; // Join 1
         query += "LEFT JOIN [Master].[TblOperator] SI2 ON T.MidScaleInchargeId = SI2.SlNo "; // Join 2
+        query += "LEFT JOIN [Master].[TblOperator] OMain ON T.OperatorId = OMain.SlNo "; // Main Operator Fallback
         query += "LEFT JOIN [Master].[TblRelay] R ON T.RelayId = R.SlNo ";
         query += "LEFT JOIN [Master].[TblActivity] Act ON T.ActivityId = Act.SlNo ";
         query += "LEFT JOIN [Master].[TblEquipment] Eq ON T.EquipmentId = Eq.SlNo ";

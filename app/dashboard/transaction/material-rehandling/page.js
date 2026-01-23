@@ -6,6 +6,7 @@ import { TRANSACTION_CONFIG } from '@/lib/transactionConfig';
 import TransactionTable from '@/components/TransactionTable';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Plus, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import styles from './page.module.css';
 
 export default function MaterialRehandlingPage() {
@@ -109,6 +110,25 @@ export default function MaterialRehandlingPage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [router]);
 
+    const handleDelete = async (id) => {
+        try {
+            const res = await fetch(`/api/transaction/material-rehandling/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
+            }
+        } catch (e) {
+            toast.error('Network error');
+        }
+    };
+
+
+
+
+
     return (
         <div className={styles.container}>
             {/* {loading && <LoadingOverlay message="Loading Rehandling Data..." />} */}
@@ -125,7 +145,7 @@ export default function MaterialRehandlingPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || lastEntry.CreatedBy || 'Admin'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | RehandlingDate :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || lastEntry.CreatedBy || 'Admin'}
                         </span>
                     )}
                     <button
@@ -187,7 +207,9 @@ export default function MaterialRehandlingPage() {
                     loading={loading} // passed to table
                     isLoading={loading}
                     userRole={userRole}
+                    onDelete={handleDelete}
                     onEdit={(row) => router.push(`/dashboard/transaction/material-rehandling/${row.SlNo}`)}
+                    title="Transactions"
                 />
             </div>
         </div>

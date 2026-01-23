@@ -50,7 +50,7 @@ export async function POST(request) {
                 -- The requirement "Logic for initial loading... load initial data" refers to form pre-filling?
                 -- "If Only Date Selected or Entered... load initial data"
                 -- I will return the LIST here. Frontend can pick the top one if it needs to pre-fill.
-                AND T.CreatedBy = @user
+                -- AND T.CreatedBy = @user -- Removed user scope
                 ORDER BY T.CreatedDate DESC
             `);
 

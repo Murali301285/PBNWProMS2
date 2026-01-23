@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Edit, Trash2, Download, Search, ArrowUpDown, Filter, X, Check, ArrowLeft, ArrowRight, ChevronsLeft, ChevronsRight, ChevronRight, ChevronDown, ChevronLeft } from 'lucide-react';
 import styles from './TransactionTable.module.css';
 import * as XLSX from 'xlsx-js-style';
+import Modal from '@/components/Modal/Modal';
 
 export default function TransactionTable({
     config,
-    title = "Recent Transactions", // Added custom title support
-    data = [], // Contains ALL data now
-    isLoading, // Initial loading state
+    title = "Recent Transactions",
+    data = [],
+    isLoading,
     onDelete,
     onEdit,
     userRole,
@@ -21,16 +22,16 @@ export default function TransactionTable({
     // --- Local State ---
     const [globalSearch, setGlobalSearch] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: config.defaultSort || null, direction: 'desc' });
-    const [columnFilters, setColumnFilters] = useState({}); // { key: Set([val1, val2]) }
-    const [activeFilterCol, setActiveFilterCol] = useState(null); // Which dropdown is open
+    const [columnFilters, setColumnFilters] = useState({});
+    const [activeFilterCol, setActiveFilterCol] = useState(null);
     const [activeFilterSearch, setActiveFilterSearch] = useState('');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    const [expandedRows, setExpandedRows] = useState(new Set()); // Set of SlNo
+    const [expandedRows, setExpandedRows] = useState(new Set());
+    const [deleteRow, setDeleteRow] = useState(null); // State for delete modal
 
-    // --- Derived Data (Memoized for Performance) ---
+    // --- Derived Data ---
 
-    // 1. Get Unique Values for each column (for Filter Dropdowns)
     const uniqueValues = useMemo(() => {
         const values = {};
         config.columns.forEach(col => {
@@ -40,36 +41,28 @@ export default function TransactionTable({
         return values;
     }, [data, config.columns]);
 
-    // 2. Filter & Global Search
     const filteredData = useMemo(() => {
         let res = data;
-
-        // Global Search
         if (globalSearch) {
             const lowerSearch = globalSearch.toLowerCase();
             res = res.filter(row =>
                 Object.values(row).some(v => String(v).toLowerCase().includes(lowerSearch))
             );
         }
-
-        // Column Filters
         Object.keys(columnFilters).forEach(key => {
             const selectedSet = columnFilters[key];
             if (selectedSet && selectedSet.size > 0) {
                 res = res.filter(row => selectedSet.has(row[key]));
             }
         });
-
         return res;
     }, [data, globalSearch, columnFilters]);
 
-    // 3. Sort
     const sortedData = useMemo(() => {
         if (!sortConfig.key) return filteredData;
         const sorted = [...filteredData].sort((a, b) => {
             const valA = a[sortConfig.key] || '';
             const valB = b[sortConfig.key] || '';
-
             if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
             if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
@@ -77,7 +70,6 @@ export default function TransactionTable({
         return sorted;
     }, [filteredData, sortConfig]);
 
-    // 4. Pagination
     const totalItems = sortedData.length;
     const totalPages = Math.ceil(totalItems / pageSize);
     const paginatedData = useMemo(() => {
@@ -99,15 +91,13 @@ export default function TransactionTable({
             const newSet = new Set(prevSet);
             if (newSet.has(value)) newSet.delete(value);
             else newSet.add(value);
-
-            // If empty, remove key to speed up filter logic
             if (newSet.size === 0) {
                 const { [colKey]: _, ...rest } = prev;
                 return rest;
             }
             return { ...prev, [colKey]: newSet };
         });
-        setCurrentPage(1); // Reset page on filter
+        setCurrentPage(1);
     };
 
     const handleSelectAll = (colKey) => {
@@ -133,8 +123,18 @@ export default function TransactionTable({
         });
     };
 
+    const handleDeleteClick = (row) => {
+        setDeleteRow(row);
+    };
+
+    const confirmDelete = () => {
+        if (deleteRow && onDelete) {
+            onDelete(deleteRow[config.idField]);
+        }
+        setDeleteRow(null);
+    };
+
     const handleExport = () => {
-        // Export FILTERED data
         const headers = config.columns.map(c => c.label);
         const rows = sortedData.map(row => config.columns.map(c => {
             let val = row[c.accessor];
@@ -142,47 +142,35 @@ export default function TransactionTable({
             else if (c.type === 'datetime' && val) val = new Date(val).toLocaleString('en-GB');
             return val || '';
         }));
-
         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-        // Auto-width and Header Styles
         const colWidths = headers.map(h => ({ wch: Math.max(h.length + 5, 15) }));
         ws['!cols'] = colWidths;
         headers.forEach((h, i) => {
             const cellRef = XLSX.utils.encode_cell({ c: i, r: 0 });
             if (ws[cellRef]) ws[cellRef].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F81BD" } } };
         });
-
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
         XLSX.writeFile(wb, `Filtered_Export.xlsx`);
     };
 
     const canEdit = (createdDate) => {
-        // ALWAYS ALLOW EDIT/DELETE as per new policy (Step 1591)
         return true;
     };
 
-    // Helper to calculate sticky offsets
     function getLeftOffset(index) {
         let offset = 0;
         for (let i = 0; i < index; i++) offset += config.columns[i].width || 100;
         return offset;
     }
 
-    // Close dropdown on click outside logic could be added here
-    // For simplicity, just use onMouseLeave or a backdrop. Backdrop is better.
-    // Or just a simple click toggle.
-
     return (
         <div className={styles.wrapper}>
-            {/* Header Title */}
             <div className="px-4 pt-3 pb-1 border-b border-gray-200">
                 <h3 className="font-semibold text-gray-700 text-xs flex items-center gap-2">
                     {title}
                 </h3>
             </div>
-            {/* Toolbar */}
             <div className={styles.toolbar}>
                 <div className={styles.leftTools}>
                     <div className={styles.searchBox}>
@@ -214,7 +202,6 @@ export default function TransactionTable({
                     <span>Showing <b>{paginatedData.length}</b> of <b>{totalItems}</b> (Total: {data.length})</span>
                 </div>
                 <div className={styles.rightTools}>
-                    {/* Pagination Controls */}
                     <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className={styles.navBtn} title="First Page">
                         <ChevronsLeft size={16} />
                     </button>
@@ -234,7 +221,6 @@ export default function TransactionTable({
                 </div>
             </div>
 
-            {/* Table */}
             <div className={styles.tableContainer} ref={tableContainerRef} style={{ height: '456px', flex: 'none', display: 'block', overflowY: 'auto' }}>
                 <table className={styles.table}>
                     <thead>
@@ -242,18 +228,13 @@ export default function TransactionTable({
                             {config.columns.map((col, index) => {
                                 const isSticky = index < 4;
                                 const left = getLeftOffset(index);
-
                                 const isFiltered = columnFilters[col.accessor]?.size > 0;
-
-                                // Filter Logic
                                 let filterOptions = uniqueValues[col.accessor] || [];
-                                // 1. Search
                                 if (activeFilterSearch && activeFilterCol === col.accessor) {
                                     filterOptions = filterOptions.filter(v =>
                                         String(v).toLowerCase().includes(activeFilterSearch.toLowerCase())
                                     );
                                 }
-                                // 2. Sort (Selected Top)
                                 const selectedSet = columnFilters[col.accessor] || new Set();
                                 const displayOptions = [...filterOptions].sort((a, b) => {
                                     const aSelected = selectedSet.has(a);
@@ -272,7 +253,7 @@ export default function TransactionTable({
                                             top: 0,
                                             left: isSticky ? left : undefined,
                                             zIndex: isSticky ? 40 : 30,
-                                            backgroundColor: isFiltered ? '#bfdbfe' : '#e2e8f0', // Highlight if filtered
+                                            backgroundColor: isFiltered ? '#bfdbfe' : '#e2e8f0',
                                             boxShadow: '0 1px 0 #cbd5e1'
                                         }}
                                         className={styles.th}
@@ -282,8 +263,6 @@ export default function TransactionTable({
                                                 {col.label}
                                                 {sortConfig.key === col.accessor && <span className="text-[10px]">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}
                                             </span>
-
-                                            {/* Filter Icon (Skip for SlNo or disabled) */}
                                             {col.accessor !== 'SlNo' && !col.disableFilter && (
                                                 <div className="relative">
                                                     <Filter
@@ -299,8 +278,6 @@ export default function TransactionTable({
                                                             }
                                                         }}
                                                     />
-
-                                                    {/* Filter Dropdown */}
                                                     {activeFilterCol === col.accessor && (
                                                         <div className={styles.filterDropdown} onClick={e => e.stopPropagation()}>
                                                             <div className={styles.filterHeader}>
@@ -341,7 +318,6 @@ export default function TransactionTable({
                                     </th>
                                 );
                             })}
-                            {/* Action Header also Sticky Top */}
                             <th className={styles.th} style={{ position: 'sticky', right: 0, top: 0, zIndex: 40, backgroundColor: '#e2e8f0', width: 80, boxShadow: '0 1px 0 #cbd5e1' }}>Action</th>
                         </tr>
                     </thead>
@@ -349,11 +325,8 @@ export default function TransactionTable({
                         {isLoading ? (
                             <tr><td colSpan="100" className="p-8 text-center text-gray-500">Loading data...</td></tr>
                         ) : paginatedData.map((row, rowIndex) => {
-                            // Correct rowIndex for SlNo should reference original index? 
-                            // Or View Index? usually List Index relative to filtered view.
                             const listIndex = (currentPage - 1) * pageSize + rowIndex + 1;
                             const isEditable = canEdit(row.CreatedDate);
-
                             return (
                                 <Fragment key={row[config.idField] || rowIndex}>
                                     <tr className={styles.tr}>
@@ -363,8 +336,7 @@ export default function TransactionTable({
                                             let val = row[col.accessor];
                                             if (col.accessor === 'SlNo') val = listIndex;
                                             if (col.type === 'date' && val) val = new Date(val).toLocaleDateString('en-GB');
-                                            if (col.type === 'datetime' && val) val = String(val).replace('T', ' ').split('.')[0]; // Display raw server time without timezone conversion
-
+                                            if (col.type === 'datetime' && val) val = String(val).replace('T', ' ').split('.')[0];
                                             return (
                                                 <td
                                                     key={col.accessor}
@@ -373,13 +345,11 @@ export default function TransactionTable({
                                                         position: isSticky ? 'sticky' : 'relative',
                                                         left: isSticky ? left : undefined,
                                                         zIndex: isSticky ? 10 : 1,
-                                                        background: rowIndex % 2 === 0 ? '#f8fafc' : (isSticky ? '#e2e8f0' : 'transparent'), // Sticky Needs Opaque BG
-                                                        // CSS handles stripes better but sticky cells need explicit BG if transparent
-                                                        backgroundColor: isSticky ? (rowIndex % 2 === 0 ? '#f1f5f9' : '#e2e8f0') : (rowIndex % 2 === 0 ? '#f8fafc' : 'transparent') // Explicit logic matches previous
+                                                        background: rowIndex % 2 === 0 ? '#f8fafc' : (isSticky ? '#e2e8f0' : 'transparent'),
+                                                        backgroundColor: isSticky ? (rowIndex % 2 === 0 ? '#f1f5f9' : '#e2e8f0') : (rowIndex % 2 === 0 ? '#f8fafc' : 'transparent')
                                                     }}
                                                 >
                                                     <div className={styles.cellContent}>
-                                                        {/* Expand Toggle in First Column (SlNo) if Expandable */}
                                                         {cIndex === 0 && config.expandable && (
                                                             <span
                                                                 onClick={(e) => { e.stopPropagation(); toggleRow(row[config.idField]); }}
@@ -407,7 +377,7 @@ export default function TransactionTable({
                                                 <button
                                                     disabled={!isEditable}
                                                     className={styles.actionBtn}
-                                                    onClick={() => isEditable && onDelete && onDelete(row[config.idField])}
+                                                    onClick={() => isEditable && handleDeleteClick(row)}
                                                     style={{ cursor: isEditable ? 'pointer' : 'not-allowed' }}
                                                     title={isEditable ? "Delete Record" : "Delete Disabled (Older than 24h)"}
                                                 >
@@ -416,7 +386,6 @@ export default function TransactionTable({
                                             </div>
                                         </td>
                                     </tr>
-                                    {/* Expanded Row */}
                                     {config.expandable && expandedRows.has(row[config.idField]) && (
                                         <tr key={`${row[config.idField]}-ex`} className={styles.tr}>
                                             <td colSpan="100" style={{ padding: '10px 20px', backgroundColor: '#f0f9ff', borderBottom: '1px solid #e2e8f0' }}>
@@ -438,7 +407,6 @@ export default function TransactionTable({
                                                                             {config.subTable.columns.map((subCol, scIdx) => {
                                                                                 let cellVal = childRow[subCol.accessor];
                                                                                 if (subCol.type === 'time' && cellVal) {
-                                                                                    // Handle potential invalid dates safely
                                                                                     const timeDate = new Date(cellVal);
                                                                                     if (!isNaN(timeDate)) {
                                                                                         cellVal = timeDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -469,15 +437,60 @@ export default function TransactionTable({
                 </table>
             </div>
 
-            {/* Click Backdrop for closing filters */}
             {activeFilterCol && (
                 <div
                     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 25 }}
                     onClick={() => setActiveFilterCol(null)}
                 />
             )}
+
+            <Modal
+                isOpen={!!deleteRow}
+                onClose={() => setDeleteRow(null)}
+                title="Confirm Delete"
+            >
+                <div>
+                    <p style={{ marginBottom: '20px', color: '#374151' }}>
+                        Are you sure you want to delete this record? <br />
+                        <b>ID: {deleteRow ? deleteRow[config.idField] : ''}</b> <br />
+                        Date: <b>{deleteRow ? new Date(deleteRow[config.columns.find(c => c.type === 'date')?.accessor || 'LoadingDate']).toLocaleDateString('en-GB') : ''}</b>
+                    </p>
+                    <div className={styles.buttonGroup} style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                        <button
+                            onClick={() => setDeleteRow(null)}
+                            style={{
+                                padding: '8px 16px',
+                                background: 'white',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                color: '#334155'
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                background: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Trash2 size={16} /> Delete
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
-
-

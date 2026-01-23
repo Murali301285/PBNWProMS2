@@ -6,6 +6,7 @@ import { TRANSACTION_CONFIG } from '@/lib/transactionConfig';
 import TransactionTable from '@/components/TransactionTable';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Plus, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 // Basic inline styles to replace missing CSS module for build success
 const styles = {
     page: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' },
@@ -123,8 +124,25 @@ export default function InternalTransferPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this record?")) return;
-        alert("Delete functionality pending API implementation in Phase 2.");
+        try {
+            setLoading(true);
+            const res = await fetch(`/api/transaction/internal-transfer/${id}`, {
+                method: 'DELETE',
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                setData(prev => prev.filter(row => row.SlNo !== id));
+                toast.success('Record deleted successfully');
+            } else {
+                toast.error('Failed to delete: ' + result.message);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Error deleting record');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

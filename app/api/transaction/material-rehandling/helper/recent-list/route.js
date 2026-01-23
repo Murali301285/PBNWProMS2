@@ -82,10 +82,11 @@ export async function POST(req) {
             request.input('LoadingMachineId', LoadingMachineId);
         }
 
-        if (user) {
-            query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
-            request.input('UserId', user.id);
-        }
+        // User scoping removed
+        // if (user) {
+        //     query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
+        //     request.input('UserId', user.id);
+        // }
 
         query += ` ORDER BY T.CreatedDate DESC OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY`;
         request.input('skip', skip);

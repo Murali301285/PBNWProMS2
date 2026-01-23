@@ -13,6 +13,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
     const [isLoading, setIsLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
     const [user, setUser] = useState(null); // Added User State
+    const [isContextLocked, setIsContextLocked] = useState(true); // Locking State (Default True for strictness)
 
     // Explicit Module Type
     const moduleType = 'material-rehandling';
@@ -25,6 +26,8 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
     const haulerRef = useRef(null);
     const loadingMachineRef = useRef(null); // Added Loader Ref
     const prevDateRef = useRef(new Date().toISOString().split('T')[0]);
+    const remarksRef = useRef(null);
+    const saveBtnRef = useRef(null);
 
     // Initial Form State
     const today = new Date().toISOString().split('T')[0];
@@ -304,29 +307,32 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                         }
                     }, 300);
 
+
+
+                    // LOCK Fields: Always Locked (Data Found)
+                    setIsContextLocked(true);
+
                 } else {
-                    // NO DATA FOUND -> AUTO CLEAR LOGIC
+                    // NO DATA FOUND -> AUTO CLEAR & KEEP LOCKED
+                    console.log("ℹ️ [MR-Context] No Data. Clearing & Locking.");
+
+                    // Strict Locking: Prevent Manual Edit even if empty
+                    setIsContextLocked(true);
+
                     setFormData(prev => {
                         const resetState = {
                             ...prev,
-                            // Keep Shift if manually selected? 
-                            // Existing logic: if isDateChange reset Shift, else keep? 
-                            // If Date changed, and no context found, we clear everything including shift (unless manually set?)
-                            // Let's stick to existing logic for resets
-
-                            // Keep Shift if manually selected? 
-                            // Legacy: ShiftInchargeId: []
-
+                            // Clear Context Fields
                             ShiftInchargeId: '',
                             MidScaleInchargeId: '',
-
                             RelayId: '',
+                            ManPower: '',
+
                             SourceId: '',
                             DestinationId: '',
                             MaterialId: '',
                             HaulerId: '',
                             LoadingMachineId: '',
-                            ManPower: '',
                             Unit: '',
                             NoOfTrips: '',
                             MangQtyTrip: '',
@@ -447,7 +453,8 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                 DestinationId: formData.DestinationId,
                 MaterialId: formData.MaterialId,
                 HaulerId: formData.HaulerId,
-                LoadingMachineId: formData.LoadingMachineId,
+                HaulerId: formData.HaulerId,
+                // LoadingMachineId: formData.LoadingMachineId, // Removed Filter
                 skip,
                 take
             };
@@ -478,7 +485,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
     }, [
         formData.Date, formData.ShiftId, formData.RelayId, formData.SourceId,
         formData.DestinationId, formData.MaterialId, formData.HaulerId,
-        formData.LoadingMachineId
+        // formData.LoadingMachineId // Removed Dependency
         // Removed page dependency
     ]);
 
@@ -563,6 +570,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                 } else {
                     setFormData(prev => ({
                         ...prev,
+                        SourceId: prev.SourceId,
                         DestinationId: prev.DestinationId,
                         MaterialId: prev.MaterialId,
                         // Retain Hauler to allow faster entry (User requested "Same like Loading From Mines")
@@ -597,6 +605,18 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
         }
     };
 
+
+
+    // Smart Tab Jump
+    const handleSmartJump = (e, targetRef) => {
+        if (e.key === 'Tab' && !e.shiftKey) {
+            e.preventDefault();
+            if (targetRef && targetRef.current) {
+                targetRef.current.focus();
+            }
+        }
+    };
+
     // Keyboard Shortcuts (F2)
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -610,6 +630,21 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
     }, [handleSubmit]);
 
     if (pageLoading) return <div className="p-8 text-center"><Loader2 className="animate-spin inline mr-2" /> Loading...</div>;
+
+    const handleDelete = async (id) => {
+        try {
+            const res = await fetch(`/api/transaction/material-rehandling/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                toast.success('Record deleted successfully');
+                setFilteredTableData(prev => prev.filter(row => row.SlNo !== id));
+            } else {
+                const json = await res.json();
+                toast.error(json.error || json.message || 'Delete failed');
+            }
+        } catch (e) {
+            toast.error('Network error');
+        }
+    };
 
     return (
         <div className={styles.container}>
@@ -627,15 +662,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                 </h1>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => {
-                        if (confirm('Reset?')) window.location.reload();
-                    }} className={styles.refreshBtn} title="Reset Form">
-                        <RotateCcw size={18} />
-                    </button>
-                    <button onClick={handleSubmit} disabled={isLoading} className={styles.saveBtn}>
-                        {isLoading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-                        {isEdit ? 'Update (F2)' : 'Save (F2)'}
-                    </button>
+                    {/* Buttons Moved to Form Grid (Row 4) */}
                 </div>
             </div>
 
@@ -680,6 +707,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                             placeholder="Large Scale"
                             className={styles.select}
                             error={errors.ShiftInchargeId}
+                            disabled={isContextLocked || isLoading}
                         />
                         {errors.ShiftInchargeId && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -695,6 +723,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                             placeholder="Mid Scale"
                             className={styles.select}
                             error={errors.MidScaleInchargeId}
+                            disabled={isContextLocked || isLoading}
                         />
                         {errors.MidScaleInchargeId && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -706,6 +735,8 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                             type="text" name="ManPower" value={formData.ManPower}
                             onChange={handleChange} className={`${styles.input} ${errors.ManPower ? styles.errorBorder : ''}`}
                             onKeyDown={handleEnter} placeholder="Man Power"
+                            disabled={isContextLocked || isLoading}
+                            style={isContextLocked ? { backgroundColor: 'var(--muted)', cursor: 'not-allowed' } : {}}
                         />
                         {errors.ManPower && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -721,6 +752,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                             placeholder="Relay"
                             className={styles.select}
                             error={errors.RelayId}
+                            disabled={isContextLocked || isLoading}
                         />
                         {errors.RelayId && <div className={styles.errorMsg}>Required</div>}
                     </div>
@@ -769,7 +801,19 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                     {/* No of Trips: R3 C1 */}
                     <div className={styles.group} style={{ gridColumn: '1 / span 1' }}>
                         <label>Trips <span style={{ color: 'red' }}>*</span></label>
-                        <input type="text" name="NoOfTrips" value={formData.NoOfTrips} onChange={handleChange} className={`${styles.input} ${errors.NoOfTrips ? styles.errorBorder : ''}`} onKeyDown={handleEnter} placeholder="Trips" />
+                        <input
+                            type="text" name="NoOfTrips" value={formData.NoOfTrips}
+                            onChange={handleChange}
+                            className={`${styles.input} ${errors.NoOfTrips ? styles.errorBorder : ''}`}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Tab' && !e.shiftKey) {
+                                    handleSmartJump(e, remarksRef);
+                                } else {
+                                    handleEnter(e);
+                                }
+                            }}
+                            placeholder="Trips"
+                        />
                         {errors.NoOfTrips && <div className={styles.errorMsg}>Required</div>}
                     </div>
 
@@ -809,15 +853,51 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
 
                     {/* --- Row 4 --- */}
 
-                    {/* Remarks: R4 C1-C6 (Span 6) */}
-                    <div className={styles.group} style={{ gridColumn: '1 / span 6' }}>
+                    {/* Remarks: R4 C1-C6 (Span 4) */}
+                    <div className={styles.group} style={{ gridColumn: '1 / span 4' }}>
                         <label>Remarks</label>
                         <input
+                            ref={remarksRef}
                             type="text"
                             name="Remarks" value={formData.Remarks} onChange={handleChange}
                             className={styles.input} placeholder="Remarks..."
-                            onKeyDown={handleEnter}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Tab' && !e.shiftKey) {
+                                    handleSmartJump(e, saveBtnRef);
+                                } else {
+                                    handleEnter(e);
+                                }
+                            }}
                         />
+                    </div>
+
+                    {/* Reset Button: R4 C7 */}
+                    <div style={{ gridColumn: '7 / span 1', display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (confirm('Reset?')) window.location.reload();
+                            }}
+                            className={styles.saveBtn}
+                            style={{ width: '100%', background: '#64748b' }} // Gray for Reset
+                            title="Reset Form"
+                        >
+                            <RotateCcw size={18} /> Reset
+                        </button>
+                    </div>
+
+                    {/* Save Button: R4 C8 */}
+                    <div style={{ gridColumn: '8 / span 1', display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            ref={saveBtnRef}
+                            onClick={handleSubmit}
+                            disabled={isLoading}
+                            className={styles.saveBtn}
+                            style={{ width: '100%' }}
+                        >
+                            {isLoading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                            {isEdit ? 'Update' : 'Save'}
+                        </button>
                     </div>
 
                 </div>
@@ -846,7 +926,10 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                                 { accessor: 'TotalQty', label: 'Total Mang. Qty', width: 100 },
                                 { accessor: 'TotalNtpcQty', label: 'Total NTPC Qty', width: 100 },
                                 { accessor: 'UnitName', label: 'Unit', width: 60 },
-                                { accessor: 'CreatedDate', label: 'Time', width: 110, type: 'datetime' }
+                                { accessor: 'CreatedByName', label: 'Created By', width: 100 },
+                                { accessor: 'CreatedDate', label: 'Created', width: 110, type: 'datetime' },
+                                { accessor: 'UpdatedByName', label: 'Updated By', width: 100 },
+                                { accessor: 'UpdatedDate', label: 'Updated', width: 110, type: 'datetime' }
                             ],
                             idField: 'SlNo',
                             defaultSort: 'CreatedDate'
@@ -854,6 +937,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                         data={filteredTableData}
                         isLoading={tableLoading}
                         userRole="Admin"
+                        onDelete={handleDelete}
                         onEdit={(row) => {
                             if (confirm('Navigate to edit this record? Unsaved changes will be lost.')) {
                                 router.push(`/dashboard/transaction/material-rehandling/${row.SlNo}`);
