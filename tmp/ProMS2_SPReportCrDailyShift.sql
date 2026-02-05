@@ -5,34 +5,36 @@ BEGIN
     SET NOCOUNT ON;
 
     -- 1. Plant-Shift Production Metrics
-    -- Aggregate separately to avoid multiplication by stoppages
+    -- Return Master Template for all Active Plants (IsDPRReport=1) and Shifts
     SELECT
         P.SlNo as PlantId,
         P.Name as PlantName,
         S.SlNo as ShiftId,
         S.ShiftName,
-        O.OperatorName as ShiftInCharge,
-        MIN(C.OHMR) as ApronStartingHour,
-        MAX(C.CHMR) as ApronClosingHour,
-        SUM(C.RunningHr) as RunningHr,
-        MAX(C.BeltScaleOHMR) as SBS_Reading, -- Assuming logic: Start of Shift Reading
-        MAX(C.BeltScaleCHMR) as CBS_Reading, -- Assuming logic: End of Shift Reading. Note: MAX might not be perfect if multiple entries per shift, but for daily shift report likely ok or logic needs refinement if multiple rows per shift. User query used C.BeltScaleOHMR directly in group by or max? User query had it in select with group by plant,shift.
-        SUM(C.ProductionQty) as TotalProductionMT,
-        SUM(C.NoofTrip) as NoofTripUnloaded,
-        SUM(C.PowerKWH) as TotalUnit,
-        -- TPH is calculated in frontend or here: Prod / Running. Handle Div/0
-        CASE WHEN SUM(C.RunningHr) > 0 THEN SUM(C.ProductionQty) / SUM(C.RunningHr) ELSE 0 END as TPH
-    FROM [Trans].[TblCrusher] C
-    JOIN [Master].[TblPlant] P ON C.PlantId = P.SlNo
-    LEFT JOIN [Master].[TblShift] S ON C.ShiftId = S.SlNo
-    LEFT JOIN [Master].[TblOperator] O ON C.ShiftInChargeId = O.SlNo
-    WHERE C.IsDelete = 0 
-      AND CAST(C.Date AS DATE) = @Date
-      AND P.IsDPRReport = 1
-    GROUP BY P.SlNo, P.Name, S.SlNo, S.ShiftName, O.OperatorName
+        OL.OperatorName as LargeScaleIncharge,
+        OM.OperatorName as MidScaleIncharge,
+        ISNULL(MIN(C.OHMR), 0) as ApronStartingHour,
+        ISNULL(MAX(C.CHMR), 0) as ApronClosingHour,
+        ISNULL(SUM(C.RunningHr), 0) as RunningHr,
+        ISNULL(MAX(C.BeltScaleOHMR), 0) as SBS_Reading,
+        ISNULL(MAX(C.BeltScaleCHMR), 0) as CBS_Reading,
+        ISNULL(SUM(C.ProductionQty), 0) as TotalProductionMT,
+        ISNULL(SUM(C.NoofTrip), 0) as NoofTripUnloaded,
+        ISNULL(SUM(C.PowerKWH), 0) as TotalUnit,
+        CASE WHEN ISNULL(SUM(C.RunningHr), 0) > 0 THEN SUM(C.ProductionQty) / SUM(C.RunningHr) ELSE 0 END as TPH
+    FROM [Master].[TblPlant] P
+    CROSS JOIN [Master].[TblShift] S
+    LEFT JOIN [Trans].[TblCrusher] C ON P.SlNo = C.PlantId AND S.SlNo = C.ShiftId 
+        AND CAST(C.Date AS DATE) = @Date 
+        AND C.IsDelete = 0
+    LEFT JOIN [Master].[TblOperator] OL ON C.ShiftInChargeId = OL.SlNo
+    LEFT JOIN [Master].[TblOperator] OM ON C.MidScaleInchargeId = OM.SlNo
+    WHERE P.IsDPRReport = 1 AND P.IsActive = 1
+    -- Filter relevant shifts if needed? Assuming all shifts in TblShift are relevant.
+    GROUP BY P.SlNo, P.Name, S.SlNo, S.ShiftName, OL.OperatorName, OM.OperatorName
     ORDER BY S.ShiftName, P.Name;
 
-    -- 2. Stoppage Details
+    -- 2. Stoppage Details (Only if exists)
     SELECT 
         P.Name as PlantName,
         S.ShiftName,
@@ -88,3 +90,4 @@ BEGIN
     ORDER BY ShiftName, PlantName, Source;
 
 END
+GO

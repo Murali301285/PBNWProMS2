@@ -4,14 +4,58 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Logic: Base on Equipment Reading to get Hours and Operators, then join Loading for Prod.
-    -- This handles the case where multiple operators might exist (we concat them)
-    -- and ensures we don't duplicate Loading rows.
+    -- CTE_Incharge: Get Distinct Incharges (Large & Mid) per Machine/Shift from Loading Data
+    -- We UNPIVOT this so we get one row per Incharge Type (Large/Mid)
+    ;WITH CTE_Incharge AS (
+        SELECT 
+            LoadingMachineEquipmentId,
+            ShiftId,
+            Cast(LoadingDate as Date) as LDate,
+            ShiftInchargeId as InchargeId,
+            'Large' as Scale
+        FROM [Trans].[TblLoading]
+        WHERE IsDelete = 0 
+          AND Cast(LoadingDate as Date) = @Date
+          AND ShiftInchargeId IS NOT NULL
+        GROUP BY LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date), ShiftInchargeId
+
+        UNION ALL
+
+        SELECT 
+            LoadingMachineEquipmentId,
+            ShiftId,
+            Cast(LoadingDate as Date) as LDate,
+            MidScaleInchargeId as InchargeId,
+            'Mid' as Scale
+        FROM [Trans].[TblLoading]
+        WHERE IsDelete = 0 
+          AND Cast(LoadingDate as Date) = @Date
+          AND MidScaleInchargeId IS NOT NULL
+        GROUP BY LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date), MidScaleInchargeId
+    ),
+
+    -- CTE_Production: Pre-aggregate Production Data per Machine/Shift
+    CTE_Production AS (
+        SELECT 
+            LoadingMachineEquipmentId,
+            ShiftId,
+            Cast(LoadingDate as Date) as LDate,
+            SUM(CASE WHEN MaterialId = 7 THEN 1 ELSE 0 END) as CoalTrips, -- 7=ROM COAL
+            SUM(CASE WHEN MaterialId = 7 THEN TotalQty ELSE 0 END) as CoalQty,
+            SUM(CASE WHEN M.MaterialName IN ('TOP SOIL', 'OVER BURDEN', 'INTER BURDEN') THEN 1 ELSE 0 END) as OBTrips,
+            SUM(CASE WHEN M.MaterialName IN ('TOP SOIL', 'OVER BURDEN', 'INTER BURDEN') THEN TotalQty ELSE 0 END) as OBQty
+        FROM [Trans].[TblLoading] L
+        JOIN [Master].TblMaterial M ON L.MaterialId = M.SlNo
+        WHERE L.IsDelete = 0 
+          AND Cast(L.LoadingDate as Date) = @Date
+        GROUP BY LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date)
+    )
 
     SELECT 
-        Cast(R.[Date] as Date) as [Date],
+        I.LDate as [Date],
         
-        op.OperatorName, -- Split Operator Rows
+        op.OperatorName, -- This is now the Incharge Name
+        I.Scale,         -- New Scale Column
         
         s.ShiftName,
         Eq.EquipmentName as VehicleNo,
@@ -19,59 +63,42 @@ BEGIN
         sec.SectorName as Sector,
         rel.Name as Relay,
         
-        -- Hours from Reading
-        -- Using SUM as per user logic (assuming one entry per shift/eq or total hours)
-        SUM(R.OHMR) as EHStart,
-        SUM(R.CHMR) as EHClose,
-        SUM(R.TotalWorkingHr) as WHr,
+        -- Hours from Equipment Reading
+        -- Note: If multiple Incharges exist for same machine/shift, they BOTH get the full machine hours/production (Shared Credit)
+        ISNULL(R.OHMR, 0) as EHStart,
+        ISNULL(R.CHMR, 0) as EHClose,
+        ISNULL(R.TotalWorkingHr, 0) as WHr,
 
-        -- Production (Coal)
-        COAL.CoalTrips,
-        COAL.CoalQty,
-        
-        -- Production (OB/Waste)
-        OB.OBTrips,
-        OB.OBQty as OBQtyBCM
+        -- Production from Loading (Joined from CTE)
+        ISNULL(P.CoalTrips, 0) as CoalTrips,
+        ISNULL(P.CoalQty, 0) as CoalQty,
+        ISNULL(P.OBTrips, 0) as OBTrips,
+        ISNULL(P.OBQty, 0) as OBQtyBCM
 
-    FROM [Trans].[TblEquipmentReading] R
-    LEFT JOIN [Master].[TblEquipment] as Eq on R.EquipmentId = Eq.SlNo
+    FROM CTE_Incharge I
+    LEFT JOIN [Master].[TblOperator] op ON I.InchargeId = op.SlNo
+    
+    -- Join to Equipment Reading to get Location & Hours
+    LEFT JOIN [Trans].[TblEquipmentReading] R ON 
+        R.EquipmentId = I.LoadingMachineEquipmentId 
+        AND R.ShiftId = I.ShiftId 
+        AND Cast(R.[Date] as Date) = I.LDate
+        AND R.IsDelete = 0
+
+    -- Join Masters via Reading (Location etc) or Equipment
+    LEFT JOIN [Master].[TblEquipment] as Eq on I.LoadingMachineEquipmentId = Eq.SlNo
     LEFT JOIN [Master].TblEquipmentGroup as eg on Eq.EquipmentGroupId = eg.SlNo
-    LEFT JOIN [Master].TblShift as s on R.ShiftId = s.SlNo
+    LEFT JOIN [Master].TblShift as s on I.ShiftId = s.SlNo
+    
+    -- Location comes from Reading
     LEFT JOIN [Master].TblSector as sec on R.SectorId = sec.SlNo
     LEFT JOIN [Master].TblRelay as rel on R.RelayId = rel.SlNo
-    
-    -- Operator Join
-    LEFT JOIN [Trans].[TblEquipmentReadingShiftIncharge] as si on si.[EquipmentReadingId] = R.SlNo
-    LEFT JOIN [Master].TblOperator as op on si.OperatorId = op.SlNo 
 
-    -- Production Joins (Pre-aggregated to prevent duplication)
-    LEFT JOIN (
-        SELECT 
-            LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date) as LDate,
-            SUM(CASE WHEN MaterialId = 7 THEN 1 ELSE 0 END) as CoalTrips, -- 7=ROM COAL
-            SUM(CASE WHEN MaterialId = 7 THEN TotalQty ELSE 0 END) as CoalQty
-        FROM [Trans].[TblLoading]
-        WHERE IsDelete=0 AND MaterialId = 7
-        GROUP BY LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date)
-    ) AS COAL ON COAL.LoadingMachineEquipmentId = R.EquipmentId AND COAL.ShiftId = R.ShiftId AND COAL.LDate = Cast(R.[Date] as Date)
+    -- Join Production
+    LEFT JOIN CTE_Production P ON 
+        P.LoadingMachineEquipmentId = I.LoadingMachineEquipmentId 
+        AND P.ShiftId = I.ShiftId 
+        AND P.LDate = I.LDate
 
-    LEFT JOIN (
-        SELECT 
-            LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date) as LDate,
-            SUM(1) as OBTrips,
-            SUM(TotalQty) as OBQty
-        FROM [Trans].[TblLoading] L
-        JOIN [Master].TblMaterial M ON L.MaterialId = M.SlNo
-        WHERE L.IsDelete=0 AND (M.MaterialName IN ('TOP SOIL', 'OVER BURDEN', 'INTER BURDEN'))
-        GROUP BY LoadingMachineEquipmentId, ShiftId, Cast(LoadingDate as Date)
-    ) AS OB ON OB.LoadingMachineEquipmentId = R.EquipmentId AND OB.ShiftId = R.ShiftId AND OB.LDate = Cast(R.[Date] as Date)
-
-    WHERE R.IsDelete=0 
-      AND Cast(R.[Date] as Date) = @Date
-      AND R.ActivityId = 3 -- FLITER FOR ACTIVITY = 3
-
-    GROUP BY Cast(R.[Date] as Date), op.OperatorName, s.ShiftName, Eq.EquipmentName, eg.Name, sec.SectorName, rel.Name,
-             COAL.CoalTrips, COAL.CoalQty, OB.OBTrips, OB.OBQty
-
-    ORDER BY op.OperatorName, s.ShiftName;
+    ORDER BY op.OperatorName, I.Scale, s.ShiftName;
 END

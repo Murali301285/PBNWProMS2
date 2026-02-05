@@ -146,10 +146,27 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 const foundUnitId = material.UnitId;
                 const currentUnitId = formData.UnitId;
 
-                // Update if they differ (comparing as strings/coerced to handle 2 vs '2')
+                // Update Unit if different
+                let updates = {};
                 if (String(foundUnitId || '') !== String(currentUnitId || '')) {
-                    console.log(`[DrillingForm] Auto-setting UnitId to ${foundUnitId} (was ${currentUnitId})`);
-                    setFormData(prev => ({ ...prev, UnitId: foundUnitId || '' }));
+                    console.log(`[DrillingForm] Auto-setting UnitId to ${foundUnitId}`);
+                    updates.UnitId = foundUnitId || '';
+                }
+
+                // Auto-Set Output %
+                // 0.95 for ROM COAL, 0.9 for others
+                const materialName = (material.MaterialName || material.Name || '').trim().toUpperCase();
+                const expectedOutput = materialName === 'ROM COAL' ? '0.95' : '0.9';
+
+                // Only set if currently empty? Or overwrite? 
+                // User said "set default value... for other 0.9". Implies overwrite or init.
+                // I'll set it if it's different to ensure compliance with rule.
+                if (String(formData.Output) !== expectedOutput) {
+                    updates.Output = expectedOutput;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    setFormData(prev => ({ ...prev, ...updates }));
                 }
             }
         }
@@ -159,6 +176,8 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
         // 2. Calculate Average Depth & Total Qty
         const holes = parseFloat(formData.NoofHoles) || 0;
         const totalMeters = parseFloat(formData.TotalMeters) || 0;
+        const spacing = parseFloat(formData.Spacing); // undefined/NaN if empty
+        const burden = parseFloat(formData.Burden); // undefined/NaN if empty
         const output = parseFloat(formData.Output) || 0;
 
         let avgDepth = 0;
@@ -168,7 +187,26 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
             avgDepth = (totalMeters / holes).toFixed(3);
         }
 
-        totalQty = (holes * totalMeters * output).toFixed(3);
+        // New Logic: TotalMeters (Depth) * Spacing * Burden * Output
+        // User confirmed: if Spacing or Burden is empty (NaN), TotalQty = 0
+        if (!isNaN(spacing) && !isNaN(burden) && spacing > 0 && burden > 0) {
+            // Assuming NoofHoles is required for total volume of patch?
+            // "TotalMeter\Hole * spacing * burden * output%"
+            // TotalMeters is per hole? Label says "Total Meters/Hole".
+            // If it is per hole, we must multiply by NoofHoles for TotalQty (Patch Qty).
+            // Formula: NoofHoles * (TotalMeters/Hole) * Spacing * Burden * Output
+
+            // Adjust Output % ? User said "output%". 
+            // If user enters 67, and means 67%, we should divide by 100?
+            // But usually in this app, Output might be Density factor directly?
+            // "recheck the caluclation -> TotalMeter\Hole * spacing * burden * output% and round of decimal to 3 points"
+            // If I stick to literal multiplication:
+            // Adjusted Logic: User example "250 * 5 * 6 * 0.9 = 6750" implies TotalMeters (250) * Spacing * Burden * Output
+            // NoofHoles (100 in image) is NOT used.
+            totalQty = (totalMeters * spacing * burden * output).toFixed(3);
+        } else {
+            totalQty = 0;
+        }
 
         setFormData(prev => ({
             ...prev,
@@ -176,7 +214,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
             TotalQty: totalQty
         }));
 
-    }, [formData.NoofHoles, formData.TotalMeters, formData.Output]); // Dependencies
+    }, [formData.NoofHoles, formData.TotalMeters, formData.Spacing, formData.Burden, formData.Output]);
 
 
     // --- Table Data State ---
@@ -439,8 +477,10 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
         const required = [
             'DrillingPatchId', 'DrillingAgencyId', 'EquipmentId', 'MaterialId', 'LocationId',
             'SectorId', 'ScaleId', 'StrataId', 'DepthSlabId',
-            'NoofHoles', 'TotalMeters', 'Spacing', 'Burden', 'RemarkId',
-            'AverageDepth', 'Output', 'UnitId', 'TotalQty'
+            'NoofHoles', 'TotalMeters',
+            // 'Spacing', 'Burden', // Removed Mandatory
+            'AverageDepth', 'Output', 'UnitId'
+            // 'TotalQty' // Removed Mandatory
         ];
 
         required.forEach(field => {
@@ -462,11 +502,13 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
         if (formData.Spacing && !decimal3.test(formData.Spacing)) newErrors.Spacing = 'Max 3 decimals';
         if (formData.Burden && !decimal3.test(formData.Burden)) newErrors.Burden = 'Max 3 decimals';
 
-        // Output % (2 Decimals, whole number prefix)
-        // Regex: Starts with digit 1-9 (no leading zero like 0.67), optional decimals .xx
-        const outputRegex = /^[1-9]\d*(\.\d{1,2})?$/;
+        // Output % (2 Decimals, allow 0.xx and .xx)
+        // Regex: 
+        // 1. \d+(\.\d{1,2})?  -> Standard numbers (0.9, 67, 67.0)
+        // 2. \.\d{1,2}        -> Dot starting (.7, .09)
+        const outputRegex = /^(\d+(\.\d{1,2})?|\.\d{1,2})$/;
         if (formData.Output && !outputRegex.test(formData.Output)) {
-            newErrors.Output = 'Invalid Format (e.g. 67.0)'; // "0.67 not valid"
+            newErrors.Output = 'Invalid Format (e.g. 67.0, 0.9, .7)';
         }
 
         setErrors(newErrors);
@@ -506,7 +548,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 StrataId: parseInt(formData.StrataId),
                 DepthSlabId: parseInt(formData.DepthSlabId),
                 UnitId: parseInt(formData.UnitId),
-                RemarkId: parseInt(formData.RemarkId)
+                RemarkId: formData.RemarkId ? parseInt(formData.RemarkId) : null
             };
 
             const res = await fetch(url, {
@@ -756,16 +798,16 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 {renderField('TotalMeters', 'Total Meters/Hole', 'text', true, { placeholder: '0.000', colSpan: 1 })}
 
                 {/* Spacing: C3 */}
-                {renderField('Spacing', 'Spacing', 'text', true, { placeholder: '0.000', colSpan: 1 })}
+                {renderField('Spacing', 'Spacing', 'text', false, { placeholder: '0.000', colSpan: 1 })}
 
                 {/* Burden: C4 */}
-                {renderField('Burden', 'Burden', 'text', true, { placeholder: '0.000', colSpan: 1 })}
+                {renderField('Burden', 'Burden', 'text', false, { placeholder: '0.000', colSpan: 1 })}
 
                 {/* RL: C5 */}
                 {renderField('TopRLBottomRL', 'Top RL Bottom RL', 'text', false, { colSpan: 1 })}
 
                 {/* Drilling Remarks: C6-C7 (Span 2) */}
-                {renderField('RemarkId', 'Drilling Remarks', 'select', true, { options: masters.remarks, colSpan: 2 })}
+                {renderField('RemarkId', 'Drilling Remarks', 'select', false, { options: masters.remarks, colSpan: 2 })}
 
 
 
@@ -780,7 +822,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 {renderField('UnitId', 'Unit', 'select', true, { options: masters.units, readOnly: false, colSpan: 1 })}
 
                 {/* Qty: C4 */}
-                {renderField('TotalQty', 'Total Qty', 'text', true, { readOnly: true, placeholder: 'Calc', colSpan: 1 })}
+                {renderField('TotalQty', 'Total Qty', 'text', false, { readOnly: true, placeholder: 'Calc', colSpan: 1 })}
 
                 {/* Agency: C5 */}
                 {renderField('DrillingAgencyId', 'Drilling Agency', 'select', true, { options: masters.drillingAgency, colSpan: 1 })}

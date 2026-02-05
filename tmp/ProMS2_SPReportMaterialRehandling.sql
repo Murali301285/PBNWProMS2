@@ -36,22 +36,34 @@ BEGIN
                 T12.SectorName as Sector,
                 T13.Name as Patch,
                 T8.Name as Relay,
-                dbo.GetShiftInchargeName(T0.SlNo,'MaterialRehandling') as ShiftIncharge,
-                T0.Remarks
-            FROM [Trans].TblMaterialRehandling T0
-            JOIN [Master].TblShift T1 on T1.SlNo=T0.ShiftId
-            JOIN [Master].TblSource T2 on T2.SlNo=T0.SourceId
-            JOIN [Master].TblDestination T3 on T3.SlNo=T0.DestinationId
-            JOIN [Master].TblEquipment T4 on T4.SlNo=T0.HaulerEquipmentId
-            JOIN [Master].TblEquipment T5 on T5.SlNo=T0.LoadingMachineEquipmentId
-            JOIN [Master].TblMaterial T6 on T6.SlNo=T0.MaterialId
-            JOIN [Master].TblScale T7 on T7.SlNo=T4.ScaleId
-            JOIN [Master].TblRelay T8 on T8.SlNo=T0.RelayId
-            join [Master].TblEquipmentGroup T9 on T9.SlNo=T4.EquipmentGroupId
-            join [Master].TblEquipmentGroup T10 on T10.SlNo=T5.EquipmentGroupId
-            left join [Trans].TblEquipmentReading T11 on T11.ActivityId=@ActivityId and CONVERT(date,T11.Date)=CONVERT(date,T0.RehandlingDate) and T11.ShiftId=T0.ShiftId and T11.EquipmentId=T0.LoadingMachineEquipmentId and T11.IsDelete=0
-            left join [Master].TblSector T12 on T12.SlNo=T11.SectorId 
-            Left Join [Master].TblPatch T13 ON T13.SlNo=T11.PatchId
+                T0.Remarks,
+                OpLarge.OperatorName as ShiftInchargeLarge,
+                OpMid.OperatorName as ShiftInchargeMid
+            FROM [Trans].TblMaterialRehandling T0 WITH(NOLOCK)
+            JOIN [Master].TblShift T1 WITH(NOLOCK) on T1.SlNo=T0.ShiftId
+            JOIN [Master].TblSource T2 WITH(NOLOCK) on T2.SlNo=T0.SourceId
+            JOIN [Master].TblDestination T3 WITH(NOLOCK) on T3.SlNo=T0.DestinationId
+            JOIN [Master].TblEquipment T4 WITH(NOLOCK) on T4.SlNo=T0.HaulerEquipmentId
+            JOIN [Master].TblEquipment T5 WITH(NOLOCK) on T5.SlNo=T0.LoadingMachineEquipmentId
+            JOIN [Master].TblMaterial T6 WITH(NOLOCK) on T6.SlNo=T0.MaterialId
+            JOIN [Master].TblScale T7 WITH(NOLOCK) on T7.SlNo=T4.ScaleId
+            JOIN [Master].TblRelay T8 WITH(NOLOCK) on T8.SlNo=T0.RelayId
+            join [Master].TblEquipmentGroup T9 WITH(NOLOCK) on T9.SlNo=T4.EquipmentGroupId
+            join [Master].TblEquipmentGroup T10 WITH(NOLOCK) on T10.SlNo=T5.EquipmentGroupId
+            
+             LEFT JOIN [Master].TblOperator OpLarge WITH(NOLOCK) ON OpLarge.SlNo = T0.ShiftInchargeId
+             LEFT JOIN [Master].TblOperator OpMid WITH(NOLOCK) ON OpMid.SlNo = T0.MidScaleInchargeId
+
+            -- Relaxed join (same as Loading Report)
+            left join [Trans].TblEquipmentReading T11 WITH(NOLOCK) on 
+                 CONVERT(date,T11.Date)=CONVERT(date,T0.RehandlingDate) 
+                and T11.ShiftId=T0.ShiftId 
+                and T11.EquipmentId=T0.LoadingMachineEquipmentId 
+                and T11.IsDelete=0
+                -- AND T11.ActivityId=@ActivityId (Relaxed)
+                
+            left join [Master].TblSector T12 WITH(NOLOCK) on T12.SlNo=T11.SectorId 
+            Left Join [Master].TblPatch T13 WITH(NOLOCK) ON T13.SlNo=T11.PatchId
             WHERE T0.IsDelete = 0
             AND (CONVERT(date,T0.RehandlingDate) BETWEEN @FromDate AND @ToDate)
             ORDER BY T0.RehandlingDate ASC

@@ -30,7 +30,8 @@ export async function POST(req) {
             if (!shiftsMap[shiftName]) {
                 shiftsMap[shiftName] = {
                     name: shiftName,
-                    inCharge: row.ShiftInCharge,
+                    largeIncharge: row.LargeScaleIncharge,
+                    midIncharge: row.MidScaleIncharge,
                     plants: [],
                     plantMetrics: {},
                     stoppages: [], // Will hold unique reasons for this shift

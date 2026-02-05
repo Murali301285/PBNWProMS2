@@ -1,4 +1,3 @@
-
 const sql = require('mssql');
 
 const config = {
@@ -9,24 +8,32 @@ const config = {
     database: 'ProdMS_live',
     options: {
         encrypt: false,
-        trustServerCertificate: true
-    }
+        trustServerCertificate: true,
+        enableArithAbort: true,
+    },
+    connectionTimeout: 30000,
+    requestTimeout: 30000,
 };
 
-async function checkOperatorSchema() {
+async function checkOperator() {
+    console.log("--- SCHEMA CHECK: TblOperator ---");
     try {
         await sql.connect(config);
-        const result = await sql.query(`
+
+        const query = `
             SELECT COLUMN_NAME, DATA_TYPE 
             FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_SCHEMA = 'Master' AND TABLE_NAME = 'TblOperator'
-        `);
-        console.log(JSON.stringify(result.recordset, null, 2));
-    } catch (err) {
-        console.error(err);
+            WHERE TABLE_SCHEMA = 'Master' 
+            AND TABLE_NAME = 'TblOperator'
+        `;
+        const result = await sql.query(query);
+        console.table(result.recordset);
+
+    } catch (e) {
+        console.error("Error:", e);
     } finally {
         await sql.close();
     }
 }
 
-checkOperatorSchema();
+checkOperator();

@@ -1,0 +1,346 @@
+.container {
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.headingWrapper {
+    margin-bottom: 1.5rem;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.filterContainer {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+}
+
+.input,
+.select {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    min-width: 200px;
+    height: 38px;
+    background-color: white;
+}
+
+.select {
+    cursor: pointer;
+}
+
+.input:focus,
+.select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.generateBtn {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 38px;
+}
+
+.generateBtn:hover:not(:disabled) {
+    background-color: #e2e8f0;
+}
+
+.generateBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Action Buttons (Print/Excel) */
+.actionBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+    color: #334155;
+    height: 38px;
+}
+
+.actionBtn:hover {
+    background-color: #e2e8f0;
+}
+
+.actionBtn.excel {
+    background-color: #16a34a;
+    color: white;
+    border-color: #15803d;
+}
+
+.actionBtn.excel:hover {
+    background-color: #15803d;
+}
+
+/* Breakdown Section specific */
+.breakdownSection {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.bdHeader {
+    background-color: #1e293b;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bdHeaderTitle {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.autoTag {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bdTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.bdTable th {
+    background-color: #f8fafc;
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #f1f5f9;
+    text-align: center;
+}
+
+.bdTable td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+}
+
+.bdInput {
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    outline: none;
+    font-weight: 600;
+}
+
+.bdInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Report Header in Sheet */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 1rem;
+}
+
+/* Table Specifics */
+.reportSheet {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.tableContainer {
+    overflow-x: auto;
+    padding: 1px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    border: 1px solid #94a3b8 !important;
+    /* Outer border */
+}
+
+/* Generic Table Styles */
+.table th,
+.table td {
+    padding: 0.5rem;
+    border: 1px solid #94a3b8 !important;
+    /* Force border */
+    text-align: left;
+}
+
+.table th {
+    background-color: #fff;
+    font-weight: 600;
+}
+
+/* Specific component overrides */
+.sectionHeader {
+    /* background-color: #bfdbfe; Removed */
+    font-weight: 700;
+    text-align: center;
+    border-bottom: 2px solid #0f172a !important;
+    /* slate-900 */
+    padding: 0.5rem;
+    color: #0f172a;
+    font-size: 1.125rem;
+}
+
+.totalRow td {
+    border-top: 2px solid #0f172a !important;
+    font-weight: 800;
+}
+
+.rowHeader {
+    background-color: #bfdbfe !important;
+    /* blue-200 */
+    color: #0f172a;
+    font-weight: 700;
+    text-align: center;
+}
+
+.blueHeader th {
+    background-color: #bfdbfe !important;
+    color: #0f172a;
+    border-color: #000 !important;
+}
+
+/* Print Overrides */
+@media print {
+    .container {
+        padding: 0;
+        background-color: white;
+    }
+
+    .filterContainer,
+    .headingWrapper,
+    .breakdownSection,
+    .no-print {
+        display: none !important;
+    }
+
+    .reportSheet {
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .table,
+    .table td,
+    .table th {
+        border-color: #000 !important;
+    }
+}
+
+/* Footer Section */
+.bdFooter {
+    background-color: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bdNote {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.bdNetHours {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bdNetLabel {
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.bdNetValue {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.textRed {
+    color: #dc2626;
+}
+
+.textGreen {
+    color: #059669;
+}
+
+.textCenter {
+    text-align: center;
+}
+
+.textLeft {
+    text-align: left;
+}
+
+.textBold {
+    font-weight: 700;
+}
+
+.pl4 {
+    padding-left: 1rem;
+}

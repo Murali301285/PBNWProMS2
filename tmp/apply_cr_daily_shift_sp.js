@@ -7,7 +7,7 @@ const config = {
     password: 'Chennai@42',
     server: 'localhost',
     port: 1433,
-    database: 'ProdMS_live',
+    database: 'ProMS2_Serv',
     options: {
         encrypt: false,
         trustServerCertificate: true

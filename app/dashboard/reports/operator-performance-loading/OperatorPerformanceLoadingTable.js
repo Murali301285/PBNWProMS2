@@ -34,7 +34,8 @@ export default function OperatorPerformanceLoadingTable({ data, date }) {
     const columns = [
         { accessor: 'SlNo', header: 'Si. No.', width: '60px' }, // Handled by DataTable if showSerialNo=true
         { accessor: 'Date', header: 'Date', width: '100px' },
-        { accessor: 'OperatorName', header: "Operator's Name", width: '180px' },
+        { accessor: 'OperatorName', header: "Operator (Incharge)", width: '180px' },
+        { accessor: 'Scale', header: 'Scale', width: '100px' },
         { accessor: 'ShiftName', header: 'Shift', width: '80px' },
         { accessor: 'VehicleNo', header: 'Vehicle No.', width: '120px' },
         { accessor: 'VehicleModel', header: 'Veh. Model', width: '120px' },

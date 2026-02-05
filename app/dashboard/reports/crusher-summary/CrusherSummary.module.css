@@ -1,243 +1,221 @@
-/* Container */
 .container {
-    padding: 20px;
-    background-color: #ffffff;
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    /* Slate-50 */
     min-height: 100vh;
-    font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
 }
 
-/* Controls */
-.controlsContainer {
-    display: flex;
-    gap: 15px;
-    align-items: flex-end;
-    background-color: #f8fafc;
-    padding: 15px;
+.headingWrapper {
+    margin-bottom: 1.5rem;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Filter Bar */
+.filterContainer {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
 }
 
 .inputGroup {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 0.25rem;
 }
 
 .label {
-    font-size: 14px;
-    font-weight: bold;
+    font-size: 0.875rem;
+    font-weight: 500;
     color: #475569;
 }
 
-.input {
-    padding: 8px 12px;
+.input,
+.select {
     border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    min-width: 200px;
+    height: 38px;
+    background-color: white;
 }
 
-.showBtn {
-    padding: 8px 16px;
-    background-color: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
+.input:focus,
+.select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.generateBtn {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid #cbd5e1;
     cursor: pointer;
+    transition: all 0.2s;
+    height: 38px;
 }
 
-.showBtn:hover {
-    background-color: #1d4ed8;
+.generateBtn:hover:not(:disabled) {
+    background-color: #e2e8f0;
 }
 
-/* Toolbar */
-.toolbar {
+.generateBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Action Buttons */
+.actionBtn {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.printBtn {
-    padding: 6px 12px;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
     background-color: #f1f5f9;
     border: 1px solid #cbd5e1;
-    color: #334155;
-    border-radius: 4px;
+    border-radius: 0.375rem;
     cursor: pointer;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+    color: #334155;
+    height: 38px;
 }
 
-.excelBtn {
-    padding: 6px 12px;
+.actionBtn:hover {
+    background-color: #e2e8f0;
+}
+
+.actionBtn.excel {
     background-color: #16a34a;
     color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
+    border-color: #15803d;
+}
+
+.actionBtn.excel:hover {
+    background-color: #15803d;
+}
+
+/* Report Header in Sheet */
+.header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 5px;
-}
-
-/* Header Section */
-.reportTitle {
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 1rem;
     text-align: center;
-    margin-bottom: 20px;
 }
 
-.companyName {
-    font-size: 20px;
-    color: #1e40af;
-    /* Blue-800 */
-    font-weight: bold;
-    text-transform: uppercase;
-    margin: 0;
-}
-
-.reportName {
-    font-size: 18px;
-    color: #db2777;
-    /* Pink-600 */
-    font-weight: bold;
-    text-decoration: underline;
-    text-transform: uppercase;
-    margin: 5px 0 15px 0;
-}
-
-.dateBox {
-    display: inline-block;
-    border: 1px solid black;
-    font-size: 14px;
-}
-
-.dateRow {
-    display: flex;
-    border-bottom: 1px solid black;
-}
-
-.dateRow:last-child {
-    border-bottom: none;
-}
-
-.dateLabel {
-    width: 80px;
-    padding: 4px 8px;
-    font-weight: bold;
+/* Table Specifics */
+.reportSheet {
     background-color: white;
-    border-right: 1px solid black;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 }
 
-.dateValue {
-    width: 120px;
-    padding: 4px 8px;
-    font-weight: bold;
-    background-color: white;
-}
-
-/* Tables */
 .tableContainer {
     overflow-x: auto;
-    margin-bottom: 30px;
+    padding: 1px;
+    margin-bottom: 2rem;
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
-    border: 1px solid black;
+    font-size: 0.875rem;
+    border: 1px solid #94a3b8 !important;
+    /* Outer border */
 }
 
+/* Generic Table Styles */
 .table th,
 .table td {
-    border: 1px solid black;
-    padding: 4px 6px;
+    padding: 0.5rem;
+    border: 1px solid #94a3b8 !important;
+    /* Force border */
     text-align: center;
 }
 
 .table th {
-    font-weight: bold;
-    vertical-align: middle;
+    background-color: #fff;
+    font-weight: 700;
 }
 
-/* Column Colors - Header */
-.thPink {
-    background-color: #fbcfe8;
-}
-
-/* shift */
-.thBlue {
-    background-color: #bfdbfe;
-}
-
-/* cum ftd */
-.thGreen {
-    background-color: #86efac;
-}
-
-/* cum ftm */
-.thYellow {
-    background-color: #fde047;
-}
-
-/* ytd */
-.thOrange {
-    background-color: #fdba74;
-}
-
-/* Cell Styles */
-.tdBold {
-    font-weight: bold;
-}
-
-.tdLeft {
+.table td.textLeft {
     text-align: left;
 }
 
-.tdRight {
+.table td.textRight {
     text-align: right;
 }
 
-.bgPink {
-    background-color: #fbcfe8;
+/* Component Overrides */
+.sectionHeader {
+    /* No Background Color */
+    font-weight: 700;
+    text-align: left;
+    border-bottom: 2px solid #0f172a !important;
+    padding: 0.5rem;
+    color: #0f172a;
+    font-size: 1rem;
+    text-transform: uppercase;
 }
 
-.bgBlue {
-    background-color: #bfdbfe;
+.blueHeader th {
+    background-color: #bfdbfe !important;
+    /* blue-200 */
+    color: #0f172a;
+    border-color: #000 !important;
+    font-weight: 700 !important;
 }
 
-.bgGreen {
-    background-color: #86efac;
+.rowHeader {
+    background-color: #bfdbfe !important;
+    color: #0f172a;
+    font-weight: 700;
+    text-align: center;
 }
 
-.bgYellow {
-    background-color: #fde047;
-}
-
-.bgOrange {
-    background-color: #fdba74;
-}
-
-.bgPurple {
-    background-color: #d8b4fe;
-}
-
-/* Print Styles */
+/* Print Overrides */
 @media print {
+    .container {
+        padding: 0;
+        background-color: white;
+    }
 
-    .controlsContainer,
-    .toolbar {
+    .filterContainer,
+    .headingWrapper,
+    .no-print {
         display: none !important;
     }
 
-    .container {
+    .reportSheet {
+        box-shadow: none;
         padding: 0;
+    }
+
+    .table,
+    .table td,
+    .table th {
+        border-color: #000 !important;
     }
 }

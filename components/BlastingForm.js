@@ -115,62 +115,58 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
     }, [mode]);
 
     // 2. Date Change: Get Context Specific to Selected Date
-    useEffect(() => {
-        if (mode !== 'create') return;
+    const fetchDateContext = useCallback(async () => {
+        if (!formData.Date) return;
 
-        const fetchDateContext = async () => {
-            if (!formData.Date) return;
+        try {
+            console.log("[BlastingForm] Checking Context for Date:", formData.Date);
+            const res = await fetch('/api/transaction/blasting/helper/last-context', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Date: formData.Date }) // Specific Date
+            });
+            const context = await res.json();
 
-            try {
-                console.log("[BlastingForm] Checking Context for Date:", formData.Date);
-                const res = await fetch('/api/transaction/blasting/helper/last-context', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ Date: formData.Date }) // Specific Date
-                });
-                const context = await res.json();
+            if (context && Object.keys(context).length > 0) {
+                console.log("[BlastingForm] Found Context for Date:", context);
+                setFormData(prev => ({
+                    ...prev,
+                    // Date: prev.Date, // Keep User Selection
+                    BlastingPatchId: context.BlastingPatchId || '',
+                    SMESupplierId: context.SMESupplierId || '',
+                    SMEQty: '', // Reset
+                    MaxCharge: '', // Reset
+                    PPV: '', // Reset
+                    DeckHoles: '', // Reset
+                    WetHoles: '', // Reset
+                    AirPressure: '', // Reset
+                    // Reset entry specific
+                    TotalExplosiveUsed: 0, Remarks: ''
+                }));
 
-                if (context && Object.keys(context).length > 0) {
-                    console.log("[BlastingForm] Found Context for Date:", context);
-                    setFormData(prev => ({
-                        ...prev,
-                        // Date: prev.Date, // Keep User Selection
-                        BlastingPatchId: context.BlastingPatchId || '',
-                        SMESupplierId: context.SMESupplierId || '',
-                        SMEQty: '', // Reset
-                        MaxCharge: '', // Reset
-                        PPV: '', // Reset
-                        DeckHoles: '', // Reset
-                        WetHoles: '', // Reset
-                        AirPressure: '', // Reset
-                        // Reset entry specific
-                        TotalExplosiveUsed: 0, Remarks: ''
-                    }));
+                // Focus logic - Patch ID
+                // Don't focus if already focused? 
+                // Only if mode is create.
 
-                    // Focus logic - Patch ID
-                    setTimeout(() => {
-                        const inputs = formRef.current.querySelectorAll('input');
-                        if (inputs[1]) inputs[1].focus();
-                    }, 100);
-
-                } else {
-                    console.log("[BlastingForm] No context for date. Resetting fields.");
-                    setFormData(prev => ({
-                        ...prev,
-                        // Date: prev.Date, // Keep User Selection
-                        BlastingPatchId: '', SMESupplierId: '', SMEQty: '', MaxCharge: '',
-                        PPV: '', DeckHoles: '', WetHoles: '', AirPressure: '',
-                        TotalExplosiveUsed: 0, Remarks: ''
-                    }));
-                }
-
-            } catch (err) {
-                console.error("Date context fetch failed", err);
+            } else {
+                console.log("[BlastingForm] No context for date. Resetting fields.");
+                setFormData(prev => ({
+                    ...prev,
+                    // Date: prev.Date, // Keep User Selection
+                    BlastingPatchId: '', SMESupplierId: '', SMEQty: '', MaxCharge: '',
+                    PPV: '', DeckHoles: '', WetHoles: '', AirPressure: '',
+                    TotalExplosiveUsed: 0, Remarks: ''
+                }));
             }
-        };
 
-        fetchDateContext();
+        } catch (err) {
+            console.error("Date context fetch failed", err);
+        }
     }, [formData.Date, mode]);
+
+    useEffect(() => {
+        if (mode === 'create') fetchDateContext();
+    }, [fetchDateContext, mode]);
 
 
     // --- DYNAMIC RECENT LIST LOGIC ---
@@ -432,7 +428,10 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                     TotalExplosiveUsed: 0
                 }));
                 setAccessories([{ SED: '', TotalBoosterUsed: '', TotalNonelMeters: '', TotalTLDMeters: '' }]);
-                fetchRecentData(); // Refresh table
+                fetchTableData(); // Refresh table
+
+                // Refresh Context (Last Entry Info) explicitly
+                if (fetchDateContext) fetchDateContext();
 
                 // Focus back to Patch ID (first field after Date)
                 setTimeout(() => {
@@ -572,7 +571,7 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                         <SearchableSelect
                             options={suppliers}
                             value={formData.SMESupplierId}
-                            onChange={(val) => handleChange('SMESupplierId', val)}
+                            onChange={(e) => handleChange('SMESupplierId', e.target.value)}
                             placeholder="Select Supplier"
                             className={css.compactInput}
                             ref={smeSupplierRef}

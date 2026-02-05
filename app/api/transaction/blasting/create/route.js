@@ -1,13 +1,13 @@
 
 import { NextResponse } from 'next/server';
-import { getDbConnection } from '@/lib/db';
+import { getDbConnection, sql } from '@/lib/db';
 import { authenticateUser } from '@/lib/auth';
 
 export async function POST(request) {
     try {
         const body = await request.json();
         const pool = await getDbConnection();
-        const transaction = new pool.transaction();
+        const transaction = new sql.Transaction(pool);
 
         await transaction.begin();
 
@@ -31,6 +31,8 @@ export async function POST(request) {
             const user = await authenticateUser(request);
             let createdBy = user ? user.id : 1;
 
+            const valOrNull = (v) => (v === '' || v === null || v === undefined) ? 'NULL' : v;
+
             const insertParent = `
                 INSERT INTO [Trans].[TblBlasting] (
                     Date, BlastingPatchId, SMESupplierId, SMEQty, 
@@ -40,15 +42,14 @@ export async function POST(request) {
                     '${body.Date}', 
                     '${body.BlastingPatchId}', 
                     ${body.SMESupplierId}, 
-                    ${body.SMEQty || 0}, 
-                    ${body.MaxCharge || 0}, 
-                    ${body.PPV || 0}, 
-                    ${body.DeckHoles || 0}, 
-                    ${body.WetHoles || 0}, 
-                    ${body.AirPressure || 0}, 
-                    ${body.TotalExplosiveUsed || 0}, 
+                    ${valOrNull(body.SMEQty)}, 
+                    ${valOrNull(body.MaxCharge)}, 
+                    ${valOrNull(body.PPV)}, 
+                    ${valOrNull(body.DeckHoles)}, 
+                    ${valOrNull(body.WetHoles)}, 
+                    ${valOrNull(body.AirPressure)}, 
+                    ${valOrNull(body.TotalExplosiveUsed)}, 
                     '${body.Remarks || ''}', 
-                    GETDATE(), 
                     GETDATE(), 
                     ${createdBy}, 
                     0
@@ -74,7 +75,6 @@ export async function POST(request) {
                             ${acc.TotalBoosterUsed || 0}, 
                             ${acc.TotalNonelMeters || 0}, 
                             ${acc.TotalTLDMeters || 0}, 
-                            GETDATE(), 
                             GETDATE(), 
                             ${createdBy}, 
                             0

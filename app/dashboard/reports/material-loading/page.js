@@ -20,37 +20,38 @@ export default function MaterialLoadingReport() {
 
     // Columns Configuration (Matched with SQL Aliases)
     const columns = [
-        { header: 'SlNo', accessor: 'SlNo', width: '60px' },
-        { header: 'Date', accessor: 'Date', width: '100px' },
-        { header: 'Month', accessor: 'Month', width: '100px' },
-        { header: 'Year', accessor: 'Year', width: '60px' },
-        { header: 'Shift', accessor: 'ShiftName', width: '80px' },
-        { header: 'Source', accessor: 'SourceName', width: '120px' },
-        { header: 'Destination', accessor: 'Destination', width: '120px' },
+        { header: 'SlNo', accessor: 'SlNo' },
+        { header: 'Date', accessor: 'Date' },
+        { header: 'Month', accessor: 'Month' },
+        { header: 'Year', accessor: 'Year' },
+        { header: 'Shift', accessor: 'ShiftName' },
+        { header: 'Source', accessor: 'SourceName' },
+        { header: 'Destination', accessor: 'Destination' },
 
-        { header: 'Hauler', accessor: 'HaulerEquipment', width: '120px' },
-        { header: 'Hauler Model', accessor: 'HaulingModel', width: '120px' },
-        { header: 'CC Hauler', accessor: 'CostCenterHauler', width: '100px' },
+        { header: 'Hauler', accessor: 'HaulerEquipment' },
+        { header: 'Hauler Model', accessor: 'HaulingModel' },
+        { header: 'CC Hauler', accessor: 'CostCenterHauler' },
 
-        { header: 'Loading Machine', accessor: 'LoadingMachine', width: '150px' },
-        { header: 'Loading Model', accessor: 'LoadingModel', width: '120px' },
-        { header: 'CC Loading', accessor: 'CostCenterLoading', width: '100px' },
+        { header: 'Loading Machine', accessor: 'LoadingMachine' },
+        { header: 'Loading Model', accessor: 'LoadingModel' },
+        { header: 'CC Loading', accessor: 'CostCenterLoading' },
 
-        { header: 'Material', accessor: 'MaterialName', width: '120px' },
-        { header: 'Scale', accessor: 'ScaleName', width: '100px' },
-        { header: 'Sector', accessor: 'Sector', width: '100px' },
-        { header: 'Patch', accessor: 'Patch', width: '100px' },
-        { header: 'Relay', accessor: 'Relay', width: '80px' },
-        { header: 'Shift Incharge', accessor: 'ShiftIncharge', width: '150px' },
+        { header: 'Material', accessor: 'MaterialName' },
+        { header: 'Scale', accessor: 'ScaleName' },
+        { header: 'Sector', accessor: 'Sector' },
+        { header: 'Patch', accessor: 'Patch' },
+        { header: 'Relay', accessor: 'Relay' },
+        { header: 'Shift Incharge (Large Scale)', accessor: 'ShiftInchargeLarge' },
+        { header: 'Shift Incharge (Mid Scale)', accessor: 'ShiftInchargeMid' },
 
-        { header: 'Mang Qty/Trip', accessor: 'ManagQtyTrip', width: '100px' },
-        { header: 'Trip Mang', accessor: 'TripManagement', width: '100px' },
-        { header: 'Total Mang Qty', accessor: 'ManagTotalQty', width: '120px' },
+        { header: 'Mang Qty/Trip', accessor: 'ManagQtyTrip' },
+        { header: 'Trip Mang', accessor: 'TripManagement' },
+        { header: 'Total Mang Qty', accessor: 'ManagTotalQty' },
 
-        { header: 'NTPC Qty/Trip', accessor: 'NtpcQtyTrip', width: '100px' },
-        { header: 'Trip NTPC', accessor: 'TripNtpc', width: '100px' },
-        { header: 'Total NTPC Qty', accessor: 'TotalNtpcQty', width: '120px' },
-        { header: 'Loading Remarks', accessor: 'LoadingRemarks', width: '200px' }
+        { header: 'NTPC Qty/Trip', accessor: 'NtpcQtyTrip' },
+        { header: 'Trip NTPC', accessor: 'TripNtpc' },
+        { header: 'Total NTPC Qty', accessor: 'TotalNtpcQty' },
+        { header: 'Loading Remarks', accessor: 'LoadingRemarks' }
     ];
 
     const handleGenerate = async () => {
