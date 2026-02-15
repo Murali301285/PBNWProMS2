@@ -90,6 +90,13 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
         return act ? act.isDetail : false;
     }, [formData.ActivityId, options.activities]);
 
+    // Derived State: Is Loading Activity? (Special Case: Show Sector + Patch + Method)
+    const isLoadingActivity = useMemo(() => {
+        if (!formData.ActivityId) return false;
+        const act = options.activities.find(a => a.id == formData.ActivityId);
+        return act ? act.name.toLowerCase().includes('loading') : false;
+    }, [formData.ActivityId, options.activities]);
+
     // Derived State: Filtered Equipments
     const filteredEquipments = useMemo(() => {
         if (!formData.ActivityId) return [];
@@ -1076,20 +1083,8 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
 
                     {/* --- Row 6 (Details) --- */}
-                    {/* Patch/Sector: C1 */}
-                    {isDetailActivity ? (
-                        <div className={styles.group} style={{ gridColumn: 'span 1' }}>
-                            <label>Sector</label>
-                            <SearchableSelect
-                                className={styles.select}
-                                options={options.sectors}
-                                value={formData.SectorId}
-                                onChange={(e) => setFormData({ ...formData, SectorId: e.target.value })}
-                                placeholder="Select"
-                                error={errors.SectorId}
-                            />
-                        </div>
-                    ) : (
+                    {/* Patch: Show if Not Detail (includes Loading) */}
+                    {!isDetailActivity && (
                         <div className={styles.group} style={{ gridColumn: 'span 1' }}>
                             <label>Patch</label>
                             <SearchableSelect
@@ -1103,7 +1098,22 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                         </div>
                     )}
 
-                    {/* Method: C2 (Only if !isDetail) */}
+                    {/* Sector: Shown if Detail OR Loading */}
+                    {(isDetailActivity || isLoadingActivity) && (
+                        <div className={styles.group} style={{ gridColumn: 'span 1' }}>
+                            <label>Sector</label>
+                            <SearchableSelect
+                                className={styles.select}
+                                options={options.sectors}
+                                value={formData.SectorId}
+                                onChange={(e) => setFormData({ ...formData, SectorId: e.target.value })}
+                                placeholder="Select"
+                                error={errors.SectorId}
+                            />
+                        </div>
+                    )}
+
+                    {/* Method: Show if Not Detail (includes Loading) */}
                     {!isDetailActivity && (
                         <div className={styles.group} style={{ gridColumn: 'span 1' }}>
                             <label>Method</label>
@@ -1118,8 +1128,13 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                         </div>
                     )}
 
-                    {/* Remarks: C3-C6 (Span 4) */}
-                    <div className={styles.group} style={{ gridColumn: 'span 4' }}>
+                    {/* Remarks: Adjust Span based on visible fields */}
+                    {/* 
+                        Loading (IsLoading=T, IsDetail=F): Sector(1) + Patch(1) + Method(1) + Remarks(3) + Buttons(2) = 8
+                        Mining (IsLoading=F, IsDetail=F): Patch(1) + Method(1) + Remarks(4) + Buttons(2) = 8
+                        Detail (IsLoading=F, IsDetail=T): Sector(1) + Remarks(5) + Buttons(2) = 8
+                    */}
+                    <div className={styles.group} style={{ gridColumn: `span ${isLoadingActivity ? 3 : (isDetailActivity ? 5 : 4)}` }}>
                         <label>Remarks</label>
                         <input type="text" className={styles.input}
                             ref={remarksRef}

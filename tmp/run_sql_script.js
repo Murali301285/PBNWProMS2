@@ -6,7 +6,7 @@ const config = {
     user: process.env.DB_USER || 'sa',
     password: process.env.DB_PASSWORD || 'Chennai@42',
     server: process.env.DB_SERVER || 'localhost',
-    database: process.env.DB_NAME || 'ProdMS_live',
+    database: process.env.DB_DATABASE || process.env.DB_NAME || 'ProMS2_Serv',
     options: {
         encrypt: false,
         trustServerCertificate: true

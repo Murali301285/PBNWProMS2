@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import ReportFilter from '@/components/reports/ReportFilter';
 import ReportTable from '@/components/reports/ReportTable';
+import MaterialLoadingFilterModal from '@/components/reports/MaterialLoadingFilterModal';
 import { toast } from 'sonner';
+import { Filter } from 'lucide-react';
+import styles from '@/components/reports/ReportFilter.module.css';
 
 /**
  * Material Loading Detailed Report
@@ -14,44 +17,42 @@ export default function MaterialLoadingReport() {
         fromDate: '',
         toDate: ''
     });
+    const [advancedFilters, setAdvancedFilters] = useState({});
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const [filterSummary, setFilterSummary] = useState('');
+
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [generated, setGenerated] = useState(false);
 
     // Columns Configuration (Matched with SQL Aliases)
     const columns = [
-        { header: 'SlNo', accessor: 'SlNo' },
-        { header: 'Date', accessor: 'Date' },
-        { header: 'Month', accessor: 'Month' },
+        { header: 'Sl.No', accessor: 'SlNo' },
+        { header: 'Cost Center Loading', accessor: 'CostCenterLoading' },
+        { header: 'Cost Center Hauling', accessor: 'CostCenterHauler' },
         { header: 'Year', accessor: 'Year' },
+        { header: 'Month', accessor: 'Month' },
+        { header: 'Date', accessor: 'Date' },
         { header: 'Shift', accessor: 'ShiftName' },
         { header: 'Source', accessor: 'SourceName' },
         { header: 'Destination', accessor: 'Destination' },
-
         { header: 'Hauler', accessor: 'HaulerEquipment' },
-        { header: 'Hauler Model', accessor: 'HaulingModel' },
-        { header: 'CC Hauler', accessor: 'CostCenterHauler' },
-
         { header: 'Loading Machine', accessor: 'LoadingMachine' },
-        { header: 'Loading Model', accessor: 'LoadingModel' },
-        { header: 'CC Loading', accessor: 'CostCenterLoading' },
-
         { header: 'Material', accessor: 'MaterialName' },
-        { header: 'Scale', accessor: 'ScaleName' },
+        { header: 'NTPC Qty/Trip', accessor: 'NtpcQtyTrip' },
+        { header: 'Manag. Qty/Trip', accessor: 'ManagQtyTrip' },
+        { header: 'Trip (NTPC)', accessor: 'TripNtpc' },
+        { header: 'Trip (Management)', accessor: 'TripManagement' },
+        { header: 'TotalQty', accessor: 'ManagTotalQty' },
+        { header: 'Loading Model', accessor: 'LoadingModel' },
+        { header: 'Hauling Model', accessor: 'HaulingModel' },
         { header: 'Sector', accessor: 'Sector' },
         { header: 'Patch', accessor: 'Patch' },
+        { header: 'Scale', accessor: 'ScaleName' },
         { header: 'Relay', accessor: 'Relay' },
-        { header: 'Shift Incharge (Large Scale)', accessor: 'ShiftInchargeLarge' },
-        { header: 'Shift Incharge (Mid Scale)', accessor: 'ShiftInchargeMid' },
-
-        { header: 'Mang Qty/Trip', accessor: 'ManagQtyTrip' },
-        { header: 'Trip Mang', accessor: 'TripManagement' },
-        { header: 'Total Mang Qty', accessor: 'ManagTotalQty' },
-
-        { header: 'NTPC Qty/Trip', accessor: 'NtpcQtyTrip' },
-        { header: 'Trip NTPC', accessor: 'TripNtpc' },
-        { header: 'Total NTPC Qty', accessor: 'TotalNtpcQty' },
-        { header: 'Loading Remarks', accessor: 'LoadingRemarks' }
+        { header: 'Shift Incharge(Large Scale)', accessor: 'ShiftInchargeLarge' },
+        { header: 'Shift Incharge(Mid Scale)', accessor: 'ShiftInchargeMid' }
     ];
 
     const handleGenerate = async () => {
@@ -61,10 +62,16 @@ export default function MaterialLoadingReport() {
         setData([]);
 
         try {
+            const payload = {
+                fromDate: filter.fromDate,
+                toDate: filter.toDate,
+                ...advancedFilters // Include selected filters
+            };
+
             const res = await fetch('/api/reports/material-loading', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fromDate: filter.fromDate, toDate: filter.toDate })
+                body: JSON.stringify(payload)
             });
             const result = await res.json();
 
@@ -83,6 +90,9 @@ export default function MaterialLoadingReport() {
         }
     };
 
+    // Check if any filter is active for visual indicator
+    const activeFilterCount = Object.values(advancedFilters).filter(v => Array.isArray(v) && v.length > 0).length;
+
     return (
         <div className="p-6 h-screen flex flex-col bg-slate-50">
             <div className="mb-6">
@@ -92,15 +102,48 @@ export default function MaterialLoadingReport() {
 
             <ReportFilter
                 reportType={filter.reportType}
-                setReportType={(val) => setFilter({ ...filter, reportType: val })} // Read-only or switchable? kept switchable but hidden logic
+                setReportType={(val) => setFilter({ ...filter, reportType: val })}
                 fromDate={filter.fromDate}
                 setFromDate={(val) => setFilter({ ...filter, fromDate: val })}
                 toDate={filter.toDate}
                 setToDate={(val) => setFilter({ ...filter, toDate: val })}
                 onGenerate={handleGenerate}
-                onReset={() => setData([])}
+                onReset={() => { setData([]); setAdvancedFilters({}); setFilterSummary(''); }}
                 loading={loading}
-                showReportType={false} // Hidden for specific page
+                showReportType={false}
+            >
+                {/* Custom Filter Button */}
+                <div className="flex items-center gap-2">
+                    <button
+                        className={`${styles.generateBtn} !bg-white !text-slate-700 !border !border-slate-300 hover:!bg-slate-50 relative`}
+                        onClick={() => setIsFilterOpen(true)}
+                        title="Advanced Filters"
+                    >
+                        <Filter size={16} /> Filter
+                        {activeFilterCount > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </button>
+                    {filterSummary && (
+                        <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'blue' }}>
+                            {filterSummary}
+                        </span>
+                    )}
+                </div>
+            </ReportFilter>
+
+            <MaterialLoadingFilterModal
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                onApply={(filters, summary) => {
+                    setAdvancedFilters(filters);
+                    setFilterSummary(summary);
+                    // Optionally auto-generate?
+                    // handleGenerate(); // Better let user click Generate explicitly
+                }}
+                initialFilters={advancedFilters}
             />
 
             <ReportTable

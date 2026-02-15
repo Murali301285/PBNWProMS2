@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './SectorWiseProduction.module.css';
 import SectorWiseProductionTable from './SectorWiseProductionTable';
 import { Download, Printer } from 'lucide-react';
@@ -9,11 +9,36 @@ import { toast } from 'sonner';
 export default function SectorWiseProductionPage() {
     const today = new Date().toISOString().split('T')[0];
     const [date, setDate] = useState(today);
+    const [shiftId, setShiftId] = useState('');
+    const [shifts, setShifts] = useState([]);
 
     // State
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Fetch Shifts on mount
+    useEffect(() => {
+        const fetchShifts = async () => {
+            try {
+                const res = await fetch('/api/master/shift');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        setShifts(data);
+                    } else if (data.success && Array.isArray(data.data)) {
+                        setShifts(data.data);
+                    }
+                } else {
+                    console.warn("Could not fetch shifts");
+                }
+            } catch (e) {
+                console.error("Shift fetch error:", e);
+                toast.error("Failed to load shifts");
+            }
+        };
+        fetchShifts();
+    }, []);
 
     const handleShowReport = async () => {
         if (!date) {
@@ -27,7 +52,7 @@ export default function SectorWiseProductionPage() {
             const response = await fetch('/api/reports/sector-wise-production', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date })
+                body: JSON.stringify({ date, shiftId })
             });
             const result = await response.json();
             if (result.success) {
@@ -55,9 +80,9 @@ export default function SectorWiseProductionPage() {
             const wsData = [
                 ["THRIVENI SAINIK MINING PRIVATE LIMITED"],
                 ["PAKRI BARWADIH COAL MINING PROJECT"],
-                [`SECTOR WISE PRODUCTION REPORT`, "", "", `Date: ${date}`],
+                [`SECTOR WISE PRODUCTION REPORT`, "", "", `Date: ${date}`, `Shift: ${shifts.find(s => s.SlNo == shiftId)?.ShiftName || 'All'}`],
                 [],
-                ["Si No", "Equipment Name", "Patch", "Trip", "Qty(BCM)", "OB Hrs", "Target BCM/Hr", "BCM/Hr", "Method"]
+                ["Si No", "Equipment Name", "Patch", "Trip", "Tentative Production Qty", "OB Hrs", "Target BCM/Hr", "BCM/Hr", "Method"]
             ];
 
             // Group Data
@@ -156,6 +181,22 @@ export default function SectorWiseProductionPage() {
                     />
                 </div>
 
+                <div className={styles.inputGroup}>
+                    <label className={styles.label}>Select Shift</label>
+                    <select
+                        className={styles.input}
+                        value={shiftId}
+                        onChange={(e) => setShiftId(e.target.value)}
+                    >
+                        <option value="">All Shifts</option>
+                        {shifts.map((s) => (
+                            <option key={s.SlNo} value={s.SlNo}>
+                                {s.ShiftName}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 <button
                     onClick={handleShowReport}
                     disabled={loading}
@@ -182,7 +223,11 @@ export default function SectorWiseProductionPage() {
 
             {reportData && (
                 <div className={styles.reportSheet} id="print-area">
-                    <SectorWiseProductionTable data={reportData} date={date} />
+                    <SectorWiseProductionTable
+                        data={reportData}
+                        date={date}
+                        shiftName={shifts.find(s => s.SlNo == shiftId)?.ShiftName || 'All Shifts'}
+                    />
                 </div>
             )}
         </div>

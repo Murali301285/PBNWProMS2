@@ -17,11 +17,12 @@ const DailyProgressTable = ({ data, date }) => {
     return (
         <div className="w-full">
             {/* Header */}
-            <div className={styles.header}>
-                <div className="text-sky-800 font-bold text-lg mb-1">THRIVENI SAINIK MINING PRIVATE LIMITED</div>
-                <div className="text-sm font-bold text-slate-900 mb-1">Pakri Barwadih Coal Mining Project (NTPC Ltd., Barkagaon, Hazaribagh)</div>
-                <h1 className="text-xl font-bold uppercase text-slate-900 mb-1 underline">DAILY PROGRESS REPORT</h1>
-                <p className="text-sm font-bold">DATE: {displayDate}</p>
+            {/* Header */}
+            <div className={styles.reportHeader}>
+                <h1>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                <h2>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                <h3>DAILY PROGRESS REPORT</h3>
+                <p>Date: {displayDate}</p>
             </div>
 
             <div className="space-y-6 mt-4">
@@ -54,12 +55,12 @@ const DailyProgressTable = ({ data, date }) => {
                                     <td className="text-center">{row.SlNo || ''}</td>
                                     <td className="text-left pl-2">{row.MaterialName}</td>
                                     <td className="text-center">{row.Unit}</td>
-                                    <td className="text-center">{row.DayTrip}</td>
-                                    <td className="text-right pr-2">{row.DayQty}</td>
-                                    <td className="text-center">{row.MonthTrip}</td>
-                                    <td className="text-right pr-2">{row.MonthQty}</td>
-                                    <td className="text-center">{row.YearTrip}</td>
-                                    <td className="text-right pr-2">{row.YearQty}</td>
+                                    <td className="!text-center">{row.DayTrip}</td>
+                                    <td className="!text-right !pr-4">{row.DayQty}</td>
+                                    <td className="!text-center">{row.MonthTrip}</td>
+                                    <td className="!text-right !pr-4">{row.MonthQty}</td>
+                                    <td className="!text-center">{row.YearTrip}</td>
+                                    <td className="!text-right !pr-4">{row.YearQty}</td>
                                 </tr>
                             ))}
                         </tbody>

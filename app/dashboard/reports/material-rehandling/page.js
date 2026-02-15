@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import ReportFilter from '@/components/reports/ReportFilter';
 import ReportTable from '@/components/reports/ReportTable';
+import MaterialRehandlingFilterModal from '@/components/reports/MaterialRehandlingFilterModal';
 import { toast } from 'sonner';
+import { Filter } from 'lucide-react';
+import styles from '@/components/reports/ReportFilter.module.css';
 
 /**
  * Material Rehandling Detailed Report
@@ -14,6 +17,12 @@ export default function MaterialRehandlingReport() {
         fromDate: '',
         toDate: ''
     });
+
+    // Advanced Filters State
+    const [advancedFilters, setAdvancedFilters] = useState({});
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filterSummary, setFilterSummary] = useState('');
+
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [generated, setGenerated] = useState(false);
@@ -57,10 +66,16 @@ export default function MaterialRehandlingReport() {
         setData([]);
 
         try {
+            const payload = {
+                fromDate: filter.fromDate,
+                toDate: filter.toDate,
+                ...advancedFilters // Include selected filters
+            };
+
             const res = await fetch('/api/reports/material-rehandling', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fromDate: filter.fromDate, toDate: filter.toDate })
+                body: JSON.stringify(payload)
             });
             const result = await res.json();
 
@@ -79,6 +94,9 @@ export default function MaterialRehandlingReport() {
         }
     };
 
+    // Check if any filter is active for visual indicator
+    const activeFilterCount = Object.values(advancedFilters).filter(v => Array.isArray(v) && v.length > 0).length;
+
     return (
         <div className="p-6 h-screen flex flex-col bg-slate-50">
             <div className="mb-6">
@@ -94,9 +112,40 @@ export default function MaterialRehandlingReport() {
                 toDate={filter.toDate}
                 setToDate={(val) => setFilter({ ...filter, toDate: val })}
                 onGenerate={handleGenerate}
-                onReset={() => setData([])}
+                onReset={() => { setData([]); setAdvancedFilters({}); setFilterSummary(''); }}
                 loading={loading}
                 showReportType={false}
+            >
+                {/* Custom Filter Button */}
+                <div className="flex items-center gap-2">
+                    <button
+                        className={`${styles.generateBtn} !bg-white !text-slate-700 !border !border-slate-300 hover:!bg-slate-50 relative`}
+                        onClick={() => setIsFilterOpen(true)}
+                        title="Advanced Filters"
+                    >
+                        <Filter size={16} /> Filter
+                        {activeFilterCount > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </button>
+                    {filterSummary && (
+                        <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'blue' }}>
+                            {filterSummary}
+                        </span>
+                    )}
+                </div>
+            </ReportFilter>
+
+            <MaterialRehandlingFilterModal
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                onApply={(filters, summary) => {
+                    setAdvancedFilters(filters);
+                    setFilterSummary(summary);
+                }}
+                initialFilters={advancedFilters}
             />
 
             <ReportTable

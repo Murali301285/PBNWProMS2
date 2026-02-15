@@ -1,0 +1,165 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* Build form from top */
+    padding: 3rem 1rem;
+    /* Add padding for scroll */
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-in-out;
+    overflow-y: auto;
+    /* Allow overlay to scroll */
+}
+
+.modalContent {
+    background: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    /* Wider for 2 columns */
+    /* Removed max-height to allow dropdowns to expand container */
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease-in-out;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modalTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    color: #6b7280;
+}
+
+.closeBtn:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+.modalBody {
+    flex: 1;
+    overflow: visible;
+    /* Allow Dropdowns to overflow */
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* Force 2 Columns as requested */
+    gap: 16px;
+    /* Space between fields */
+    align-content: start;
+}
+
+/* On small screens, stack to 1 column */
+@media (max-width: 640px) {
+    .modalBody {
+        grid-template-columns: 1fr;
+    }
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filterLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.modalFooter {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.resetBtn {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.resetBtn:hover {
+    background-color: #f3f4f6;
+}
+
+.applyBtn {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: #2563eb;
+    border: 1px solid #2563eb;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.applyBtn:hover {
+    background-color: #1d4ed8;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

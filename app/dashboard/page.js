@@ -167,23 +167,21 @@ export default function Dashboard() {
         }
     };
 
-    // Update Auto-scroll to respect Manual Pause
+    // Auto-scroll Logic
     useEffect(() => {
         const scrollContainer = scrollRef.current;
         if (!scrollContainer) return;
 
-        const speed = 0.5;
+        const speed = 1; // Increased speed slightly
         let animationFrameId;
 
         const scroll = () => {
             // Scroll only if NOT paused (hover) AND NOT manually paused
             if (!isPaused && !isManualPaused && scrollContainer) {
-                // Reset after scrolling past one full set (1/4 of total interpolated width)
-                // Using 1/4 because we have 4 sets of data
-                const singleSetWidth = scrollContainer.scrollWidth / 4;
-
-                if (scrollContainer.scrollLeft >= singleSetWidth) {
-                    scrollContainer.scrollLeft = scrollContainer.scrollLeft - singleSetWidth;
+                if (scrollContainer.scrollLeft >= (scrollContainer.scrollWidth / 2)) {
+                    // Reset to beginning to create infinite loop effect
+                    // We are duplicating the list 4 times, so resetting at half-way point is safe
+                    scrollContainer.scrollLeft = 0;
                 } else {
                     scrollContainer.scrollLeft += speed;
                 }

@@ -104,9 +104,10 @@ export default function ChpPssProductionTable({ production, stoppages, allReason
     return (
         <div>
             <div className={styles.header}>
-                <h1 className="text-xl font-bold">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4 font-bold">CHP PSS PRODUCTION REPORT</h3>
-                <div className="mt-2 text-sm text-slate-600 font-medium">Month: {monthName}</div>
+                <h1 className="text-xl font-bold uppercase text-slate-800">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                <h2 className="text-lg font-bold uppercase text-slate-800">PAKRI BARWADIH COAL MINING PROJECT</h2>
+                <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4 font-bold uppercase">CHP PSS PRODUCTION REPORT</h3>
+                <div className="mt-2 font-bold text-slate-600 text-sm">Month: {monthName}</div>
             </div>
 
             <div className="overflow-x-auto">

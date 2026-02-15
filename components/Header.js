@@ -189,7 +189,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
                         {results.length > 0 ? (
                             results.map((item, index) => (
                                 <div
-                                    key={item.id}
+                                    key={`${item.id}_${index}`}
                                     className={`${styles.searchResultItem} ${index === highlightedIndex ? styles.highlighted : ''} ${!item.isAuthorized ? styles.disabled : ''}`}
                                     onClick={() => handleNavigate(item)}
                                 >
@@ -244,7 +244,11 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
                     <span className={styles.badge}>3</span>
                 </button> */}
 
-                <div className={styles.profile} onClick={() => setUserMenuOpen(!userMenuOpen)}>
+                <div
+                    className={styles.profile}
+                    onMouseEnter={() => setUserMenuOpen(true)}
+                    onMouseLeave={() => setUserMenuOpen(false)}
+                >
                     <div className={styles.avatar}>
                         {userInfo?.ProfileImage ? (
                             <img src={userInfo.ProfileImage} alt="Profile" className={styles.profileImg} />

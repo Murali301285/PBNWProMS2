@@ -49,6 +49,7 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
         DestinationId: '',
         HaulerId: '',
         FillingPointId: '',
+        FillingPumpId: '', // New Field
         NoOfTrip: '',
         Capacity: '',
         TotalQty: '',
@@ -67,6 +68,7 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
     const destRef = useRef(null);
     const haulerRef = useRef(null);
     const fillPtRef = useRef(null);
+    const fillPumpRef = useRef(null); // New Ref
     const tripsRef = useRef(null);
     const remarksRef = useRef(null);
 
@@ -152,15 +154,15 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
             setErrors(prev => ({ ...prev, [name]: false }));
         }
 
-        if (['ShiftId', 'DestinationId', 'HaulerId', 'FillingPointId'].includes(name)) {
-            setTimeout(() => {
-                if (name === 'ShiftId') destRef.current?.focus();
-                if (name === 'DestinationId') haulerRef.current?.focus();
-                if (name === 'HaulerId') fillPtRef.current?.focus();
-                if (name === 'FillingPointId') tripsRef.current?.focus();
-            }, 100);
-        }
-    };
+        setTimeout(() => {
+            if (name === 'ShiftId') destRef.current?.focus();
+            if (name === 'DestinationId') haulerRef.current?.focus();
+            if (name === 'HaulerId') fillPtRef.current?.focus();
+            if (name === 'FillingPointId') fillPumpRef.current?.focus(); // Focus Pump
+            if (name === 'FillingPumpId') tripsRef.current?.focus(); // Focus Trips
+        }, 100);
+    }
+
 
     const handleSave = async () => {
         const newErrors = {};
@@ -200,6 +202,7 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
                         DestinationId: '',
                         HaulerId: '',
                         FillingPointId: '',
+                        FillingPumpId: '',
                         NoOfTrip: '',
                         Capacity: '',
                         TotalQty: '',
@@ -256,7 +259,9 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
     }, [formData]);
 
     const shiftOpts = helpers.shifts?.map(s => ({ id: String(s.SlNo), name: s.ShiftName })) || [];
-    const destOpts = helpers.fillingPoints?.map(f => ({ id: String(f.SlNo), name: f.FillingPoint })) || [];
+    const destOpts = helpers.destinations?.map(d => ({ id: String(d.SlNo), name: d.LocationName })) || []; // Destinations from TblLocation
+    const fillPtOpts = helpers.fillingPoints?.map(f => ({ id: String(f.SlNo), name: f.FillingPoint })) || []; // Filling Points
+    const fillPumpOpts = helpers.fillingPumps?.map(p => ({ id: String(p.SlNo), name: p.FillingPump })) || []; // Filling Pumps
     const haulerOpts = helpers.haulers?.map(h => ({ id: String(h.SlNo), name: h.EquipmentName })) || [];
 
     const [lastEntry, setLastEntry] = useState(null);
@@ -336,7 +341,7 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
 
                     {/* Destination (Filling Pt): R1 C3-C4 (Span 2) */}
                     <div className={styles.group} style={{ gridColumn: '3 / span 2' }}>
-                        <label>Destination (Filling Pt) <span className={styles.required}>*</span> {errors.DestinationId && <span className={styles.errorMsg}>Required</span>}</label>
+                        <label>Destination <span className={styles.required}>*</span> {errors.DestinationId && <span className={styles.errorMsg}>Required</span>}</label>
                         <SearchableSelect
                             ref={destRef}
                             name="DestinationId"
@@ -370,10 +375,24 @@ export default function WaterTankerForm({ initialHelpers = {}, initialData = nul
                         <SearchableSelect
                             ref={fillPtRef}
                             name="FillingPointId"
-                            options={destOpts}
+                            options={fillPtOpts}
                             value={formData.FillingPointId}
                             onChange={handleChange}
                             error={errors.FillingPointId}
+                            className={styles.select}
+                        />
+                    </div>
+
+                    {/* Filling Pump: R2 C5-C6 (Span 2) */}
+                    <div className={styles.group} style={{ gridColumn: '5 / span 2' }}>
+                        <label>Filling Pump</label>
+                        <SearchableSelect
+                            ref={fillPumpRef}
+                            name="FillingPumpId"
+                            options={fillPumpOpts}
+                            value={formData.FillingPumpId}
+                            onChange={handleChange}
+                            error={errors.FillingPumpId}
                             className={styles.select}
                         />
                     </div>

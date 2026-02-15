@@ -29,15 +29,27 @@ export default function MasterTable({ config, title }) {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const table = config.table.replace('[Master].[', '').replace(']', '');
-            console.log("Fetching data for:", table);
-            const res = await fetch('/api/settings/crud', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'read', table })
-            });
-            const result = await res.json();
-            setData(Array.isArray(result) ? result : []);
+            if (config.apiRoute) {
+                console.log("Fetching custom data from:", config.apiRoute);
+                const res = await fetch(config.apiRoute);
+                if (res.ok) {
+                    const result = await res.json();
+                    setData(Array.isArray(result) ? result : []);
+                } else {
+                    console.error("Custom API Error");
+                    setData([]);
+                }
+            } else {
+                const table = config.table.replace('[Master].[', '').replace(']', '');
+                console.log("Fetching data for:", table);
+                const res = await fetch('/api/settings/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'read', table })
+                });
+                const result = await res.json();
+                setData(Array.isArray(result) ? result : []);
+            }
         } catch (error) {
             console.error(error);
             setData([]);
@@ -148,6 +160,18 @@ export default function MasterTable({ config, title }) {
                 }
             }
 
+            // Fix Date mapping for Edit
+            if (typeof col === 'object' && col.type === 'date' && val) {
+                try {
+                    // If ISO string, take first 10 chars (YYYY-MM-DD)
+                    if (typeof val === 'string' && val.includes('T')) {
+                        val = val.split('T')[0];
+                    }
+                } catch (e) {
+                    console.error("Date conversion error:", e);
+                }
+            }
+
             form[field] = val;
         });
         form.IsActive = row.IsActive;
@@ -165,15 +189,21 @@ export default function MasterTable({ config, title }) {
         if (!deleteId) return;
 
         try {
-            await fetch('/api/settings/crud', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    table: config.table.replace('[Master].[', '').replace(']', ''),
-                    action: 'delete',
-                    id: deleteId[config.idField] // Extract ID here
-                })
-            });
+            if (config.apiRoute) {
+                await fetch(`${config.apiRoute}?id=${deleteId[config.idField]}`, {
+                    method: 'DELETE'
+                });
+            } else {
+                await fetch('/api/settings/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: config.table.replace('[Master].[', '').replace(']', ''),
+                        action: 'delete',
+                        id: deleteId[config.idField] // Extract ID here
+                    })
+                });
+            }
             fetchData();
             toast.success('Record deleted successfully');
         } catch (error) {
@@ -257,11 +287,20 @@ export default function MasterTable({ config, title }) {
         console.log("🚀 FRONTEND: Sending to API:", JSON.stringify(body, null, 2));
 
         try {
-            const res = await fetch('/api/settings/crud', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+            let res;
+            if (config.apiRoute) {
+                res = await fetch(config.apiRoute, {
+                    method: editId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...body.data, id: editId }) // Flatten structure for custom API
+                });
+            } else {
+                res = await fetch('/api/settings/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+            }
 
             if (res.ok) {
                 setIsEditing(false);

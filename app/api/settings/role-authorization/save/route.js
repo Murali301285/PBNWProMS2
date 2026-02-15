@@ -15,37 +15,35 @@ export async function POST(req) {
         // Since we are using simple executeQuery, we'll do sequential upserts.
 
         for (const p of permissions) {
-            if (p.Permissionid > 0) {
-                // Update
-                const updateQuery = `
+            // Robust UPSERT logic to prevent duplicates
+            // Check if active record exists for RoleId + PageId
+            // If yes -> Update
+            // If no -> Insert
+
+            const upsertQuery = `
+                IF EXISTS (SELECT 1 FROM [Master].[TblRoleAuthorization_New] WHERE RoleId = @RoleId AND PageId = @PageId AND IsDeleted = 0)
+                BEGIN
                     UPDATE [Master].[TblRoleAuthorization_New]
                     SET IsView = @IsView, IsAdd = @IsAdd, IsEdit = @IsEdit, IsDelete = @IsDelete, UpdatedDate = GETDATE()
-                    WHERE Permissionid = @Permissionid
-                `;
-                await executeQuery(updateQuery, [
-                    { name: 'IsView', value: p.IsView },
-                    { name: 'IsAdd', value: p.IsAdd },
-                    { name: 'IsEdit', value: p.IsEdit },
-                    { name: 'IsDelete', value: p.IsDelete },
-                    { name: 'Permissionid', value: p.Permissionid }
-                ]);
-            } else {
-                // Insert New Permission
-                const insertQuery = `
+                    WHERE RoleId = @RoleId AND PageId = @PageId AND IsDeleted = 0
+                END
+                ELSE
+                BEGIN
                     INSERT INTO [Master].[TblRoleAuthorization_New] 
-                    (RoleId, MenuId, PageId, IsView, IsAdd, IsEdit, IsDelete, IsActive, IsDeleted, CreatedDate)
+                    (RoleId, PageId, IsView, IsAdd, IsEdit, IsDelete, IsActive, IsDeleted, CreatedDate)
                     VALUES 
-                    (@RoleId, NULL, @PageId, @IsView, @IsAdd, @IsEdit, @IsDelete, 1, 0, GETDATE())
-                `;
-                await executeQuery(insertQuery, [
-                    { name: 'RoleId', value: roleId },
-                    { name: 'PageId', value: p.PageId },
-                    { name: 'IsView', value: p.IsView },
-                    { name: 'IsAdd', value: p.IsAdd },
-                    { name: 'IsEdit', value: p.IsEdit },
-                    { name: 'IsDelete', value: p.IsDelete }
-                ]);
-            }
+                    (@RoleId, @PageId, @IsView, @IsAdd, @IsEdit, @IsDelete, 1, 0, GETDATE())
+                END
+            `;
+
+            await executeQuery(upsertQuery, [
+                { name: 'RoleId', value: roleId },
+                { name: 'PageId', value: p.PageId },
+                { name: 'IsView', value: p.IsView },
+                { name: 'IsAdd', value: p.IsAdd },
+                { name: 'IsEdit', value: p.IsEdit },
+                { name: 'IsDelete', value: p.IsDelete }
+            ]);
         }
 
         return NextResponse.json({ success: true, message: 'Permissions updated successfully' });

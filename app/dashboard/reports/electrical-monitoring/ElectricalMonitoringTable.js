@@ -1,11 +1,18 @@
+
 import React, { useMemo } from 'react';
-import styles from '../daily-production/DailyProduction.module.css';
-import { Download, Printer } from 'lucide-react';
-import * as XLSX from 'xlsx-js-style';
+import styles from './ElectricalMonitoring.module.css';
 
 export default function ElectricalMonitoringTable({ data, date }) {
     if (!data) return null;
 
+    // Format Date Helpers (dd/mm/yyyy)
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB'); // DD/MM/YYYY
+    };
+
+    const displayDate = formatDate(date);
     const dateObj = new Date(date);
     const monthName = dateObj.toLocaleString('default', { month: 'short' }) + '-' + dateObj.getFullYear().toString().slice(-2);
     const dayOfMonth = dateObj.getDate();
@@ -63,116 +70,149 @@ export default function ElectricalMonitoringTable({ data, date }) {
     const grandFtmBCMHr = grand.ftmHrs > 0 ? grand.ftmQty / grand.ftmHrs : 0;
     const grandMtdAvg = grand.ftmQty / (dayOfMonth || 1);
 
-    const handlePrint = () => window.print();
-
-    const handleExportExcel = () => {
-        alert("Excel Export to be implemented after UI verification.");
-    };
 
     return (
-        <div className={styles.container}>
-            <div className="flex justify-end gap-2 mb-4 no-print">
-                <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-1 bg-slate-100 border rounded cursor-pointer">
-                    <Printer size={16} /> Print
-                </button>
-                <button onClick={handleExportExcel} className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded cursor-pointer">
-                    <Download size={16} /> Excel
-                </button>
+        <div className="w-full">
+            {/* Header */}
+            <div className={styles.reportHeader}>
+                <h1>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                <h2>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                <h3>ELECTRICAL EQUIPMENTS MONITORING REPORT</h3>
+                <p>Date: {displayDate}</p>
             </div>
 
-            <div className={styles.reportSheet}>
-                <div className="text-center mb-6 uppercase font-bold text-slate-800">
-                    <h1 className="text-xl">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                    <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4">ELECTRICAL EQUIPMENTS MONITORING REPORT</h3>
-                    <div className="mt-2 text-sm text-slate-600">Date: {date}</div>
-                </div>
+            <div className="space-y-6 mt-4">
+                <div className={styles.tableContainer}>
 
-                <div className="overflow-x-auto">
                     <table className={styles.table}>
                         <thead>
-                            <tr className="bg-orange-100 text-slate-800">
-                                <th colSpan="2" className="bg-white border-none"></th>
-                                <th colSpan="10" className="bg-rose-100 text-center border font-bold">F. T. D ({date})</th>
-                                <th colSpan="5" className="bg-amber-100 text-center border font-bold">F. T. M : {monthName}</th>
+                            {/* Top Level Headers - Grouped by Metric */}
+                            <tr className={styles.blueHeader}>
+                                <th rowSpan="2" className="w-12 text-center">Sl. No.</th>
+                                <th rowSpan="2" className="text-left pl-2">Equipment</th>
+                                <th rowSpan="2" className="text-center">Sector</th>
+
+                                {/* Trip/Hr Block */}
+                                <th rowSpan="2" className="w-20 text-indigo-700 bg-slate-50">Target Trip/Hr</th>
+                                <th colSpan="2" className="text-center font-bold bg-amber-50">Achieved Trip/Hr</th>
+
+                                {/* BCM/Hr Block */}
+                                <th rowSpan="2" className="w-20 text-indigo-700 bg-slate-50">Target BCM/Hr</th>
+                                <th colSpan="2" className="text-center font-bold bg-amber-50">Achieved BCM/Hr</th>
+
+                                {/* Unit/Hr Block */}
+                                <th rowSpan="2" className="w-20 text-indigo-700 bg-slate-50">Target Unit/Hr</th>
+                                <th colSpan="2" className="text-center font-bold bg-amber-50">Achieved Unit/Hr</th>
+
+                                {/* Unit/BCM Block */}
+                                <th rowSpan="2" className="w-20 text-indigo-700 bg-slate-50">Target Unit/BCM</th>
+                                <th colSpan="2" className="text-center font-bold bg-amber-50">Achieved Unit/BCM</th>
+
+                                {/* Total BCM Block */}
+                                <th colSpan="3" className="text-center font-bold bg-amber-100">Total BCM</th>
+
+                                {/* Avg BCM/Day */}
+                                <th rowSpan="2" className="w-24 text-center font-bold bg-white">MTD Average BCM/Day</th>
                             </tr>
 
-                            <tr className="bg-slate-100 text-xs font-bold text-slate-700 text-center">
-                                <th className="bg-white border text-left px-2">Equipment Name</th>
-                                <th className="bg-white border text-left px-2">Sector</th>
+                            {/* Sub Headers (FTD / MTD) */}
+                            <tr className={styles.blueHeader}>
+                                {/* Trips */}
+                                <th className="bg-white">FTD</th>
+                                <th className="bg-white">MTD</th>
 
-                                {/* FTD 10 Cols */}
-                                <th className="w-20 text-red-600">Target Trip/Hr</th>
-                                <th className="w-20">Achieved Trip/Hr</th>
-                                <th className="w-24 text-red-600">Target BCM/Hr</th>
-                                <th className="w-24">Achieved BCM/Hr</th>
-                                <th className="w-20 text-red-600">Target Unit/Hr</th>
-                                <th className="w-20">Achieved Unit/Hr</th>
-                                <th className="w-20 text-red-600">Target Unit/BCM</th>
-                                <th className="w-20">Achieved Unit/BCM</th>
-                                <th className="w-24">Total BCM</th>
-                                <th className="w-20">OB Hrs</th>
+                                {/* BCM */}
+                                <th className="bg-white">FTD</th>
+                                <th className="bg-white">MTD</th>
 
-                                {/* FTM 5 Cols */}
-                                <th className="w-20">Achieved Trip/Hr</th>
-                                <th className="w-24">Achieved BCM(MT)/Hr</th>
-                                <th className="w-20">Achieved Unit/Hr</th>
-                                <th className="w-20">Achieved Unit/BCM</th>
-                                <th className="w-24">MTD Average BCM/Day</th>
+                                {/* Unit */}
+                                <th className="bg-white">FTD</th>
+                                <th className="bg-white">MTD</th>
+
+                                {/* Unit/BCM */}
+                                <th className="bg-white">FTD</th>
+                                <th className="bg-white">MTD</th>
+
+                                {/* Total BCM Breakdown */}
+                                <th className="bg-white">FTD</th>
+                                <th className="bg-white">MTD</th>
+                                <th className="bg-white">FTY</th>
                             </tr>
                         </thead>
                         <tbody>
                             {processedData.map((r, idx) => (
-                                <tr key={idx} className="bg-white hover:bg-blue-50 border-b text-center text-sm">
-                                    <td className="text-left pl-2 font-medium border-r">{r.EquipmentName}</td>
-                                    <td className="text-left pl-2 text-slate-600 border-r">{r.SectorName}</td>
+                                <tr key={idx} className="hover:bg-blue-50 text-center text-sm">
+                                    <td className="text-center">{idx + 1}</td>
+                                    <td className="text-left pl-2 font-medium">{r.EquipmentName}</td>
+                                    <td className="text-center text-slate-600">{r.SectorName}</td>
 
-                                    {/* FTD */}
-                                    <td className="text-red-500">-</td>
+                                    {/* Trip/Hr */}
+                                    <td className="text-indigo-700 bg-slate-50 font-medium">-</td>
                                     <td className="font-bold text-blue-700">{fmtDec2(r.metrics.ftdTripsHr)}</td>
-                                    <td className="text-red-500">-</td>
-                                    <td className="font-bold text-blue-700">{fmtDec2(r.metrics.ftdBCMHr)}</td>
-                                    <td className="text-red-500">-</td>
-                                    <td>-</td>
-                                    <td className="text-red-500">-</td>
-                                    <td>-</td>
-                                    <td className="font-bold">{fmt(r.FTD_Qty)}</td>
-                                    <td>{fmtDec2(r.FTD_WorkingHr)}</td>
+                                    <td className="font-bold text-slate-800">{fmtDec2(r.metrics.ftmTripsHr)}</td>
 
-                                    {/* FTM */}
-                                    <td className="bg-amber-50 font-bold">{fmtDec2(r.metrics.ftmTripsHr)}</td>
-                                    <td className="bg-amber-50 font-bold">{fmtDec2(r.metrics.ftmBCMHr)}</td>
-                                    <td className="bg-amber-50">-</td>
-                                    <td className="bg-amber-50">-</td>
-                                    <td className="bg-amber-50 font-bold">{fmtDec2(r.metrics.mtdAvgBCMDay)}</td>
+                                    {/* BCM/Hr */}
+                                    <td className="text-indigo-700 bg-slate-50 font-medium">-</td>
+                                    <td className="font-bold text-blue-700">{fmtDec2(r.metrics.ftdBCMHr)}</td>
+                                    <td className="font-bold text-slate-800">{fmtDec2(r.metrics.ftmBCMHr)}</td>
+
+                                    {/* Unit/Hr */}
+                                    <td className="text-indigo-700 bg-slate-50 font-medium">-</td>
+                                    <td className="text-center">-</td>
+                                    <td className="text-center">-</td>
+
+                                    {/* Unit/BCM */}
+                                    <td className="text-indigo-700 bg-slate-50 font-medium">-</td>
+                                    <td className="text-center">-</td>
+                                    <td className="text-center">-</td>
+
+                                    {/* Total BCM */}
+                                    <td className="font-bold">{fmt(r.FTD_Qty)}</td>
+                                    <td className="font-bold">{fmt(r.FTM_Qty)}</td>
+                                    <td className="font-bold text-slate-400">-</td>
+
+                                    {/* MTD Avg */}
+                                    <td className="font-bold">{fmtDec2(r.metrics.mtdAvgBCMDay)}</td>
                                 </tr>
                             ))}
 
                             {/* Grand Total Row */}
-                            <tr style={{ backgroundColor: '#FACC15', borderTop: '2px solid black' }}>
-                                <td colSpan="2" className="text-right pr-4 font-extrabold" style={{ color: 'black', fontSize: '1.2em' }}>Grand Total</td>
+                            <tr className="bg-yellow-300 font-bold border-t-2 border-slate-800">
+                                <td colSpan="3" className="text-center font-extrabold text-lg">Total</td>
 
-                                {/* FTD */}
-                                <td>-</td>
-                                <td className="font-bold" style={{ color: 'black' }}>{fmtDec2(grandFtdTripsHr)}</td>
-                                <td>-</td>
-                                <td className="font-bold" style={{ color: 'black' }}>{fmtDec2(grandFtdBCMHr)}</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td className="font-bold" style={{ color: 'black' }}>{fmt(grand.ftdQty)}</td>
-                                <td className="font-bold" style={{ color: 'black' }}>{fmtDec2(grand.ftdHrs)}</td>
+                                {/* Trip/Hr */}
+                                <td className="text-center">-</td>
+                                <td className="text-center">{fmtDec2(grandFtdTripsHr)}</td>
+                                <td className="text-center">{fmtDec2(grandFtmTripsHr)}</td>
 
-                                {/* FTM */}
-                                <td className="font-bold" style={{ color: 'black' }}>{fmtDec2(grandFtmTripsHr)}</td>
-                                <td className="font-bold" style={{ color: 'black' }}>{fmtDec2(grandFtmBCMHr)}</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td className="font-bold" style={{ color: 'black' }}>{fmtDec2(grandMtdAvg)}</td>
+                                {/* BCM/Hr */}
+                                <td className="text-center">-</td>
+                                <td className="text-center">{fmtDec2(grandFtdBCMHr)}</td>
+                                <td className="text-center">{fmtDec2(grandFtmBCMHr)}</td>
+
+                                {/* Unit/Hr */}
+                                <td className="text-center">-</td>
+                                <td className="text-center">-</td>
+                                <td className="text-center">-</td>
+
+                                {/* Unit/BCM */}
+                                <td className="text-center">-</td>
+                                <td className="text-center">-</td>
+                                <td className="text-center">-</td>
+
+                                {/* Total BCM */}
+                                <td className="text-center">{fmt(grand.ftdQty)}</td>
+                                <td className="text-center">{fmt(grand.ftmQty)}</td>
+                                <td className="text-center">-</td>
+
+                                {/* MTD Avg */}
+                                <td className="text-center">{fmtDec2(grandMtdAvg)}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+
             </div>
         </div>
     );

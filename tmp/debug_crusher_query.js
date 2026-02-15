@@ -5,83 +5,61 @@ const config = {
     user: 'sa',
     password: 'Chennai@42',
     server: 'localhost',
+    database: 'ProMS2_Serv',
     port: 1433,
-    database: 'ProdMS_live',
     options: {
         encrypt: false,
-        trustServerCertificate: true
-    }
+        trustServerCertificate: true,
+        enableArithAbort: true,
+    },
+    connectionTimeout: 30000,
+    requestTimeout: 30000,
 };
 
-async function runQuery() {
+async function debugQuery() {
     try {
-        await sql.connect(config);
+        console.log(`Connecting to database: ${config.database} on ${config.server}`);
+        const pool = await new sql.ConnectionPool(config).connect();
 
-        const query = `
+        const dateInput = '2025-12-30';
+        const shiftId = 3;
+
+        console.log(`--- Executing Query with Date: ${dateInput}, ShiftId: ${shiftId} ---`);
+
+        const crusherQuery = `
             SELECT 
-                T.SlNo,
-                T.[Date],
-                T.ShiftId,
-                T.ShiftInChargeId,
-                T.PlantId,
-                T.ProductionUnitId,
-                T.HaulerId,
-                T.TripQtyUnitId,
-                
-                S.ShiftName,
-                O.OperatorName as ShiftInChargeName,
-                
-                T.ManPowerInShift,
-                
-                P.Name as PlantName,
-                
-                T.BeltScaleOHMR,
-                T.BeltScaleCHMR,
-                
-                U1.Name as ProductionUnitName,
-                T.ProductionQty,
-                
-                H.EquipmentName as HaulerName,
-                
-                T.NoofTrip,
-                T.QtyTrip,
-                U2.Name as TripQtyUnitName,
-                
-                T.TotalQty,
-                T.OHMR,
-                T.CHMR,
-                T.RunningHr,
-                T.TotalStoppageHours,
-                T.Remarks,
-
-                CU.UserName as CreatedByName,
-                T.CreatedDate,
-                UU.UserName as UpdatedByName,
-                T.UpdatedDate
-
-            FROM [Trans].[TblCrusher] T
-            LEFT JOIN [Master].[TblShift] S ON T.ShiftId = S.SlNo
-            LEFT JOIN [Master].[TblOperator] O ON T.ShiftInChargeId = O.SlNo 
-            LEFT JOIN [Master].[TblPlant] P ON T.PlantId = P.SlNo
-            LEFT JOIN [Master].[TblUnit] U1 ON T.ProductionUnitId = U1.SlNo
-            LEFT JOIN [Master].[TblEquipment] H ON T.HaulerId = H.SlNo
-            LEFT JOIN [Master].[TblUnit] U2 ON T.TripQtyUnitId = U2.SlNo
-            LEFT JOIN [Master].[TblUser] CU ON T.CreatedBy = CU.SlNo
-            LEFT JOIN [Master].[TblUser] UU ON T.UpdatedBy = UU.SlNo
-            
-            WHERE T.IsDelete = 0
-            ORDER BY T.[Date] DESC, T.SlNo DESC
-            OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY
+                c.SlNo,
+                p.PlantName as EquipmentName,
+                c.RunningHr,
+                c.TotalQty,
+                0 as Budget,
+                c.TotalQty as Actual
+            FROM Trans.TblCrusher c
+            LEFT JOIN Master.TblPlant p ON c.PlantId = p.PlantId
+            WHERE c.Date = @Date AND c.ShiftId = @ShiftId
         `;
 
-        const result = await sql.query(query);
-        console.log("Query Successful. Rows:", result.recordset.length);
+        const res = await pool.request()
+            .input('Date', sql.Date, dateInput) // Try sql.Date first
+            .input('ShiftId', sql.Int, shiftId)
+            .query(crusherQuery);
 
-    } catch (err) {
-        console.error("SQL ERROR:", err);
-    } finally {
-        await sql.close();
+        console.log("Result using sql.Date:");
+        console.log(res.recordset);
+
+        // Also try literal string in query to debug
+        const crusherQueryLiteral = `
+            SELECT TOP 5 * FROM Trans.TblCrusher c WHERE c.Date = '${dateInput}' AND c.ShiftId = ${shiftId}
+        `;
+        const resLit = await pool.request().query(crusherQueryLiteral);
+        console.log("Result using Literal String:");
+        console.log(resLit.recordset);
+
+        await pool.close();
+
+    } catch (error) {
+        console.error('Error executing query:', error);
     }
 }
 
-runQuery();
+debugQuery();

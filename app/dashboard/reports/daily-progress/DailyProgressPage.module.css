@@ -114,14 +114,36 @@
 }
 
 /* Report Header in Sheet */
-.header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 1rem;
+/* Report Header in Sheet */
+.reportHeader {
     text-align: center;
+    margin-bottom: 2rem;
+    color: #0f172a;
+}
+
+.reportHeader h1 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.reportHeader h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0.25rem 0;
+}
+
+.reportHeader h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0.25rem 0;
+}
+
+.reportHeader p {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    color: #0f172a;
 }
 
 /* Table Specifics */

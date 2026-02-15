@@ -12,7 +12,8 @@ export default function ShiftReportTable({ data, date, shiftName }) {
         sectionB_Loading,
         sectionC_Coal, sectionC_Waste,
         sectionD_Coal, sectionD_Waste,
-        sectionE_Coal, sectionE_Waste
+        sectionE_Coal, sectionE_Waste,
+        crushingDetails, dewateringDetails
     } = data;
 
     const fmt = (val) => val != null ? Number(val).toLocaleString('en-IN') : '0';
@@ -30,20 +31,12 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                         <div>SHIFT: {shiftName}</div>
                         {/* Incharge Details - Table Layout */}
                         <div className="mt-2 text-xs">
-                            <div className="font-bold border-b border-black mb-1 w-fit">Incharge</div>
-                            <table className="text-left border-collapse">
-                                <tbody>
-                                    {incharge.map((inc, i) => (
-                                        <tr key={i}>
-                                            <td className="font-bold pr-2 align-top">{inc.scalename}:</td>
-                                            <td>{inc.ShiftInchare || '-'}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <div className="font-bold mb-1 w-fit">
+                                Incharge : {data.inchargeDetails?.LargeScale || '-'}(Large Scale), {data.inchargeDetails?.SmallScale || '-'}(Mid Scale)
+                            </div>
                         </div>
                     </div>
-                    <div className="text-right font-bold text-red-600">Date: {date}</div>
+                    <div className="text-right font-bold text-red-600">Date: {date ? date.split('-').reverse().join('/') : '-'}</div>
                 </div>
             </div>
 
@@ -288,6 +281,66 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* SECTION F: CRUSHING DETAILS */}
+            <h3 className={styles.sectionHeader}>F. Crushing Details (1150 TPH)</h3>
+            <div className="mb-6">
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Sl No</th>
+                            <th>EQUIPMENT .</th>
+                            <th>Hrs</th>
+                            <th>Qty</th>
+                            <th>Budget</th>
+                            <th>Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {crushingDetails && crushingDetails.length > 0 ? (
+                            crushingDetails.map((r, i) => (
+                                <tr key={i}>
+                                    <td>{i + 1}</td>
+                                    <td>{r.EquipmentName || '-'}</td>
+                                    <td>{r.RunningHr}</td>
+                                    <td>{fmt(r.TotalQty)}</td>
+                                    <td>{fmt(r.Budget)}</td>
+                                    <td>{fmt(r.Actual)}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="6" className="text-center">No Data</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* SECTION G: DEWATERING PUMP DETAILS */}
+            <h3 className={styles.sectionHeader}>G. Dewatering Pump Details :</h3>
+            <div className="mb-6 w-1/2">
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Sl No</th>
+                            <th>Pump</th>
+                            <th>Rn Hr</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {dewateringDetails && dewateringDetails.length > 0 ? (
+                            dewateringDetails.map((r, i) => (
+                                <tr key={i}>
+                                    <td>{i + 1}</td>
+                                    <td>{r.Pump || '-'}</td>
+                                    <td>{r.RunHr}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="3" className="text-center">No Data</td></tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
 
         </div>

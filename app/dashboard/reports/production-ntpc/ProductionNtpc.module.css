@@ -118,11 +118,12 @@
 /* Report Header in Sheet */
 .header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     margin-bottom: 2rem;
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 1rem;
+    text-align: center;
 }
 
 /* Table Specifics */
@@ -173,8 +174,7 @@
 }
 
 .totalRow td {
-    background-color: #bfdbfe;
-    /* blue-200 */
+    /* background-color removed */
     border-top: 2px solid #0f172a !important;
     font-weight: 800;
 }

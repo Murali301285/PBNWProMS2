@@ -42,9 +42,10 @@ async function run() {
         console.log("Testing LIST...");
         const listRes = await fetch(`${baseUrl}/api/transaction/water-tanker-entry`);
         const listJson = await listRes.json();
-        console.log("List Count:", listJson.length);
+        const listData = listJson.data || [];
+        console.log("List Count:", listData.length);
 
-        const myEntry = listJson.find(x => x.Remarks === 'Test Entry via Script');
+        const myEntry = listData.find(x => x.Remarks === 'Test Entry via Script');
         if (myEntry) {
             console.log("Found Entry ID:", myEntry.SlNo);
 

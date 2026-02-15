@@ -41,6 +41,37 @@ export default function ProductionTsmplPage() {
         setBreakdown(prev => ({ ...prev, [field]: parseFloat(val) || 0 }));
     };
 
+    // Fetch breakdown data when Date/Shift changes
+    useEffect(() => {
+        const fetchBreakdown = async () => {
+            if (!filter.date || !filter.shiftId) {
+                setBreakdown({ shiftChange: 0, breakTime: 0, blasting: 0, others: 0 }); // Reset if invalid selection
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/reports/production-tsmpl?type=breakdown&date=${filter.date}&shiftId=${filter.shiftId}`);
+                const result = await res.json();
+
+                if (result.success && result.data) {
+                    setBreakdown({
+                        shiftChange: result.data.ShiftChangeTime || 0,
+                        breakTime: result.data.Break_TeaTime || 0,
+                        blasting: result.data.BlastingTime || 0,
+                        others: result.data.Others || 0
+                    });
+                    toast.success('Breakdown data loaded');
+                } else {
+                    setBreakdown({ shiftChange: 0, breakTime: 0, blasting: 0, others: 0 }); // Reset if not found
+                }
+            } catch (error) {
+                console.error("Error fetching breakdown:", error);
+            }
+        };
+
+        fetchBreakdown();
+    }, [filter.date, filter.shiftId]);
+
     // Calculate Totals for Preview
     const calculatedStats = useMemo(() => {
         const totalMins = breakdown.shiftChange + breakdown.breakTime + breakdown.blasting + breakdown.others;
@@ -293,7 +324,7 @@ export default function ProductionTsmplPage() {
             {/* Report Content */}
             {data && (
                 <div className={styles.reportSheet} id="print-area">
-                    <ProductionTsmplTable data={data} loading={loading} />
+                    <ProductionTsmplTable data={data} loading={loading} date={filter.date} />
                 </div>
             )}
         </div>

@@ -210,7 +210,7 @@ export default function ProductionNtpcPage() {
             {/* Report Content */}
             {data && (
                 <div className={styles.reportSheet} id="print-area">
-                    <ProductionNtpcTable data={data} loading={loading} />
+                    <ProductionNtpcTable data={data} loading={loading} date={filter.date} />
                 </div>
             )}
         </div>

@@ -52,17 +52,24 @@ export default function HaulingTripTable({ data, date }) {
     const handlePrint = () => window.print();
     const handleExportExcel = () => alert("Excel Export pending UI verification.");
 
+    // Helper for table section header (now just Month/Year if needed, or keeping section title)
+    // User wants main header: Hauling Model Wise Trip/Hr
+    // The tables are: Trip/Hr and Quantity.
+    // I will keep the specific table titles but remove the redundant main title if it was there? 
+    // The renderHeader used to put "Hauling Model Wise Trip / Hr. Month" in standard <th>.
+    // I'll keep the section distinction but maybe style it simpler or consistent.
+
     const renderHeader = (title) => (
         <thead>
-            <tr className="bg-white">
-                <th colSpan={dates.length + 2} className="text-left py-2">
-                    <h3 className="text-blue-700 font-bold text-lg underline">{title} {monthName}</h3>
+            <tr className={styles.blueHeader}>
+                <th colSpan={dates.length + 2} className="text-left py-2 bg-white border-0">
+                    <h3 className="text-blue-700 font-bold text-lg underline ml-2">{title} {monthName}</h3>
                 </th>
             </tr>
             <tr className="bg-slate-100 text-xs font-bold text-slate-700 text-center border">
                 <th className="bg-white border px-2 py-1 w-40">Model</th>
                 {dates.map(d => (
-                    <th key={d} className="border px-1 w-12">{d} {monthName}</th>
+                    <th key={d} className="border px-1 w-12">{d}</th>
                 ))}
                 <th key="MTD" className="border px-2 bg-slate-200">MTD</th>
             </tr>
@@ -175,16 +182,13 @@ export default function HaulingTripTable({ data, date }) {
 
     return (
         <div className={styles.container}>
-            <div className="flex justify-end gap-2 mb-4 no-print">
-                <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-1 bg-slate-100 border rounded cursor-pointer">
-                    <Printer size={16} /> Print
-                </button>
-                <button onClick={handleExportExcel} className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded cursor-pointer">
-                    <Download size={16} /> Excel
-                </button>
-            </div>
-
             <div className={styles.reportSheet}>
+                <div className={styles.header}>
+                    <h1 className="text-xl font-bold uppercase text-slate-800">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 className="text-lg font-bold uppercase text-slate-800">PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4 font-bold uppercase">Hauling Model Wise Trip/Hr</h3>
+                    <div className="mt-2 font-bold text-slate-600 text-sm">Date: {new Date(date).toLocaleDateString('en-GB')}</div>
+                </div>
 
                 {/* 1. TRIP / HR TABLE */}
                 <div className="mb-8 overflow-x-auto">

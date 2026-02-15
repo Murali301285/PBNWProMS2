@@ -27,7 +27,7 @@ export async function POST(req) {
             'TblSMECategory', 'TblDrillingRemarks', 'TblEquipmentOwnerType',
             'TblOperatorCategory', 'TblOperatorSubCategory', 'TblStoppageReason', 'TblStoppageCategory',
             'tblParty', 'TblBDSEntry', 'TblRole_New', 'TblUser_New', 'TblDrillingAgency',
-            'tblFillingPoint', 'tblFillingPump'
+            'tblFillingPoint', 'tblFillingPump', 'TblConversionFactor'
         ];
         if (!validTables.includes(table)) return NextResponse.json({ message: 'Invalid table' }, { status: 403 });
 
@@ -218,7 +218,17 @@ export async function POST(req) {
 
             // Add Audit Columns
             const userId = 2; // Default to 'admin'
-            keys.push('CreatedBy', 'CreatedDate', 'UpdatedBy', 'UpdatedDate', 'IsDelete');
+            // Standard Audit Columns
+            const auditColsToAdd = [];
+
+            // TblUser_New Missing CreatedBy, UpdatedBy
+            if (table !== 'TblUser_New') {
+                auditColsToAdd.push('CreatedBy', 'UpdatedBy');
+            }
+            // All tables have CreatedDate, UpdatedDate, IsDelete
+            auditColsToAdd.push('CreatedDate', 'UpdatedDate', 'IsDelete');
+
+            keys.push(...auditColsToAdd);
 
             const cols = '[' + keys.join('], [') + ']';
             const vars = keys.map(k => k.includes('Date') ? 'GETDATE()' : `@${k}`).join(', ');
@@ -335,7 +345,10 @@ export async function POST(req) {
                 !auditCols.includes(k.toLowerCase())
             );
 
-            const setClause = keys.map(k => `[${k}] = @${k}`).join(', ') + ', [UpdatedBy] = @UpdatedBy, [UpdatedDate] = GETDATE()';
+            let setClause = keys.map(k => `[${k}] = @${k}`).join(', ');
+            if (table !== 'TblUser_New') {
+                setClause += ', [UpdatedBy] = @UpdatedBy, [UpdatedDate] = GETDATE()';
+            }
             const userId = 2;
 
             const inputs = keys.map(k => {
@@ -349,7 +362,11 @@ export async function POST(req) {
             });
 
             // Add UpdatedBy
-            inputs.push({ name: 'UpdatedBy', type: 'Int', value: userId });
+            // SPECIAL FIX: TblUser_New apparently doesn't have UpdatedBy?
+            if (table !== 'TblUser_New') {
+                inputs.push({ name: 'UpdatedBy', type: 'Int', value: userId });
+            }
+            // TblUser_New DOES have UpdatedDate, so setClause logic (already using GETDATE()) is fine.
             inputs.push({ name: 'id', type: 'Int', value: id });
 
             const query = `UPDATE ${tableName} SET ${setClause} WHERE SlNo = @id`;
@@ -392,7 +409,10 @@ export async function POST(req) {
 
     } catch (error) {
         console.error("CRUD API Error:", error);
-        logger.error(`CRUD API Error [${body?.action || 'unknown'}]: ${error.message}`, { stack: error.stack, table: body?.table });
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        logger.error(`CRUD API Error [${body?.action || 'unknown'}]: ${error.message || error}`, { stack: error.stack, table: body?.table });
+
+        // Ensure we always return a JSON with a message
+        const errorMsg = error.message || (typeof error === 'string' ? error : 'Unknown server error');
+        return NextResponse.json({ message: errorMsg, error: errorMsg, details: error }, { status: 500 });
     }
 }

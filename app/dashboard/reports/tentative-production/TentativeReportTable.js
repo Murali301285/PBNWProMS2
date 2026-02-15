@@ -1,6 +1,5 @@
-import styles from './TentativeReportTable.module.css';
-import { Download, Printer } from 'lucide-react';
-import * as XLSX from 'xlsx-js-style';
+
+import styles from './TentativeProduction.module.css';
 
 /**
  * Custom Layout for Tentative Production Qty Report
@@ -18,7 +17,7 @@ export default function TentativeReportTable({ data, loading }) {
 
     const { wasteHandling, coalProduction, wp3, obRehandling, coalRehandling, headerInfo } = data;
 
-    // --- Totals Calculation Helpers ---
+    // --- Totals Calculation Helpers (Duplicated from Page but essential for rendering) ---
     const calculateWasteTotal = (arr) => arr.reduce((acc, row) => ({
         OverBurden: acc.OverBurden + (row.OverBurden || 0),
         TopSoil: acc.TopSoil + (row.TopSoil || 0),
@@ -45,417 +44,248 @@ export default function TentativeReportTable({ data, loading }) {
     const obRehandlingTotal = calculateRehandlingTotal(obRehandling);
     const coalRehandlingTotal = calculateRehandlingTotal(coalRehandling);
 
-
-    // --- Export Logic ---
-    const handlePrint = () => {
-        window.print();
-    };
-
-    const handleExportExcel = () => {
-        const wb = XLSX.utils.book_new();
-        const wsData = [];
-
-        // Title
-        wsData.push(["Tentative Production Qty"]);
-        wsData.push([`Date: ${headerInfo?.Date || '-'}`, "", `Shift: ${headerInfo?.ShiftName || '-'}`]);
-        wsData.push([`Relay: ${headerInfo?.Relay || '-'}`]);
-        wsData.push([`Shift Incharge: ${headerInfo?.ShiftIncharge || '-'}`]);
-        wsData.push([]); // Spacer
-
-        // --- Waste Handling ---
-        wsData.push(["Waste Handling", "", "", "", "", "", "Mapio"]);
-        wsData.push(["Model", "OB/IB", "Factor", "Top Soil", "Factor", "Total Trip", "Qty (BCM)", "Trip", "Qty (BCM)", "Diff"]);
-
-        wasteHandling.forEach(row => {
-            wsData.push([
-                row.EquipmentGroup,
-                row.OverBurden,
-                row.OverBurdenFactor,
-                row.TopSoil,
-                row.TopSoilFactor,
-                row.TotalTrip,
-                row.QtyBcm,
-                row.MapioTrip,
-                row.MapioQty,
-                row.Diff
-            ]);
-        });
-        // Total Waste
-        wsData.push(["Total", wasteTotal.OverBurden, "", wasteTotal.TopSoil, "", wasteTotal.TotalTrip, wasteTotal.QtyBcm, 0, 0, wasteTotal.Diff]);
-        wsData.push([]);
-
-        // --- Coal Production ---
-        wsData.push(["Coal Production", "", "", "", "", "Mapio"]);
-        wsData.push(["Model", "ROM Coal", "Factor", "Qty (MT)", "", "Trip", "Qty (MT)", "Diff"]);
-        coalProduction.forEach(row => {
-            wsData.push([
-                row.EquipmentGroup,
-                row.RomCoal,
-                row.Factor,
-                row.Qty,
-                "",
-                row.MapioTrip,
-                row.MapioQty,
-                row.Diff
-            ]);
-        });
-        wsData.push(["Total", coalTotal.RomCoal, "", coalTotal.Qty, "", 0, 0, coalTotal.Diff]);
-        wsData.push([]);
-
-        // --- WP-3 ---
-        wsData.push(["WP-3 Quantity"]);
-        wsData.push(["Model", "OB/IB", "Factor", "Top Soil", "Factor", "Total Trip", "Qty (BCM)"]);
-        wp3.forEach(row => {
-            wsData.push([
-                row.EquipmentGroup,
-                row.OverBurden,
-                row.OverBurdenFactor,
-                row.TopSoil,
-                row.TopSoilFactor,
-                row.TotalTrip,
-                row.QtyBcm
-            ]);
-        });
-        wsData.push(["Total", wp3Total.OverBurden, "", wp3Total.TopSoil, "", wp3Total.TotalTrip, wp3Total.QtyBcm]);
-        wsData.push([]);
-
-        // --- Rehandling ---
-        wsData.push(["OB Rehandling/Carpeting Quantity"]);
-        wsData.push(["Model", "Trip", "Factor", "Qty (BCM)"]);
-        obRehandling.forEach(row => {
-            wsData.push([row.EquipmentGroup, row.Trip, row.Factor, row.Qty]);
-        });
-        wsData.push(["Total", obRehandlingTotal.Trip, "", obRehandlingTotal.Qty]);
-        wsData.push([]);
-
-        wsData.push(["Coal Rehandling Quantity"]);
-        wsData.push(["Model", "Trip", "Factor", "Qty (MT)"]);
-        coalRehandling.forEach(row => {
-            wsData.push([row.EquipmentGroup, row.Trip, row.Factor, row.Qty]);
-        });
-        wsData.push(["Total", coalRehandlingTotal.Trip, "", coalRehandlingTotal.Qty]);
-
-
-        // Create Sheet
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Styling
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-                if (!ws[cellRef]) continue;
-
-                // Default Style: Border + Font
-                const cellStyle = {
-                    font: { name: "Calibri", sz: 10 },
-                    border: {
-                        top: { style: "thin" },
-                        bottom: { style: "thin" },
-                        left: { style: "thin" },
-                        right: { style: "thin" }
-                    },
-                    alignment: { vertical: "center", horizontal: "center" } // Center align everything by default
-                };
-
-                // Alignment overrides
-                // Column 0 (Model) -> Left
-                if (C === 0) cellStyle.alignment.horizontal = "left";
-
-
-                // Header / Label Styling Logic based on Row Content
-                const rowVal = wsData[R];
-
-                if (!rowVal) continue;
-
-                const firstColVal = rowVal[0];
-                if (typeof firstColVal === 'string' && (
-                    firstColVal.includes("Waste Handling") ||
-                    firstColVal.includes("Coal Production") ||
-                    firstColVal.includes("WP-3") ||
-                    firstColVal.includes("Rehandling") ||
-                    firstColVal.includes("Top Soil") || // Sub-header row
-                    firstColVal === "Model" || // Table Header
-                    firstColVal === "Total"
-                )) {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "E2E8F0" } }; // Slate-200 (Darker for visibility)
-
-                    if (rowVal.length === 1 || (rowVal[1] === "" && rowVal[2] === "")) {
-                        // Section Title - make it slightly distinct slightly darker text?
-                        cellStyle.font.sz = 11;
-                    }
-                    if (firstColVal === "Model") {
-                        // Table Header Row 
-                        cellStyle.fill = { fgColor: { rgb: "CBD5E1" } }; // Slate-300 for main headers
-                    }
-                    if (firstColVal === "Total") {
-                        // Total Row
-                        cellStyle.fill = { fgColor: { rgb: "E0F2FE" } }; // Sky-100
-                    }
-                }
-
-                // Header Info (Date/Shift) - Bold Labels
-                if (R < 4) {
-                    cellStyle.border = {}; // No borders for top info
-                    cellStyle.font.bold = true;
-                }
-
-                ws[cellRef].s = cellStyle;
-            }
-        }
-
-        // Auto width
-        ws['!cols'] = [{ wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
-
-        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, `TentativeProduction_${headerInfo?.Date || 'Report'}.xlsx`);
+    // Format Date Helpers (dd/mm/yyyy)
+    const formatDate = (d) => {
+        if (!d) return '';
+        // Assuming d is YYYY-MM-DD or similar standard
+        const dateObj = new Date(d);
+        if (isNaN(dateObj.getTime())) return d;
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        return `${day}/${month}/${year}`;
     };
 
     return (
-        <div className={styles.container}>
+        <div className="p-4 bg-white min-h-screen">
+            {/* Header */}
+            <div className="flex flex-col items-center mb-6 w-full" style={{ textAlign: 'center' }}>
+                <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide text-center w-full" style={{ textAlign: 'center' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                <h2 className="text-xl font-bold text-slate-900 uppercase mt-1 text-center w-full" style={{ textAlign: 'center' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                <h3 className="text-xl font-bold text-blue-900 uppercase underline decoration-2 underline-offset-4 mt-2 mb-3 text-center w-full" style={{ textAlign: 'center' }}>TENTATIVE PRODUCTION QTY</h3>
 
-            {/* Action Bar */}
-            <div className="flex justify-end gap-2 mb-4 print:hidden">
-                <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded hover:bg-slate-200 border border-slate-300">
-                    <Printer size={14} /> Print / PDF
-                </button>
-                <button onClick={handleExportExcel} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 shadow-sm">
-                    <Download size={14} /> Export Excel
-                </button>
+                <div className="flex flex-col items-center gap-1 text-sm font-bold text-slate-800 uppercase w-full text-center" style={{ textAlign: 'center', alignItems: 'center' }}>
+                    <div>SHIFT: {headerInfo?.ShiftName}</div>
+                    <div>Incharge : {headerInfo?.ShiftIncharge || '-'}</div>
+                    <div>Date: {formatDate(headerInfo?.Date)}</div>
+                </div>
             </div>
 
-            <div className={styles.reportSheet} id="print-area">
-
-                {/* Header */}
-                <div className={styles.header}>
-                    <div className="flex-1">
-                        <h1 className="text-xl font-bold uppercase text-slate-900 mb-2">Tentative Production Qty</h1>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm font-bold text-slate-900">
-                            <p>Date : <span>{headerInfo?.Date}</span></p>
-                            <p>Shift : <span>{headerInfo?.ShiftName}</span></p>
-                            <p className="col-span-2">Relay : <span>{headerInfo?.Relay || 'N/A'}</span></p>
-                            <p className="col-span-2">Shift Incharge : <span>{headerInfo?.ShiftIncharge || 'N/A'}</span></p>
-                        </div>
-                    </div>
-                    <div>
-                        {/* Logo Placeholder - User can replace or dynamic */}
-                        <div className="text-right">
-                            {/* Assuming Logo image logic, but placing text for now */}
-                            <div className="text-sky-800 font-bold text-lg">THRIVENI SAINIK</div>
-                        </div>
-                    </div>
+            {/* 1. Coal Production */}
+            <div className="mb-6">
+                <div className={styles.sectionTitle}>
+                    Coal Production
                 </div>
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Model</th>
+                            <th>ROM COAL</th>
+                            <th>Factor</th>
+                            <th>Qty (MT)</th>
+                            {/* Mapio Columns */}
+                            <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
+                            <th>Qty (MT)</th>
+                            <th>Diff.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {coalProduction.map((row, i) => (
+                            <tr key={i}>
+                                <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
+                                <td>{row.RomCoal}</td>
+                                <td>{row.Factor}</td>
+                                <td>{row.Qty}</td>
+                                {/* Mapio Data */}
+                                <td className="border-l-2 border-slate-800">{row.MapioTrip}</td>
+                                <td>{row.MapioQty}</td>
+                                <td>{row.Diff}</td>
+                            </tr>
+                        ))}
+                        <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
+                            <td className="text-left pl-2">Total</td>
+                            <td>{coalTotal.RomCoal}</td>
+                            <td></td>
+                            <td>{coalTotal.Qty}</td>
+                            {/* Mapio Total */}
+                            <td className="border-l-2 border-slate-800">0</td>
+                            <td>0</td>
+                            <td>{coalTotal.Diff}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                {/* 1. Waste Handling (Merged with Mapio) */}
-                <div className="border border-slate-900 mt-4">
-                    <div className="bg-white font-extrabold text-center border-b border-slate-900 py-1 flex justify-between px-4 uppercase text-sm">
-                        <span>Waste Handling</span>
-                        <span className="mr-12">Mapio</span>
-                    </div>
-                    <table className={`${styles.table} w-full`}>
-                        <thead>
-                            <tr>
-                                <th>Model</th>
-                                <th>OB/IB</th>
-                                <th>Factor</th>
-                                <th>TOP SOIL</th>
-                                <th>Factor</th>
-                                <th>Total Trip</th>
-                                <th>Qty (BCM)</th>
-                                {/* Mapio Columns */}
-                                <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
-                                <th>Qty (BCM)</th>
-                                <th>Diff.</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {wasteHandling.map((row, i) => (
-                                <tr key={i}>
-                                    <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                    <td className="text-center">{row.OverBurden}</td>
-                                    <td className="text-center">{row.OverBurdenFactor}</td>
-                                    <td className="text-center">{row.TopSoil}</td>
-                                    <td className="text-center">{row.TopSoilFactor}</td>
-                                    <td className="text-center">{row.TotalTrip}</td>
-                                    <td className="text-center">{row.QtyBcm}</td>
-                                    {/* Mapio Data */}
-                                    <td className="border-l-2 border-slate-800 text-center">{row.MapioTrip}</td>
-                                    <td className="text-center">{row.MapioQty}</td>
-                                    <td className="text-center">{row.Diff}</td>
-                                </tr>
-                            ))}
-                            {/* Total Row */}
-                            <tr className="bg-slate-300 font-extrabold border-t-2 border-slate-800">
-                                <td className="text-left pl-2">Total</td>
-                                <td className="text-center">{wasteTotal.OverBurden}</td>
-                                <td></td>
-                                <td className="text-center">{wasteTotal.TopSoil}</td>
-                                <td></td>
-                                <td className="text-center">{wasteTotal.TotalTrip}</td>
-                                <td className="text-center">{wasteTotal.QtyBcm}</td>
-                                {/* Mapio Total */}
-                                <td className="border-l-2 border-slate-800 text-center">0</td>
-                                <td className="text-center">0</td>
-                                <td className="text-center">{wasteTotal.Diff}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            {/* 2. WP-3 Quantity */}
+            <div className="mb-6">
+                <div className={styles.sectionTitle}>
+                    WP-3 Quantity
                 </div>
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Model</th>
+                            <th>OB/IB</th>
+                            <th>Factor</th>
+                            <th>Top Soil</th>
+                            <th>Factor</th>
+                            <th>Total Trip</th>
+                            <th>Qty (BCM)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {wp3.map((row, i) => (
+                            <tr key={i}>
+                                <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
+                                <td>{row.OverBurden}</td>
+                                <td>{row.OverBurdenFactor}</td>
+                                <td>{row.TopSoil}</td>
+                                <td>{row.TopSoilFactor}</td>
+                                <td>{row.TotalTrip}</td>
+                                <td>{row.QtyBcm}</td>
+                            </tr>
+                        ))}
+                        <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
+                            <td className="text-left pl-2">Total</td>
+                            <td>{wp3Total.OverBurden}</td>
+                            <td></td>
+                            <td>{wp3Total.TopSoil}</td>
+                            <td></td>
+                            <td>{wp3Total.TotalTrip}</td>
+                            <td>{wp3Total.QtyBcm}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                {/* 2. Coal Production (Merged with Mapio) */}
-                <div className="border border-slate-900 mt-4">
-                    <div className="bg-white font-extrabold text-center border-b border-slate-900 py-1 flex justify-between px-4 uppercase text-sm">
-                        <span>Coal Production</span>
-                        <span className="mr-12">Mapio</span>
+            {/* 3 & 4. Rehandling Tables (Coal Rehandling then OB Rehandling as per request) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+
+                {/* Coal Rehandling */}
+                <div>
+                    <div className={styles.sectionTitle}>
+                        Coal Rehandling Quantity
                     </div>
-                    <table className={`${styles.table} w-full`}>
+                    <table className={styles.table}>
                         <thead>
-                            <tr>
+                            <tr className={styles.blueHeader}>
                                 <th>Model</th>
-                                <th>ROM COAL</th>
+                                <th>Trip</th>
                                 <th>Factor</th>
                                 <th>Qty (MT)</th>
-                                {/* Mapio Columns */}
-                                <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
-                                <th>Qty (MT)</th>
-                                <th>Diff.</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {coalProduction.map((row, i) => (
+                            {coalRehandling.map((row, i) => (
                                 <tr key={i}>
                                     <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                    <td className="text-center">{row.RomCoal}</td>
-                                    <td className="text-center">{row.Factor}</td>
-                                    <td className="text-center">{row.Qty}</td>
-                                    {/* Mapio Data */}
-                                    <td className="border-l-2 border-slate-800 text-center">{row.MapioTrip}</td>
-                                    <td className="text-center">{row.MapioQty}</td>
-                                    <td className="text-center">{row.Diff}</td>
+                                    <td>{row.Trip}</td>
+                                    <td>{row.Factor}</td>
+                                    <td>{row.Qty}</td>
                                 </tr>
                             ))}
-                            {/* Total Row */}
-                            <tr className="bg-slate-300 font-extrabold border-t-2 border-slate-800">
+                            <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
                                 <td className="text-left pl-2">Total</td>
-                                <td className="text-center">{coalTotal.RomCoal}</td>
+                                <td>{coalRehandlingTotal.Trip}</td>
                                 <td></td>
-                                <td className="text-center">{coalTotal.Qty}</td>
-                                {/* Mapio Total */}
-                                <td className="border-l-2 border-slate-800 text-center">0</td>
-                                <td className="text-center">0</td>
-                                <td className="text-center">{coalTotal.Diff}</td>
+                                <td>{coalRehandlingTotal.Qty}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                {/* 3. WP-3 Quantity */}
-                <div className="border border-slate-900 mt-4">
-                    <div className="bg-white font-extrabold text-center border-b border-slate-900 py-1 uppercase text-sm">WP-3 Quantity</div>
-                    <table className={`${styles.table} w-full`}>
+                {/* OB Rehandling */}
+                <div>
+                    <div className={styles.sectionTitle}>
+                        OB Rehandling/Carpeting Quantity
+                    </div>
+                    <table className={styles.table}>
                         <thead>
-                            <tr>
+                            <tr className={styles.blueHeader}>
                                 <th>Model</th>
-                                <th>OB/IB</th>
+                                <th>Trip</th>
                                 <th>Factor</th>
-                                <th>Top Soil</th>
-                                <th>Factor</th>
-                                <th>Total Trip</th>
                                 <th>Qty (BCM)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {wp3.map((row, i) => (
+                            {obRehandling.map((row, i) => (
                                 <tr key={i}>
                                     <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                    <td className="text-center">{row.OverBurden}</td>
-                                    <td className="text-center">{row.OverBurdenFactor}</td>
-                                    <td className="text-center">{row.TopSoil}</td>
-                                    <td className="text-center">{row.TopSoilFactor}</td>
-                                    <td className="text-center">{row.TotalTrip}</td>
-                                    <td className="text-center">{row.QtyBcm}</td>
+                                    <td>{row.Trip}</td>
+                                    <td>{row.Factor}</td>
+                                    <td>{row.Qty}</td>
                                 </tr>
                             ))}
-                            <tr className="bg-slate-300 font-extrabold border-t-2 border-slate-800">
+                            <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
                                 <td className="text-left pl-2">Total</td>
-                                <td className="text-center">{wp3Total.OverBurden}</td>
+                                <td>{obRehandlingTotal.Trip}</td>
                                 <td></td>
-                                <td className="text-center">{wp3Total.TopSoil}</td>
-                                <td></td>
-                                <td className="text-center">{wp3Total.TotalTrip}</td>
-                                <td className="text-center">{wp3Total.QtyBcm}</td>
+                                <td>{obRehandlingTotal.Qty}</td>
                             </tr>
                         </tbody>
                     </table>
-                </div>
-
-                {/* 4. Rehandling Tables (Side by Side potentially, or stacked as per PDF flow) */}
-                <div className="mt-4 space-y-4">
-                    {/* OB Rehandling */}
-                    <div className="border border-slate-900">
-                        <div className="bg-white font-extrabold text-center border-b border-slate-900 py-1 uppercase text-sm">OB Rehandling/Carpeting Quantity</div>
-                        <table className={`${styles.table} w-full`}>
-                            <thead>
-                                <tr>
-                                    <th>Model</th>
-                                    <th>Trip</th>
-                                    <th>Factor</th>
-                                    <th>Qty (BCM)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {obRehandling.map((row, i) => (
-                                    <tr key={i}>
-                                        <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                        <td className="text-center">{row.Trip}</td>
-                                        <td className="text-center">{row.Factor}</td>
-                                        <td className="text-center">{row.Qty}</td>
-                                    </tr>
-                                ))}
-                                <tr className="bg-slate-300 font-extrabold border-t-2 border-slate-800">
-                                    <td className="text-left pl-2">Total</td>
-                                    <td className="text-center">{obRehandlingTotal.Trip}</td>
-                                    <td></td>
-                                    <td className="text-center">{obRehandlingTotal.Qty}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Coal Rehandling */}
-                    <div className="border border-slate-900">
-                        <div className="bg-white font-extrabold text-center border-b border-slate-900 py-1 uppercase text-sm">Coal Rehandling Quantity</div>
-                        <table className={`${styles.table} w-full`}>
-                            <thead>
-                                <tr>
-                                    <th>Model</th>
-                                    <th>Trip</th>
-                                    <th>Factor</th>
-                                    <th>Qty (MT)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {coalRehandling.map((row, i) => (
-                                    <tr key={i}>
-                                        <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                        <td className="text-center">{row.Trip}</td>
-                                        <td className="text-center">{row.Factor}</td>
-                                        <td className="text-center">{row.Qty}</td>
-                                    </tr>
-                                ))}
-                                <tr className="bg-slate-300 font-extrabold border-t-2 border-slate-800">
-                                    <td className="text-left pl-2">Total</td>
-                                    <td className="text-center">{coalRehandlingTotal.Trip}</td>
-                                    <td></td>
-                                    <td className="text-center">{coalRehandlingTotal.Qty}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
 
             </div>
+
+            {/* 5. Waste Handling (Moved to bottom) */}
+            <div className="mb-6">
+                {/* Section Header */}
+                <div className={styles.sectionTitle}>
+                    Waste Handling
+                </div>
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Model</th>
+                            <th>OB/IB</th>
+                            <th>Factor</th>
+                            <th>Top Soil</th>
+                            <th>Factor</th>
+                            <th>Total Trip</th>
+                            <th>Qty (BCM)</th>
+                            {/* Mapio Columns */}
+                            <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
+                            <th>Qty (BCM)</th>
+                            <th>Diff.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {wasteHandling.map((row, i) => (
+                            <tr key={i}>
+                                <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
+                                <td>{row.OverBurden}</td>
+                                <td>{row.OverBurdenFactor}</td>
+                                <td>{row.TopSoil}</td>
+                                <td>{row.TopSoilFactor}</td>
+                                <td>{row.TotalTrip}</td>
+                                <td>{row.QtyBcm}</td>
+                                {/* Mapio Data */}
+                                <td className="border-l-2 border-slate-800">{row.MapioTrip}</td>
+                                <td>{row.MapioQty}</td>
+                                <td>{row.Diff}</td>
+                            </tr>
+                        ))}
+                        {/* Total Row */}
+                        <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
+                            <td className="text-left pl-2">Total</td>
+                            <td>{wasteTotal.OverBurden}</td>
+                            <td></td>
+                            <td>{wasteTotal.TopSoil}</td>
+                            <td></td>
+                            <td>{wasteTotal.TotalTrip}</td>
+                            <td>{wasteTotal.QtyBcm}</td>
+                            {/* Mapio Total */}
+                            <td className="border-l-2 border-slate-800">0</td>
+                            <td>0</td>
+                            <td>{wasteTotal.Diff}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+
         </div>
     );
 }

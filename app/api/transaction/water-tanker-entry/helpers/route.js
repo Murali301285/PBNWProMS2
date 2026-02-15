@@ -14,14 +14,21 @@ export async function GET() {
             ORDER BY ShiftName
         `);
 
-        // 2. Filling Points (Used for Destination AND FillingPoint)
+        // 2. Destinations (Locations with IsDestination = 1)
+        const destinations = await executeQuery(`
+            SELECT SlNo, LocationName FROM [Master].[TblLocation] 
+            WHERE IsDelete = 0 AND IsActive = 1 AND IsDestination = 1
+            ORDER BY LocationName
+        `);
+
+        // 3. Filling Points
         const fillingPoints = await executeQuery(`
             SELECT SlNo, FillingPoint FROM [Master].[tblFillingPoint] 
             WHERE IsDelete = 0 AND IsActive = 1
             ORDER BY FillingPoint
         `);
 
-        // 3. Filling Pumps
+        // 4. Filling Pumps
         const fillingPumps = await executeQuery(`
             SELECT SlNo, FillingPump FROM [Master].[tblFillingPump] 
             WHERE IsDelete = 0 AND IsActive = 1
@@ -39,6 +46,7 @@ export async function GET() {
 
         return NextResponse.json({
             shifts,
+            destinations,
             fillingPoints,
             fillingPumps,
             haulers

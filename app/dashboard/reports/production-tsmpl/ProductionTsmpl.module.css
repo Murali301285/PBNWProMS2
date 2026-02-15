@@ -189,11 +189,12 @@
 /* Report Header in Sheet */
 .header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     margin-bottom: 2rem;
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 1rem;
+    text-align: center;
 }
 
 /* Table Specifics */
@@ -233,7 +234,7 @@
 
 /* Specific component overrides */
 .sectionHeader {
-    /* background-color: #bfdbfe; Removed */
+    background-color: #bfdbfe;
     font-weight: 700;
     text-align: center;
     border-bottom: 2px solid #0f172a !important;
@@ -249,8 +250,7 @@
 }
 
 .rowHeader {
-    background-color: #bfdbfe !important;
-    /* blue-200 */
+    /* background-color removed */
     color: #0f172a;
     font-weight: 700;
     text-align: center;

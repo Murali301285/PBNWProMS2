@@ -34,7 +34,10 @@ export default function ReportFilter({
     reportOptions = [],
     showReportType = true,
     singleDate = false,
-    children // NEW: Allow injecting custom inputs
+    children, // NEW: Allow injecting custom inputs
+    onFilterClick,
+    filterSummary,
+    filterCount
 }) {
     const router = useRouter(); // Initialize router
 
@@ -138,6 +141,23 @@ export default function ReportFilter({
 
             {/* Custom Inputs (e.g. Shift Selection) */}
             {children}
+
+            {/* Filter Toggle Button */}
+            {onFilterClick && (
+                <div className="relative">
+                    <button
+                        onClick={onFilterClick}
+                        className={`${styles.filterBtn} ${filterSummary ? styles.active : ''}`}
+                        title={filterSummary || "Filter Report"}
+                    >
+                        <Search size={18} />
+                        <span className="hidden md:inline">
+                            Filter {filterCount > 0 && <span className="font-bold ml-1">{filterCount}</span>}
+                        </span>
+                        {filterSummary && <span className={styles.badge} />}
+                    </button>
+                </div>
+            )}
 
             <div className="flex gap-2">
                 <button

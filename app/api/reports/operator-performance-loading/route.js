@@ -1,23 +1,36 @@
-import { getDbConnection, sql } from '@/lib/db';
+
+import { executeStoredProcedure } from '@/lib/db';
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req) {
     try {
-        const { date } = await req.json();
+        const body = await req.json();
+        const { date, operatorIds } = body;
 
-        if (!date) {
-            return NextResponse.json({ success: false, message: 'Date is required' }, { status: 400 });
-        }
+        console.log("Operator Report Request:", { date, operatorIds });
 
-        const pool = await getDbConnection();
-        const request = pool.request();
-        request.input('Date', sql.Date, date);
+        const params = [
+            { name: 'FromDate', value: date },
+            { name: 'ToDate', value: date },
+            { name: 'OperatorIds', value: operatorIds && operatorIds.length > 0 ? operatorIds.join(',') : null }
+        ];
 
-        const result = await request.query('EXEC ProMS2_SPReportOperatorPerformanceLoading @Date');
+        // executeStoredProcedure returns result.recordsets (array of arrays)
+        // PMS2_New_Sp_OperatorPerformanceLoadingReport returns 1 result set
+        const resultSets = await executeStoredProcedure(
+            '[dbo].[PMS2_New_Sp_OperatorPerformanceLoadingReport]',
+            params
+        );
 
-        return NextResponse.json({ success: true, data: result.recordset || [] });
+        const data = resultSets && resultSets.length > 0 ? resultSets[0] : [];
+        console.log(`Fetched ${data.length} rows`);
+
+        return NextResponse.json(data);
+
     } catch (error) {
-        console.error("Operator Performance Report API Error:", error);
-        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        console.error("Operator Report API Error:", error);
+        return NextResponse.json({ message: error.message }, { status: 500 });
     }
 }

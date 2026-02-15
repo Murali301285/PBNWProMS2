@@ -175,7 +175,47 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
     }, [pathname, menuItems, loading]);
 
     const toggleSubMenu = (id) => {
-        setExpandedMenus(prev => ({ ...prev, [id]: !prev[id] }));
+        setExpandedMenus(prev => {
+            const isCurrentlyOpen = prev[id];
+
+            if (isCurrentlyOpen) {
+                // Just close this specific item
+                const next = { ...prev };
+                delete next[id];
+                return next;
+            } else {
+                // Open this item, close others (Accordion behavior)
+                // 1. Find the lineage (parents) of this item to keep them open
+                const lineage = [];
+                const findLineage = (items, target, currentPath = []) => {
+                    for (const item of items) {
+                        const itemId = item.id || item.name;
+                        if (itemId === target) {
+                            lineage.push(...currentPath);
+                            return true;
+                        }
+                        if (item.subItems && item.subItems.length > 0) {
+                            if (findLineage(item.subItems, target, [...currentPath, itemId])) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+
+                // Search in main menu items
+                findLineage(menuItems, id);
+
+                // If not found in menuItems, check bottomItems (though currently empty)
+                // findLineage(bottomItems, id);
+
+                // 2. Build new state: Lineage + Self = Open
+                const next = {};
+                lineage.forEach(pId => next[pId] = true);
+                next[id] = true;
+                return next;
+            }
+        });
     };
 
 

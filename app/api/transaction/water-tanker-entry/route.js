@@ -21,11 +21,13 @@ export async function GET(request) {
                 WT.ShiftId,
                 S.ShiftName,
                 WT.DestinationId,
-                FP_Dest.FillingPoint as DestinationName,
+                L.LocationName as DestinationName,
                 WT.HaulerId,
                 E.EquipmentName as HaulerName,
                 WT.FillingPointId,
                 FP_Fill.FillingPoint as FillingPointName,
+                WT.FillingPumpId,
+                FP_Pump.FillingPump as FillingPumpName,
                 WT.NoOfTrip,
                 WT.Capacity,
                 WT.TotalQty,
@@ -38,9 +40,10 @@ export async function GET(request) {
                 WT.UpdatedDate
             FROM [Transaction].[TblWaterTankerEntry] WT
             LEFT JOIN [Master].[TblShift] S ON WT.ShiftId = S.SlNo
-            LEFT JOIN [Master].[tblFillingPoint] FP_Dest ON WT.DestinationId = FP_Dest.SlNo
+            LEFT JOIN [Master].[TblLocation] L ON WT.DestinationId = L.SlNo
             LEFT JOIN [Master].[TblEquipment] E ON WT.HaulerId = E.SlNo
             LEFT JOIN [Master].[tblFillingPoint] FP_Fill ON WT.FillingPointId = FP_Fill.SlNo
+            LEFT JOIN [Master].[tblFillingPump] FP_Pump ON WT.FillingPumpId = FP_Pump.SlNo
             LEFT JOIN [Master].[TblUser_New] U1 ON WT.CreatedBy = U1.SlNo
             LEFT JOIN [Master].[TblUser_New] U2 ON WT.UpdatedBy = U2.SlNo
             WHERE WT.IsDelete = 0
@@ -94,6 +97,7 @@ export async function POST(request) {
             DestinationId,
             HaulerId,
             FillingPointId,
+            FillingPumpId,
             NoOfTrip,
             Capacity,
             TotalQty,
@@ -108,9 +112,9 @@ export async function POST(request) {
 
         const query = `
             INSERT INTO [Transaction].[TblWaterTankerEntry] 
-            (ShiftId, DestinationId, HaulerId, FillingPointId, NoOfTrip, Capacity, TotalQty, Remarks, EntryDate, CreatedBy, CreatedDate)
+            (ShiftId, DestinationId, HaulerId, FillingPointId, FillingPumpId, NoOfTrip, Capacity, TotalQty, Remarks, EntryDate, CreatedBy, CreatedDate)
             VALUES 
-            (@shift, @dest, @hauler, @fillpt, @trips, @cap, @qty, @remarks, @date, @user, GETDATE())
+            (@shift, @dest, @hauler, @fillpt, @fillpump, @trips, @cap, @qty, @remarks, @date, @user, GETDATE())
         `;
 
         await executeQuery(query, [
@@ -118,6 +122,7 @@ export async function POST(request) {
             { name: 'dest', value: DestinationId },
             { name: 'hauler', value: HaulerId },
             { name: 'fillpt', value: FillingPointId },
+            { name: 'fillpump', value: FillingPumpId || null },
             { name: 'trips', value: NoOfTrip },
             { name: 'cap', value: Capacity || 0 },
             { name: 'qty', value: TotalQty },

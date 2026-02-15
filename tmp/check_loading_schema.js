@@ -1,11 +1,10 @@
-const sql = require('mssql');
 
 const config = {
     user: 'sa',
     password: 'Chennai@42',
     server: 'localhost',
+    database: 'ProMS2_Serv',
     port: 1433,
-    database: 'ProdMS_live',
     options: {
         encrypt: false,
         trustServerCertificate: true,
@@ -13,28 +12,28 @@ const config = {
     },
 };
 
-async function check() {
+const sql = require('mssql');
+
+async function checkSchema() {
     try {
-        await sql.connect(config);
+        console.log(`Connecting to database: ${config.database} on ${config.server}`);
+        const pool = await new sql.ConnectionPool(config).connect();
 
-        console.log("Checking [Trans].[TblLoading]...");
-        const cols = await sql.query(`
-            SELECT COLUMN_NAME, DATA_TYPE 
-            FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_NAME = 'TblLoading' 
-            AND TABLE_SCHEMA = 'Trans'
-            AND COLUMN_NAME IN ('CreatedBy', 'UpdatedBy')
-        `);
-        console.table(cols.recordset);
+        const checkQuery = `
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = 'TblLoading'
+            ORDER BY ORDINAL_POSITION
+        `;
+        const result = await pool.request().query(checkQuery);
+        console.log("--- TblLoading Columns ---");
+        console.table(result.recordset);
 
-        const data = await sql.query(`SELECT TOP 5 CreatedBy FROM [Trans].[TblLoading] ORDER BY SlNo DESC`);
-        console.table(data.recordset);
+        await pool.close();
 
-    } catch (err) {
-        console.error(err);
-    } finally {
-        await sql.close();
+    } catch (error) {
+        console.error('Error executing query:', error);
     }
 }
 
-check();
+checkSchema();

@@ -1,12 +1,12 @@
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import LoadingOverlay from '@/components/LoadingOverlay';
-import { RotateCcw, Printer, Download } from 'lucide-react'; // Added icons
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx-js-style';
-import styles from '@/app/dashboard/reports/crusher-summary/CrusherSummary.module.css';
+// import SearchableSelect from '@/components/SearchableSelect'; // Not using for single select shift for now, keeping simple select
+import ReportTable from '@/components/reports/ReportTable';
+import styles from './WaterTankerReport.module.css';
 
 export default function WaterTankerReport() {
     const today = new Date().toISOString().split('T')[0];
@@ -14,26 +14,44 @@ export default function WaterTankerReport() {
         date: today,
         shiftId: ''
     });
+
+    // Data States
     const [data, setData] = useState([]);
     const [shifts, setShifts] = useState([]);
+
+    // UI States
     const [loading, setLoading] = useState(false);
     const [generated, setGenerated] = useState(false);
+    const [initializing, setInitializing] = useState(true);
 
     // Load Shifts on Mount
     useEffect(() => {
-        fetch('/api/master/shift')
-            .then(r => r.json())
-            .then(res => {
-                if (Array.isArray(res)) setShifts(res);
-                else if (res.success && res.data) setShifts(res.data);
-            })
-            .catch(err => console.error("Failed to load shifts", err));
+        const loadShifts = async () => {
+            try {
+                const res = await fetch('/api/master/shift');
+                const json = await res.json();
+                if (Array.isArray(json)) setShifts(json);
+                else if (json.success && json.data) setShifts(json.data);
+            } catch (err) {
+                console.error("Failed to load shifts", err);
+                toast.error("Failed to load shift options");
+            } finally {
+                setInitializing(false);
+            }
+        };
+        loadShifts();
     }, []);
 
     const fetchData = async () => {
-        if (!filter.date) return toast.error('Please select a date');
+        if (!filter.date) {
+            toast.error('Please select a date');
+            return;
+        }
 
         setLoading(true);
+        setGenerated(true);
+        setData([]);
+
         try {
             const res = await fetch('/api/reports/water-tanker-entry', {
                 method: 'POST',
@@ -44,7 +62,7 @@ export default function WaterTankerReport() {
 
             if (result.success) {
                 setData(result.data);
-                if (!generated) setGenerated(true);
+                if (result.data.length === 0) toast.info("No records found");
             } else {
                 toast.error(result.message || 'Failed to fetch report');
             }
@@ -56,83 +74,38 @@ export default function WaterTankerReport() {
         }
     };
 
-    const handleReset = () => {
-        setFilter({ date: today, shiftId: '' });
-        setData([]);
-        setGenerated(false);
-    };
-
-    // Calculations
-    const totalTrips = data.reduce((acc, row) => acc + (row.Trip || 0), 0);
-    const totalQty = data.reduce((acc, row) => acc + (row.Qty || 0), 0);
-
     // Formatters
     const fmt0 = (val) => val != null ? Number(val).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0';
     const fmt3 = (val) => val != null ? Number(val).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '0.000';
 
-    // Print
-    const handlePrint = () => window.print();
+    // Columns Configuration for ReportTable
+    const columns = useMemo(() => [
+        { header: 'S.N.', accessor: 'SlNo', width: '60px' },
+        { header: 'Water Tanker Equipment', accessor: 'WaterTankerEquipment', width: '200px' },
+        { header: 'Trip', accessor: 'Trip', width: '80px', render: r => fmt0(r.Trip) },
+        { header: 'Tanker Capacity (Cub mtr)', accessor: 'TankerCapacity', width: '150px', render: r => fmt0(r.TankerCapacity) },
+        { header: 'Qty.', accessor: 'Qty', width: '100px', render: r => fmt3(r.Qty) },
+        { header: 'Filling Point', accessor: 'FillingPoint', width: '150px' },
+        { header: 'Filling Pump', accessor: 'FillingPump', width: '150px' },
+        { header: 'Destination', accessor: 'Destination', width: '150px' },
+        { header: 'Remarks', accessor: 'Remarks', width: '200px' },
+    ], []);
 
-    // Excel Export
-    const handleExportExcel = () => {
-        const wb = XLSX.utils.book_new();
-        const wsData = [];
-
-        // Title Section
-        wsData.push(["WATER TANKER PERFORMANCE REPORT"]);
-        wsData.push([]);
-
-        const shiftName = filter.shiftId ? shifts.find(s => s.SlNo == filter.shiftId)?.ShiftName : "All Shifts";
-        wsData.push(["Date:", new Date(filter.date).toLocaleDateString('en-GB'), "Shift:", shiftName]);
-        wsData.push([]);
-
-        // Headers
-        const headers = ["S.N.", "Water Tanker Equipment", "Trip", "Tanker Capacity (Cub mtr)", "Qty.", "Filling Point", "Filling Pump", "Destination", "Remarks"];
-        wsData.push(headers);
-
-        // Body
-        data.forEach((row) => {
-            wsData.push([
-                row.SlNo,
-                row.WaterTankerEquipment,
-                row.Trip,
-                row.TankerCapacity,
-                row.Qty,
-                row.FillingPoint,
-                row.FillingPump,
-                row.Destination,
-                row.Remarks
-            ]);
-        });
-
-        // Totals
-        wsData.push(["Total", "", totalTrips, "", totalQty, "", "", "", ""]);
-
-        // Create Sheet
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Column Widths
-        ws['!cols'] = [{ wch: 6 }, { wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
-
-        // Header Style (Simple Bold)
-        // Note: xlsx-js-style allows styling but keeping it simple for now to match basic requirement.
-
-        XLSX.utils.book_append_sheet(wb, ws, "Water Tanker Report");
-        XLSX.writeFile(wb, `Water_Tanker_Report_${filter.date}.xlsx`);
-    };
-
-    const getShiftLabel = () => {
-        if (!filter.shiftId) return "All Shifts";
-        const s = shifts.find(x => x.SlNo == filter.shiftId);
-        return s ? s.ShiftName : filter.shiftId;
+    if (initializing) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-primary" /></div>;
     }
 
     return (
         <div className={styles.container}>
-            {loading && <LoadingOverlay message="Generating Report..." />}
+            <div className={styles.headingWrapper}>
+                <h1 className={styles.title}>Water Tanker Performance Report</h1>
+                <p className={styles.subtitle}>Daily water tanker operations and entries</p>
+            </div>
 
-            {/* Controls Bar */}
-            <div className={styles.controlsContainer}>
+            {/* Filter Container */}
+            <div className={styles.filterContainer}>
+
+                {/* Date Input */}
                 <div className={styles.inputGroup}>
                     <label className={styles.label}>Date</label>
                     <input
@@ -143,13 +116,14 @@ export default function WaterTankerReport() {
                     />
                 </div>
 
+                {/* Shift Filter (Single Select) */}
                 <div className={styles.inputGroup}>
                     <label className={styles.label}>Shift</label>
                     <select
                         className={styles.input}
                         value={filter.shiftId}
                         onChange={(e) => setFilter({ ...filter, shiftId: e.target.value })}
-                        style={{ minWidth: '150px' }}
+                        style={{ minWidth: '200px' }}
                     >
                         <option value="">All Shifts</option>
                         {shifts.map(s => (
@@ -158,87 +132,37 @@ export default function WaterTankerReport() {
                     </select>
                 </div>
 
-                <button onClick={fetchData} className={styles.showBtn}>Show</button>
-                <button onClick={handleReset} className={styles.showBtn} style={{ backgroundColor: '#64748b' }}>
-                    <RotateCcw size={16} />
+                {/* Generate Button */}
+                <button
+                    onClick={fetchData}
+                    disabled={loading}
+                    className={styles.generateBtn}
+                    style={{ marginTop: 'auto', marginBottom: '2px' }}
+                >
+                    {loading ? (
+                        <>
+                            <Loader2 className="animate-spin" size={16} />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Search size={16} />
+                            Generate View
+                        </>
+                    )}
                 </button>
             </div>
 
-            {/* Only show report content if generated or data exists */}
-            {(generated || data.length > 0) && (
-                <div className={styles.tableContainer}>
-                    <div className={styles.toolbar}>
-                        <button onClick={handlePrint} className={styles.printBtn}>
-                            <Printer size={16} /> Print
-                        </button>
-                        <button onClick={handleExportExcel} className={styles.excelBtn}>
-                            <Download size={16} /> Excel Download
-                        </button>
-                    </div>
-
-                    <div id="report-content">
-                        {/* Report Header Block */}
-                        <div className={styles.reportTitle}>
-                            <h2 className={styles.reportName} style={{ color: '#003366', textDecoration: 'underline' }}>
-                                WATER TANKER PERFORMANCE REPORT
-                            </h2>
-                            <div className={styles.dateBox} style={{ marginLeft: 'auto', display: 'flex', gap: '0', border: '1px solid #333' }}>
-                                <div className={styles.dateLabel}>Date</div>
-                                <div className={styles.dateValue}>{new Date(filter.date).toLocaleDateString('en-GB')}</div>
-                                <div className={styles.dateLabel} style={{ borderLeft: '1px solid #333' }}>Shift</div>
-                                <div className={styles.dateValue}>{getShiftLabel()}</div>
-                            </div>
-                        </div>
-
-                        {/* Table */}
-                        <table className={styles.table} style={{ width: '100%' }}>
-                            <thead>
-                                <tr>
-                                    <th className={styles.thGrey} style={{ backgroundColor: '#ced4da' }}>S.N.</th>
-                                    <th className={styles.thGrey} style={{ backgroundColor: '#ced4da' }}>Water Tanker Equipment</th>
-                                    <th className={styles.thBlue} style={{ backgroundColor: '#64748b', color: '#fff' }}>Trip</th>
-                                    <th className={styles.thBlue} style={{ backgroundColor: '#64748b', color: '#fff' }}>Tanker Capacity (Cub mtr)</th>
-                                    <th className={styles.thBlue} style={{ backgroundColor: '#64748b', color: '#fff' }}>Qty.</th>
-                                    <th className={styles.thGrey} style={{ backgroundColor: '#ced4da' }}>Filling Point</th>
-                                    <th className={styles.thGrey} style={{ backgroundColor: '#ced4da' }}>Filling Pump</th>
-                                    <th className={styles.thGrey} style={{ backgroundColor: '#ced4da' }}>Destination</th>
-                                    <th className={styles.thGrey} style={{ backgroundColor: '#ced4da' }}>Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.map((row, i) => (
-                                    <tr key={i}>
-                                        <td className={styles.tdLeft}>{row.SlNo}</td>
-                                        <td className={styles.tdLeft}>{row.WaterTankerEquipment}</td>
-                                        <td className={styles.tdRight}>{fmt0(row.Trip)}</td>
-                                        <td className={styles.tdRight}>{fmt0(row.TankerCapacity)}</td>
-                                        <td className={styles.tdRight}>{fmt3(row.Qty)}</td>
-                                        <td className={styles.tdLeft}>{row.FillingPoint}</td>
-                                        <td className={styles.tdLeft}>{row.FillingPump}</td>
-                                        <td className={styles.tdLeft}>{row.Destination}</td>
-                                        <td className={styles.tdLeft}>{row.Remarks}</td>
-                                    </tr>
-                                ))}
-
-                                {/* Total Row */}
-                                <tr style={{ backgroundColor: '#e2e8f0', fontWeight: 'bold' }}>
-                                    <td colSpan={2} style={{ textAlign: 'center' }}>Total</td>
-                                    <td className={styles.tdRight}>{fmt0(totalTrips)}</td>
-                                    <td></td>
-                                    <td className={styles.tdRight}>{fmt3(totalQty)}</td>
-                                    <td colSpan={4}></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {generated && data.length === 0 && (
-                <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-                    No Data Found
-                </div>
-            )}
+            {/* Data Table */}
+            <ReportTable
+                columns={columns}
+                data={data}
+                loading={loading}
+                generated={generated}
+                reportName="Water Tanker Performance"
+                fromDate={filter.date}
+                toDate={filter.date}
+            />
         </div>
     );
 }

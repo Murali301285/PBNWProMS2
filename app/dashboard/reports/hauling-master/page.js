@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ReportFilter from '@/components/reports/ReportFilter';
 import ReportTable from '@/components/reports/ReportTable';
+import HaulingMasterFilterModal from '@/components/reports/HaulingMasterFilterModal';
 import { toast } from 'sonner';
 
 export default function HaulingMasterReportPage() {
@@ -12,6 +13,14 @@ export default function HaulingMasterReportPage() {
     // State for Filter
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [filters, setFilters] = useState({});
+    const [filterSummary, setFilterSummary] = useState('');
+
+    const handleApplyFilters = (newFilters, summary) => {
+        setFilters(newFilters);
+        setFilterSummary(summary);
+    };
 
     const columns = [
         { header: 'Sl.No', accessor: 'Sl.No' },
@@ -58,13 +67,13 @@ export default function HaulingMasterReportPage() {
         setLoading(true);
         setReportData([]);
 
-        const filters = { fromDate, toDate };
+        const payload = { fromDate, toDate, ...filters };
 
         try {
             const res = await fetch('/api/reports/hauling-master', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(filters),
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json();
@@ -100,6 +109,10 @@ export default function HaulingMasterReportPage() {
                 setFromDate={setFromDate}
                 toDate={toDate}
                 setToDate={setToDate}
+                showDetails={true}
+                onFilterClick={() => setModalOpen(true)}
+                filterSummary={filterSummary}
+                filterCount={Object.values(filters).filter(f => Array.isArray(f) && f.length > 0).length}
             />
 
             <div className="mt-8">
@@ -112,6 +125,13 @@ export default function HaulingMasterReportPage() {
                     toDate={toDate}
                 />
             </div>
+
+            <HaulingMasterFilterModal
+                isOpen={isModalOpen}
+                onClose={() => setModalOpen(false)}
+                onApply={handleApplyFilters}
+                initialFilters={filters}
+            />
         </div>
     );
 }

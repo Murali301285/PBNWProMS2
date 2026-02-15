@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ReportFilter from '@/components/reports/ReportFilter';
 import ReportTable from '@/components/reports/ReportTable';
+import LoadingMasterFilterModal from '@/components/reports/LoadingMasterFilterModal';
 import { toast } from 'sonner';
 
 export default function LoadingMasterReportPage() {
@@ -12,6 +13,14 @@ export default function LoadingMasterReportPage() {
     // State for Filter
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [filters, setFilters] = useState({});
+    const [filterSummary, setFilterSummary] = useState('');
+
+    const handleApplyFilters = (newFilters, summary) => {
+        setFilters(newFilters);
+        setFilterSummary(summary);
+    };
 
     // Columns based on User Request
     // Channels columns to match SQL Aliases exactly
@@ -63,13 +72,13 @@ export default function LoadingMasterReportPage() {
         setLoading(true);
         setReportData([]);
 
-        const filters = { fromDate, toDate };
+        const payload = { fromDate, toDate, ...filters };
 
         try {
             const res = await fetch('/api/reports/loading-master', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(filters),
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json();
@@ -105,6 +114,10 @@ export default function LoadingMasterReportPage() {
                 setFromDate={setFromDate}
                 toDate={toDate}
                 setToDate={setToDate}
+                showDetails={true}
+                onFilterClick={() => setModalOpen(true)}
+                filterSummary={filterSummary}
+                filterCount={Object.values(filters).filter(f => Array.isArray(f) && f.length > 0).length}
             />
 
             <div className="mt-8">
@@ -117,6 +130,13 @@ export default function LoadingMasterReportPage() {
                     toDate={toDate}
                 />
             </div>
+
+            <LoadingMasterFilterModal
+                isOpen={isModalOpen}
+                onClose={() => setModalOpen(false)}
+                onApply={handleApplyFilters}
+                initialFilters={filters}
+            />
         </div>
     );
 }

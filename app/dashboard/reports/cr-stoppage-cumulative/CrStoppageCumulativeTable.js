@@ -22,10 +22,10 @@ export default function CrStoppageCumulativeTable({ data, date }) {
         <div className={styles.container}>
             <div id="report-content">
                 <div className={styles.header}>
-                    <h2 className="text-xl font-bold uppercase text-slate-800">Stoppage cumulative report</h2>
-                    <div className="w-full flex justify-end mt-2 px-4">
-                        <div className="text-right font-bold text-slate-600 text-sm">Date: {new Date(date).toLocaleDateString('en-GB')}</div>
-                    </div>
+                    <h1 className="text-xl font-bold uppercase text-slate-800">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 className="text-lg font-bold uppercase text-slate-800">PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4 font-bold uppercase">Stoppage cumulative report</h3>
+                    <div className="mt-2 font-bold text-slate-600 text-sm">Date: {new Date(date).toLocaleDateString('en-GB')}</div>
                 </div>
 
                 <div className={styles.tableContainer}>

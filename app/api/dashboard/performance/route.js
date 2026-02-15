@@ -20,21 +20,19 @@ export async function GET(req) {
             { name: 'ToDate', type: sql.Date, value: toDate }
         ];
 
-        // Expecting multiple result sets:
-        // [0]: Highest Production (Category, Qty, etc.)
-        // [1]: Crusher Wise (Plant, Qty)
-        // [2]: Sector Wise (Plant, Qty)
-        // [3]: Operator Performance (Loading/Hauling)
-        // [4]: Loading Performance (Loading/Hauling Efficiency)
-        const resultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetPerformanceStats', params);
+        // Fetch Legacy Data (for other tabs)
+        const legacyResultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetPerformanceStats', params);
+
+        // Fetch New Highest Production Data
+        const newResultSets = await executeStoredProcedure('PMS2_New_Sp_Dash_GetPerformanceStats', params);
 
         return NextResponse.json({
             success: true,
-            highestProduction: resultSets[0] || [],
-            crusherWise: resultSets[1] || [],
-            sectorWise: resultSets[2] || [],
-            operatorPerformance: resultSets[3] || [],
-            loadingPerformance: resultSets[4] || []
+            highestProduction: newResultSets[0] || [], // Use New SP result
+            crusherWise: legacyResultSets[1] || [],    // Keep Legacy
+            sectorWise: legacyResultSets[2] || [],     // Keep Legacy
+            operatorPerformance: legacyResultSets[3] || [], // Keep Legacy
+            loadingPerformance: legacyResultSets[4] || []   // Keep Legacy
         });
 
     } catch (error) {

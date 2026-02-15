@@ -1,3 +1,4 @@
+
 const sql = require('mssql');
 
 const config = {
@@ -5,35 +6,35 @@ const config = {
     password: 'Chennai@42',
     server: 'localhost',
     port: 1433,
-    database: 'ProdMS_live',
+    database: 'ProMS2_Serv',
     options: {
         encrypt: false,
         trustServerCertificate: true,
         enableArithAbort: true,
-    },
-    connectionTimeout: 30000,
-    requestTimeout: 30000,
+    }
 };
 
-async function checkOperator() {
-    console.log("--- SCHEMA CHECK: TblOperator ---");
+async function checkSchema() {
     try {
         await sql.connect(config);
 
-        const query = `
-            SELECT COLUMN_NAME, DATA_TYPE 
-            FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_SCHEMA = 'Master' 
-            AND TABLE_NAME = 'TblOperator'
-        `;
-        const result = await sql.query(query);
-        console.table(result.recordset);
+        console.log("--- TblLoading Columns ---");
+        const loadingCols = await sql.query("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'TblLoading' AND TABLE_SCHEMA = 'Trans'");
+        console.table(loadingCols.recordset);
 
-    } catch (e) {
-        console.error("Error:", e);
+        console.log("--- TblEquipmentReading Columns ---");
+        const readingCols = await sql.query("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'TblEquipmentReading' AND TABLE_SCHEMA = 'Trans'");
+        console.table(readingCols.recordset);
+
+        console.log("--- Potential Operator/Employee Tables ---");
+        const tables = await sql.query("SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME LIKE '%Employee%' OR TABLE_NAME LIKE '%Operator%' OR TABLE_NAME LIKE '%Driver%'");
+        console.table(tables.recordset);
+
+    } catch (err) {
+        console.error("Error:", err);
     } finally {
-        await sql.close();
+        process.exit();
     }
 }
 
-checkOperator();
+checkSchema();

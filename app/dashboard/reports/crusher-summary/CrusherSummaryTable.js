@@ -47,12 +47,10 @@ export default function CrusherSummaryTable({ data, meta, date }) {
 
                 {/* Header Summary Box */}
                 <div className={styles.header}>
-                    <h1 className="text-xl font-bold">TSMPL PBCMP Operations</h1>
+                    <h1 className="text-xl font-bold">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 className="text-lg font-bold">PAKRI BARWADIH COAL MINING PROJECT</h2>
                     <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4 font-bold">CRUSHER PRODUCTION REPORT</h3>
-
-                    <div className="w-full flex justify-end mt-2 px-4">
-                        <div className="text-right font-bold text-slate-600 text-sm">Date: {new Date(date).toLocaleDateString('en-GB')}</div>
-                    </div>
+                    <div className="mt-2 font-bold text-slate-600 text-sm">Date: {new Date(date).toLocaleDateString('en-GB')}</div>
                 </div>
 
                 {/* Table 1: Production */}

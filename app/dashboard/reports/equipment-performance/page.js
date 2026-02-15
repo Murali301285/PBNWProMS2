@@ -1,69 +1,143 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReportTable from '@/components/reports/ReportTable';
 import { toast } from 'sonner';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
+import SearchableSelect from '@/components/SearchableSelect'; // Assuming this exists, based on other reports
 
 import styles from './EquipmentPerformance.module.css';
 
 /**
  * Equipment Performance Report
- * Shows FTD and FTM performance metrics per equipment
+ * Shows Shift-wise, FTD, and MTD performance metrics per equipment
  */
 export default function EquipmentPerformanceReport() {
     const today = new Date().toISOString().split('T')[0];
     const [date, setDate] = useState(today);
 
+    // Filters
+    const [activityOptions, setActivityOptions] = useState([]);
+    const [equipmentOptions, setEquipmentOptions] = useState([]);
+    const [selectedActivities, setSelectedActivities] = useState([]); // Array of IDs
+    const [selectedEquipment, setSelectedEquipment] = useState([]); // Array of IDs
+
+    // Master Data (Full list to filter locally)
+    const [allEquipment, setAllEquipment] = useState([]);
+
     // State
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [generated, setGenerated] = useState(false);
+    const [initializing, setInitializing] = useState(true);
+
+    // Fetch Helper Data
+    useEffect(() => {
+        const fetchHelpers = async () => {
+            try {
+                const res = await fetch('/api/reports/equipment-performance/helpers');
+                const data = await res.json();
+
+                if (data.activities) setActivityOptions(data.activities);
+                if (data.equipment) {
+                    setAllEquipment(data.equipment);
+                    setEquipmentOptions(data.equipment); // Default show all
+                }
+            } catch (error) {
+                console.error("Error fetching helpers:", error);
+                toast.error("Failed to load filter options");
+            } finally {
+                setInitializing(false);
+            }
+        };
+
+        fetchHelpers();
+    }, []);
+
+    // Filter Equipment based on Activity Selection
+    useEffect(() => {
+        if (selectedActivities.length === 0) {
+            setEquipmentOptions(allEquipment);
+        } else {
+            // Filter equipment where ActivityId matches selected activities (IDs)
+            const filtered = allEquipment.filter(eq => selectedActivities.includes(eq.ActivityId));
+            setEquipmentOptions(filtered);
+        }
+    }, [selectedActivities, allEquipment]);
 
     // Columns Configuration
-    const columns = [
-        { header: 'SlNo', accessor: 'SlNo', width: '60px' },
-        { header: 'Activity', accessor: 'ActivityName', width: '150px' },
-        { header: 'Group', accessor: 'EquipmentGroupName', width: '150px' },
-        { header: 'Equipment', accessor: 'EquipmentName', width: '180px' },
+    const columns = useMemo(() => [
+        { header: 'Sl.No', accessor: 'SlNo', width: '60px' },
+        { header: 'PMS Code', accessor: 'PMS Code', width: '100px' },
+        { header: 'Cost Center', accessor: 'CostCenter', width: '100px' },
+        { header: 'Equipment', accessor: 'Equipment', width: '180px' },
+        { header: 'Activity', accessor: 'Activity', width: '150px' },
+
+        // Shift A
+        { header: 'Shift A Trips', accessor: 'Shift ATotal Trips', width: '110px' },
+        { header: 'Shift A Qty', accessor: 'Shift ATotal Qty', width: '110px' },
+        { header: 'Shift A Hrs', accessor: 'Shift ATotal Hrs', width: '110px' },
+        { header: 'Shift A Kms', accessor: 'Shift ATotal Kms', width: '110px' },
+        { header: 'Shift A Trips/Hr', accessor: 'Shift ATrips Per Hr', width: '120px', render: r => Number(r['Shift ATrips Per Hr']).toFixed(2) },
+        { header: 'Shift A Qty/Hr', accessor: 'Shift AQty Per Hr', width: '120px', render: r => Number(r['Shift AQty Per Hr']).toFixed(2) },
+
+        // Shift B
+        { header: 'Shift B Trips', accessor: 'Shift BTotal Trips', width: '110px' },
+        { header: 'Shift B Qty', accessor: 'Shift BTotal Qty', width: '110px' },
+        { header: 'Shift B Hrs', accessor: 'Shift BTotal Hrs', width: '110px' },
+        { header: 'Shift B Kms', accessor: 'Shift BTotal Kms', width: '110px' },
+        { header: 'Shift B Trips/Hr', accessor: 'Shift BTrips Per Hr', width: '120px', render: r => Number(r['Shift BTrips Per Hr']).toFixed(2) },
+        { header: 'Shift B Qty/Hr', accessor: 'Shift BQty Per Hr', width: '120px', render: r => Number(r['Shift BQty Per Hr']).toFixed(2) },
+
+        // Shift C
+        { header: 'Shift C Trips', accessor: 'Shift CTotal Trips', width: '110px' },
+        { header: 'Shift C Qty', accessor: 'Shift CTotal Qty', width: '110px' },
+        { header: 'Shift C Hrs', accessor: 'Shift CTotal Hrs', width: '110px' },
+        { header: 'Shift C Kms', accessor: 'Shift CTotal Kms', width: '110px' },
+        { header: 'Shift C Trips/Hr', accessor: 'Shift CTrips Per Hr', width: '120px', render: r => Number(r['Shift CTrips Per Hr']).toFixed(2) },
+        { header: 'Shift C Qty/Hr', accessor: 'Shift CQty Per Hr', width: '120px', render: r => Number(r['Shift CQty Per Hr']).toFixed(2) },
 
         // FTD
-        { header: 'FTD Hrs', accessor: 'FTD_WorkingHr', width: '100px' },
-        { header: 'FTD Trips', accessor: 'FTD_Trips', width: '100px' },
-        { header: 'FTD Qty', accessor: 'FTD_Qty', width: '100px' },
-        { header: 'FTD Trips/Hr', accessor: 'FTD_TripsHr', width: '100px', render: (row) => row.FTD_WorkingHr > 0 ? (row.FTD_Trips / row.FTD_WorkingHr).toFixed(2) : '0.00' },
-        { header: 'FTD Qty/Hr', accessor: 'FTD_QtyHr', width: '100px', render: (row) => row.FTD_WorkingHr > 0 ? (row.FTD_Qty / row.FTD_WorkingHr).toFixed(2) : '0.00' },
+        { header: 'FTD Trips', accessor: 'FTDTotal Trips', width: '110px' },
+        { header: 'FTD Qty', accessor: 'FTDTotal Qty', width: '110px' },
+        { header: 'FTD Hrs', accessor: 'FTDTotal Hrs', width: '110px' },
+        { header: 'FTD Kms', accessor: 'FTDTotal Kms', width: '110px' },
+        { header: 'FTD Fuel', accessor: 'FTDTotal Fuel', width: '110px' },
+        { header: 'FTD Trips/Hr', accessor: 'FTDTrips Per Hr', width: '120px', render: r => Number(r['FTDTrips Per Hr']).toFixed(2) },
+        { header: 'FTD Qty/Hr', accessor: 'FTDQty Per Hr', width: '120px', render: r => Number(r['FTDQty Per Hr']).toFixed(2) },
+        { header: 'FTD Fuel/Hr', accessor: 'FTDFuel Per Hr', width: '120px', render: r => Number(r['FTDFuel Per Hr']).toFixed(2) },
+        { header: 'FTD KMPL', accessor: 'FTDKMPL', width: '110px', render: r => Number(r['FTDKMPL']).toFixed(2) },
 
-        // FTM
-        { header: 'FTM Hrs', accessor: 'FTM_WorkingHr', width: '100px' },
-        { header: 'FTM Trips', accessor: 'FTM_Trips', width: '100px' },
-        { header: 'FTM Qty', accessor: 'FTM_Qty', width: '100px' },
-        { header: 'FTM Trips/Hr', accessor: 'FTM_TripsHr', width: '100px', render: (row) => row.FTM_WorkingHr > 0 ? (row.FTM_Trips / row.FTM_WorkingHr).toFixed(2) : '0.00' },
-        { header: 'FTM Qty/Hr', accessor: 'FTM_QtyHr', width: '100px', render: (row) => row.FTM_WorkingHr > 0 ? (row.FTM_Qty / row.FTM_WorkingHr).toFixed(2) : '0.00' },
-    ];
+        // MTD
+        { header: 'MTD Trips', accessor: 'MTDTotal Trips', width: '110px' },
+        { header: 'MTD Qty', accessor: 'MTDTotal Qty', width: '110px' },
+        { header: 'MTD Hrs', accessor: 'MTDTotal Hrs', width: '110px' },
+        { header: 'MTD Kms', accessor: 'MTDTotal Kms', width: '110px' },
+        { header: 'MTD Fuel', accessor: 'MTDTotal Fuel', width: '110px' },
+        { header: 'MTD Trips/Hr', accessor: 'MTDTrips Per Hr', width: '120px', render: r => Number(r['MTDTrips Per Hr']).toFixed(2) },
+        { header: 'MTD Qty/Hr', accessor: 'MTDQty Per Hr', width: '120px', render: r => Number(r['MTDQty Per Hr']).toFixed(2) },
+        { header: 'MTD Fuel/Hr', accessor: 'MTDFuel Per Hr', width: '120px', render: r => Number(r['MTDFuel Per Hr']).toFixed(2) },
+        { header: 'MTD KMPL', accessor: 'MTDKMPL', width: '110px', render: r => Number(r['MTDKMPL']).toFixed(2) },
+
+    ], []);
 
     const handleGenerate = async () => {
         if (!date) return toast.error('Please select a date');
 
         setLoading(true);
-        setData([]); // Clear previous
+        setData([]);
 
         try {
-            // Re-using the filter component logic but specifically for single date
-            // ReportFilter expects separate props or we can just call API here if ReportFilter's onGenerate handles it.
-            // Actually ReportFilter is robust. We can pass 'date' to it if it supports it, 
-            // BUT ReportFilter usually does range.
-            // Let's check ReportFilter again? 
-            // The template EqGroup used a custom date input. 
-            // I will use a simple custom header similar to EqGroup or adapt ReportFilter.
-            // Plan said "Uses ReportFilter". ReportFilter has reportType, fromDate, toDate.
-            // I need a SINGLE DATE.
-            // I'll stick to the layout from EqGroup for the header part (simple date picker) but use ReportTable for data.
+            const payload = {
+                date,
+                activityIds: selectedActivities,
+                equipmentIds: selectedEquipment
+            };
 
             const response = await fetch('/api/reports/equipment-performance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date })
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
@@ -82,6 +156,10 @@ export default function EquipmentPerformanceReport() {
             setGenerated(true);
         }
     };
+
+    if (initializing) {
+        return <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin text-primary" /></div>;
+    }
 
     return (
         <div className={styles.container}>
@@ -104,11 +182,36 @@ export default function EquipmentPerformanceReport() {
                     />
                 </div>
 
+                {/* Activity Filter */}
+                <div className={styles.inputGroup} style={{ minWidth: '200px' }}>
+                    <label className={styles.label}>Activity</label>
+                    <SearchableSelect
+                        options={activityOptions}
+                        value={selectedActivities}
+                        onChange={(e) => setSelectedActivities(e.target.value)}
+                        multiple
+                        placeholder="All Activities"
+                    />
+                </div>
+
+                {/* Equipment Filter */}
+                <div className={styles.inputGroup} style={{ minWidth: '200px' }}>
+                    <label className={styles.label}>Equipment</label>
+                    <SearchableSelect
+                        options={equipmentOptions}
+                        value={selectedEquipment}
+                        onChange={(e) => setSelectedEquipment(e.target.value)}
+                        multiple
+                        placeholder="All Equipment"
+                    />
+                </div>
+
                 {/* Generate Button */}
                 <button
                     onClick={handleGenerate}
                     disabled={loading}
                     className={styles.generateBtn}
+                    style={{ marginTop: 'auto', marginBottom: '2px' }}
                 >
                     <Search size={16} />
                     {loading ? 'Processing...' : 'Generate View'}
