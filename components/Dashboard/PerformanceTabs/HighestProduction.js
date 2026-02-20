@@ -67,11 +67,11 @@ export default function HighestProduction({ data = [] }) {
 
 
     const sections = [
-        { title: 'Highest Coal Production', category: 'Coal', unit: 'Production (MT)' },
-        { title: 'Highest OB Production', category: 'OB', unit: 'Production (BCM)' },
-        { title: 'Highest Electrical Loading Production', category: 'Electrical', unit: 'Production (BCM)' },
-        { title: 'Highest Dispatch Production', category: 'Dispatch', unit: 'Production (MT)' },
-        { title: 'Highest Crushing Production', category: 'Crushing', unit: 'Production (MT)' },
+        { title: 'Highest Coal (MT) Production', category: 'Coal', unit: 'Production (MT)' },
+        { title: 'Highest OB (BCM) Removal', category: 'OB', unit: 'Production (BCM)' },
+        { title: 'Highest Electrical Loading Production OB (BCM)', category: 'Electrical', unit: 'Production (BCM)' },
+        { title: 'Highest Coal Dispatch (MT)', category: 'Dispatch', unit: 'Production (MT)' },
+        { title: 'Highest Coal Crushing (MT)', category: 'Crushing', unit: 'Production (MT)' },
     ];
 
     return (

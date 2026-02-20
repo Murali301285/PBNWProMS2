@@ -13,7 +13,7 @@ export async function POST(request) {
 
         const result = await pool.request()
             .input('Date', sql.Date, date)
-            .execute('SPReportDailyProgress');
+            .execute('PMS2_New_Sp_DailyProgressReport');
 
         // Map Result Sets based on SP definition
         // 0: Production Details

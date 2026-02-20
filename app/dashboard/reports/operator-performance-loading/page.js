@@ -1,7 +1,6 @@
 
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-// UI imports removed
 import { Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import SearchableSelect from '@/components/SearchableSelect';
@@ -9,7 +8,9 @@ import ReportTable from '@/components/reports/ReportTable';
 import styles from './OperatorPerformance.module.css';
 
 export default function OperatorPerformanceReport() {
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    const [fromDate, setFromDate] = useState(today);
+    const [toDate, setToDate] = useState(today);
 
     // Filters
     const [allOperators, setAllOperators] = useState([]);
@@ -36,8 +37,8 @@ export default function OperatorPerformanceReport() {
     };
 
     const handleGenerate = async () => {
-        if (!date) {
-            toast.error("Please select a date");
+        if (!fromDate || !toDate) {
+            toast.error("Please select both dates");
             return;
         }
 
@@ -45,7 +46,8 @@ export default function OperatorPerformanceReport() {
         setIsGenerated(true);
         try {
             const payload = {
-                date,
+                fromDate,
+                toDate,
                 operatorIds: selectedOperators // Array of IDs
             };
 
@@ -79,21 +81,34 @@ export default function OperatorPerformanceReport() {
     const columns = useMemo(() => [
         { header: 'Sl No', accessor: 'SlNo', width: '60px' },
         { header: 'Date', accessor: 'Date', width: '100px', render: r => new Date(r.Date).toLocaleDateString('en-GB') },
-        { header: 'Operator Name', accessor: "Operator's Name", width: '200px' },
+        { header: "Operator's Name", accessor: "OPERATOR'S NAME", width: '200px' },
         { header: 'Shift', accessor: 'SHIFT', width: '80px' },
-        { header: 'Loading Equipment', accessor: 'Loading Equipment', width: '150px' },
-        { header: 'Equipment Model', accessor: 'Equipment.MODEL', width: '150px' },
+
+        { header: 'Loading Equipment', accessor: 'LOADING EQUIPMENT', width: '150px' },
+        { header: 'Equipment Model', accessor: 'MODEL', width: '150px' },
+
         { header: 'Sector', accessor: 'SECTOR', width: '120px' },
         { header: 'Relay', accessor: 'RELAY', width: '120px' },
+
         { header: 'Open HMR', accessor: 'Open HMR', width: '100px' },
-        { header: 'Close HMR', accessor: 'CLOSE HMR', width: '100px' },
+        { header: 'Close HMR', accessor: 'Close HMR', width: '100px' },
         { header: 'Net HMR', accessor: 'Net HMR', width: '100px' },
-        { header: 'OB Trips', accessor: 'OB TRIPS', width: '100px' },
-        { header: 'Quantity (BCM)', accessor: 'QUANTITY (BCM)', width: '120px' },
+
         { header: 'Coal Trips', accessor: 'COAL TRIPS', width: '100px' },
-        { header: 'Quantity (MT)', accessor: 'QUANTITY (MT)', width: '120px' },
-        { header: 'Trip/Hrs', accessor: 'TRIP/HRS', width: '100px' },
-        { header: 'BCM/Hrs', accessor: 'BCM/HRS', width: '100px' },
+        { header: 'Coal Qty (MT)', accessor: 'QUANTITY (MT)', width: '120px' },
+
+        { header: 'OB Trips', accessor: 'OB TRIPS', width: '100px' },
+        { header: 'OB Qty (BCM)', accessor: 'QUANTITY (BCM)', width: '120px' },
+
+        { header: 'Coal Trips/Hr', accessor: 'COAL TRIPS/HR', width: '100px' },
+        { header: 'Coal Qty/Hr', accessor: 'COAL QTY/HR', width: '100px' },
+
+        { header: 'OB Trips', accessor: 'OB TRIPS', width: '100px' },
+        { header: 'OB Qty (BCM)', accessor: 'QUANTITY (BCM)', width: '120px' },
+
+        { header: 'Trip/Hrs', accessor: 'OB TRIPS/HR', width: '100px' },
+        { header: 'BCM/Hrs', accessor: 'OB QTY/HR', width: '100px' },
+
         { header: 'Shift Incharge (Large Scale)', accessor: 'Shift Incharge(Large Scale)', width: '200px' },
         { header: 'Shift Incharge (Mid Scale)', accessor: 'Shift Incharge - Mid Scale', width: '200px' },
     ], []);
@@ -109,14 +124,26 @@ export default function OperatorPerformanceReport() {
 
             <div className={styles.filterContainer}>
                 {/* Date Filter */}
+                {/* Date Filter */}
                 <div className={styles.inputGroup}>
                     <label className={styles.label}>
-                        Date
+                        From Date
                     </label>
                     <input
                         type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className={styles.input}
+                    />
+                </div>
+                <div className={styles.inputGroup}>
+                    <label className={styles.label}>
+                        To Date
+                    </label>
+                    <input
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
                         className={styles.input}
                     />
                 </div>
@@ -162,8 +189,8 @@ export default function OperatorPerformanceReport() {
                 loading={isLoading}
                 generated={isGenerated}
                 reportName="Operator Performance - Loading"
-                fromDate={date}
-                toDate={date}
+                fromDate={fromDate}
+                toDate={toDate}
             />
         </div>
     );

@@ -32,10 +32,7 @@ export async function POST(request) {
                 T.Type,
                 
                 T.EquipmentId,
-                E.EquipmentName,
-                
                 T.PlantId,
-                P.Name as PlantName,
                 
                 -- Dynamic Name based on Type (for Table display)
                 -- If Type is 'Equipment', show EquipmentName, else PlantName

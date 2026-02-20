@@ -13,7 +13,9 @@ import {
     Tooltip,
     Legend
 } from 'chart.js';
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+import CrushingHighestProduction from './CrushingTabs/CrushingHighestProduction';
 
 ChartJS.register(
     CategoryScale,
@@ -44,6 +46,7 @@ export default function Crushing() {
     const [chartType, setChartType] = useState('bar'); // bar | line
     const [hiddenShifts, setHiddenShifts] = useState([]);
     const [hiddenCrushers, setHiddenCrushers] = useState([]);
+    const [highestProductionData, setHighestProductionData] = useState([]);
 
     // Table State
     // Table State (Production)
@@ -55,6 +58,7 @@ export default function Crushing() {
     const [stoppagePage, setStoppagePage] = useState(1);
     const [stoppagePageSize, setStoppagePageSize] = useState(10);
     const [stoppageSearch, setStoppageSearch] = useState('');
+    const [selectedStoppagePlant, setSelectedStoppagePlant] = useState('All');
 
 
     const fetchData = async () => {
@@ -69,6 +73,13 @@ export default function Crushing() {
                     stoppages: json.stoppages,
                     stoppageLog: json.stoppageLog
                 });
+
+                // Fetch Production Overview
+                const resProd = await fetch(`/api/dashboard/crushing/production-overview?fromDate=${dateRange.from}&toDate=${dateRange.to}`);
+                const jsonProd = await resProd.json();
+                if (jsonProd.success) {
+                    setHighestProductionData(jsonProd.data);
+                }
             } else {
                 toast.error(json.message || 'Failed to fetch data');
             }
@@ -228,9 +239,12 @@ export default function Crushing() {
                 };
             }
 
-            if (t.Shift === 'Shift A') grouped[key].ShiftAQty += t.Qty;
-            if (t.Shift === 'Shift B') grouped[key].ShiftBQty += t.Qty;
-            if (t.Shift === 'Shift C') grouped[key].ShiftCQty += t.Qty;
+            // Normalize shift name check (DB returns SHIFT-A, Loop checks Shift A)
+            const s = t.Shift.toUpperCase().replace('-', ' '); // Converts 'SHIFT-A' -> 'SHIFT A', 'Shift A' -> 'SHIFT A'
+
+            if (s.includes('SHIFT A')) grouped[key].ShiftAQty += t.Qty;
+            if (s.includes('SHIFT B')) grouped[key].ShiftBQty += t.Qty;
+            if (s.includes('SHIFT C')) grouped[key].ShiftCQty += t.Qty;
             grouped[key].TotalQty += t.Qty;
 
             if (t.Remarks) {
@@ -358,56 +372,15 @@ export default function Crushing() {
                 <section>
                     <div className={styles.sectionTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span>1. Production Overview</span>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            {/* Chart Controls */}
-                            <div className={styles.toggleGroup} style={{ display: 'flex', background: 'var(--card)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                                <button
-                                    onClick={() => setViewMode('cumulative')}
-                                    style={{ padding: '6px 12px', background: viewMode === 'cumulative' ? 'var(--primary)' : 'transparent', color: viewMode === 'cumulative' ? 'white' : 'inherit', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                >
-                                    Cumulative
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('comprehensive')}
-                                    style={{ padding: '6px 12px', background: viewMode === 'comprehensive' ? 'var(--primary)' : 'transparent', color: viewMode === 'comprehensive' ? 'white' : 'inherit', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                >
-                                    Comprehensive
-                                </button>
-                            </div>
-
-                            <div className={styles.toggleGroup} style={{ display: 'flex', background: 'var(--card)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                                <button
-                                    onClick={() => setChartType('bar')}
-                                    style={{ padding: '6px', background: chartType === 'bar' ? 'var(--muted)' : 'transparent', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-                                    title="Bar Chart"
-                                >
-                                    <BarChart3 size={18} />
-                                </button>
-                                <button
-                                    onClick={() => setChartType('line')}
-                                    style={{ padding: '6px', background: chartType === 'line' ? 'var(--muted)' : 'transparent', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-                                    title="Line Chart"
-                                >
-                                    <LineChart size={18} />
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
-
-                    {/* Main Chart Card */}
-                    <div className={styles.chartContainer} style={{ minHeight: '400px', marginBottom: '1.5rem', position: 'relative' }}>
-                        {/* Filter Popover Trigger (Visual only for now, can implement proper popover if needed) */}
-                        <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
-                            {/* Placeholder for advanced filter */}
-                        </div>
-
-                        {chartData && (
-                            chartType === 'bar'
-                                ? <Bar options={chartOptions} data={chartData} />
-                                : <Line options={chartOptions} data={chartData} />
-                        )}
+                    {/* Highest Production Tables */}
+                    <div className={styles.chartContainer} style={{ height: 'auto', minHeight: 'auto', marginBottom: '1.5rem', background: '#f8fafc', padding: '0' }}>
+                        <CrushingHighestProduction data={highestProductionData} />
                     </div>
+                </section>
+
+                <section>
 
                     {/* Dynamic Data Table */}
                     <div className={styles.chartContainer} style={{ height: 'auto', minHeight: 'auto' }}>
@@ -566,7 +539,35 @@ export default function Crushing() {
 
                 {/* Section 2: Stoppage Analysis */}
                 <section style={{ marginTop: '2rem' }}>
-                    <h2 className={styles.sectionTitle}>2. Stoppage Analysis</h2>
+                    <div className={styles.sectionTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>2. Stoppage Analysis</span>
+
+                        {/* Plant Filter Dropdown */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>Plant:</span>
+                            <select
+                                value={selectedStoppagePlant}
+                                onChange={(e) => {
+                                    setSelectedStoppagePlant(e.target.value);
+                                    setStoppagePage(1); // Reset pagination
+                                }}
+                                style={{
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--card)',
+                                    fontSize: '0.85rem',
+                                    minWidth: '120px'
+                                }}
+                            >
+                                <option value="All">All</option>
+                                {/* Derive unique crusher names from loaded data */}
+                                {data?.stoppages && [...new Set(data.stoppages.map(s => s.CrusherName))].sort().map(name => (
+                                    <option key={name} value={name}>{name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
 
                     {/* Chart Row */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -574,16 +575,28 @@ export default function Crushing() {
                         {/* Summary Chart (Pareto) */}
                         <div className={styles.chartContainer} style={{ minHeight: '350px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Stoppage Reasons (Hrs)</h3>
-                            {data?.stoppages && <StoppagePareto data={data.stoppages} />}
+                            {data?.stoppages && (() => {
+                                // Filter data based on selected plant
+                                const filteredStoppages = selectedStoppagePlant === 'All'
+                                    ? data.stoppages
+                                    : data.stoppages.filter(s => s.CrusherName === selectedStoppagePlant);
+
+                                return <StoppagePareto data={filteredStoppages} />;
+                            })()}
                         </div>
 
                         {/* Summary Chart (Donut - Crusher Wise) */}
                         <div className={styles.chartContainer} style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', alignSelf: 'flex-start', color: 'var(--foreground)' }}>Stoppage by Crusher</h3>
                             {data?.stoppages && (() => {
+                                // Filter data based on selected plant
+                                const filteredStoppages = selectedStoppagePlant === 'All'
+                                    ? data.stoppages
+                                    : data.stoppages.filter(s => s.CrusherName === selectedStoppagePlant);
+
                                 // Aggregate duration by crusher
                                 const crusherMap = {};
-                                data.stoppages.forEach(s => {
+                                filteredStoppages.forEach(s => {
                                     crusherMap[s.CrusherName] = (crusherMap[s.CrusherName] || 0) + s.TotalDuration;
                                 });
                                 const labels = Object.keys(crusherMap);
@@ -662,6 +675,9 @@ export default function Crushing() {
                         {/* Table Logic Calculation */}
                         {(() => {
                             const stopFiltered = data?.stoppageLog?.filter(row => {
+                                // Plant Filter
+                                if (selectedStoppagePlant !== 'All' && row.CrusherName !== selectedStoppagePlant) return false;
+
                                 const q = stoppageSearch.toLowerCase();
                                 return (
                                     row.CrusherName.toLowerCase().includes(q) ||
@@ -748,7 +764,7 @@ export default function Crushing() {
                         })()}
                     </div>
                 </section>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

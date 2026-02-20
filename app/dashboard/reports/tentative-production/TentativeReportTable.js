@@ -39,7 +39,16 @@ export default function TentativeReportTable({ data, loading }) {
 
 
     const wasteTotal = calculateWasteTotal(wasteHandling);
-    const wp3Total = calculateWasteTotal(wp3);
+    const calculateWP3Total = (arr) => arr.reduce((acc, row) => ({
+        OverBurden: acc.OverBurden + (row.OverBurden || 0),
+        TopSoil: acc.TopSoil + (row.TopSoil || 0),
+        Coal: acc.Coal + (row.Coal || 0),
+        CoalQty: acc.CoalQty + (row.CoalQty || 0),
+        TotalTrip: acc.TotalTrip + (row.TotalTrip || 0),
+        QtyBcm: acc.QtyBcm + (row.QtyBcm || 0)
+    }), { OverBurden: 0, TopSoil: 0, Coal: 0, CoalQty: 0, TotalTrip: 0, QtyBcm: 0 });
+
+    const wp3Total = calculateWP3Total(wp3);
     const coalTotal = calculateCoalTotal(coalProduction);
     const obRehandlingTotal = calculateRehandlingTotal(obRehandling);
     const coalRehandlingTotal = calculateRehandlingTotal(coalRehandling);
@@ -56,6 +65,8 @@ export default function TentativeReportTable({ data, loading }) {
         return `${day}/${month}/${year}`;
     };
 
+    const fmt = (val) => (val !== undefined && val !== null) ? Number(val).toLocaleString('en-IN') : '0';
+
     return (
         <div className="p-4 bg-white min-h-screen">
             {/* Header */}
@@ -71,7 +82,63 @@ export default function TentativeReportTable({ data, loading }) {
                 </div>
             </div>
 
-            {/* 1. Coal Production */}
+            {/* 1. OB Handling (Moved to Top) */}
+            <div className="mb-6">
+                {/* Section Header */}
+                <div className={styles.sectionTitle}>
+                    OB Handling
+                </div>
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Model</th>
+                            <th>OB/IB</th>
+                            <th>Factor</th>
+                            <th>Free Dig</th>
+                            <th>Factor</th>
+                            <th>Total Trip</th>
+                            <th>Qty (BCM)</th>
+                            {/* Mapio Columns */}
+                            <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
+                            <th>Qty (BCM)</th>
+                            <th>Diff.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {wasteHandling.map((row, i) => (
+                            <tr key={i}>
+                                <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
+                                <td>{fmt(row.OverBurden)}</td>
+                                <td>{row.OverBurdenFactor}</td>
+                                <td>{fmt(row.TopSoil)}</td>
+                                <td>{row.TopSoilFactor}</td>
+                                <td>{fmt(row.TotalTrip)}</td>
+                                <td>{fmt(row.QtyBcm)}</td>
+                                {/* Mapio Data */}
+                                <td className="border-l-2 border-slate-800">{fmt(row.MapioTrip)}</td>
+                                <td>{fmt(row.MapioQty)}</td>
+                                <td>{fmt(row.Diff)}</td>
+                            </tr>
+                        ))}
+                        {/* Total Row */}
+                        <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
+                            <td className="text-left pl-2">Total</td>
+                            <td>{fmt(wasteTotal.OverBurden)}</td>
+                            <td></td>
+                            <td>{fmt(wasteTotal.TopSoil)}</td>
+                            <td></td>
+                            <td>{fmt(wasteTotal.TotalTrip)}</td>
+                            <td>{fmt(wasteTotal.QtyBcm)}</td>
+                            {/* Mapio Total */}
+                            <td className="border-l-2 border-slate-800">0</td>
+                            <td>0</td>
+                            <td>{fmt(wasteTotal.Diff)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {/* 2. Coal Production */}
             <div className="mb-6">
                 <div className={styles.sectionTitle}>
                     Coal Production
@@ -93,30 +160,30 @@ export default function TentativeReportTable({ data, loading }) {
                         {coalProduction.map((row, i) => (
                             <tr key={i}>
                                 <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                <td>{row.RomCoal}</td>
+                                <td>{fmt(row.RomCoal)}</td>
                                 <td>{row.Factor}</td>
-                                <td>{row.Qty}</td>
+                                <td>{fmt(row.Qty)}</td>
                                 {/* Mapio Data */}
-                                <td className="border-l-2 border-slate-800">{row.MapioTrip}</td>
-                                <td>{row.MapioQty}</td>
-                                <td>{row.Diff}</td>
+                                <td className="border-l-2 border-slate-800">{fmt(row.MapioTrip)}</td>
+                                <td>{fmt(row.MapioQty)}</td>
+                                <td>{fmt(row.Diff)}</td>
                             </tr>
                         ))}
                         <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
                             <td className="text-left pl-2">Total</td>
-                            <td>{coalTotal.RomCoal}</td>
+                            <td>{fmt(coalTotal.RomCoal)}</td>
                             <td></td>
-                            <td>{coalTotal.Qty}</td>
+                            <td>{fmt(coalTotal.Qty)}</td>
                             {/* Mapio Total */}
                             <td className="border-l-2 border-slate-800">0</td>
                             <td>0</td>
-                            <td>{coalTotal.Diff}</td>
+                            <td>{fmt(coalTotal.Diff)}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            {/* 2. WP-3 Quantity */}
+            {/* 3. WP-3 Quantity */}
             <div className="mb-6">
                 <div className={styles.sectionTitle}>
                     WP-3 Quantity
@@ -127,9 +194,12 @@ export default function TentativeReportTable({ data, loading }) {
                             <th>Model</th>
                             <th>OB/IB</th>
                             <th>Factor</th>
-                            <th>Top Soil</th>
+                            <th>Free Dig</th>
+                            <th>Factor</th>
+                            <th>Coal</th>
                             <th>Factor</th>
                             <th>Total Trip</th>
+                            <th>Coal Qty</th>
                             <th>Qty (BCM)</th>
                         </tr>
                     </thead>
@@ -137,62 +207,35 @@ export default function TentativeReportTable({ data, loading }) {
                         {wp3.map((row, i) => (
                             <tr key={i}>
                                 <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                <td>{row.OverBurden}</td>
+                                <td>{fmt(row.OverBurden)}</td>
                                 <td>{row.OverBurdenFactor}</td>
-                                <td>{row.TopSoil}</td>
+                                <td>{fmt(row.TopSoil)}</td>
                                 <td>{row.TopSoilFactor}</td>
-                                <td>{row.TotalTrip}</td>
-                                <td>{row.QtyBcm}</td>
+                                <td className="bg-yellow-50">{fmt(row.Coal)}</td>
+                                <td className="bg-yellow-50">{row.CoalFactor}</td>
+                                <td>{fmt(row.TotalTrip)}</td>
+                                <td className="bg-yellow-50">{fmt(row.CoalQty)}</td>
+                                <td>{fmt(row.QtyBcm)}</td>
                             </tr>
                         ))}
                         <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
                             <td className="text-left pl-2">Total</td>
-                            <td>{wp3Total.OverBurden}</td>
+                            <td>{fmt(wp3Total.OverBurden)}</td>
                             <td></td>
-                            <td>{wp3Total.TopSoil}</td>
+                            <td>{fmt(wp3Total.TopSoil)}</td>
                             <td></td>
-                            <td>{wp3Total.TotalTrip}</td>
-                            <td>{wp3Total.QtyBcm}</td>
+                            <td>{fmt(wp3Total.Coal)}</td>
+                            <td></td>
+                            <td>{fmt(wp3Total.TotalTrip)}</td>
+                            <td>{fmt(wp3Total.CoalQty)}</td>
+                            <td>{fmt(wp3Total.QtyBcm)}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            {/* 3 & 4. Rehandling Tables (Coal Rehandling then OB Rehandling as per request) */}
+            {/* 4 & 5. Rehandling Tables (OB Rehandling then Coal Rehandling) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-
-                {/* Coal Rehandling */}
-                <div>
-                    <div className={styles.sectionTitle}>
-                        Coal Rehandling Quantity
-                    </div>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr className={styles.blueHeader}>
-                                <th>Model</th>
-                                <th>Trip</th>
-                                <th>Factor</th>
-                                <th>Qty (MT)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {coalRehandling.map((row, i) => (
-                                <tr key={i}>
-                                    <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                    <td>{row.Trip}</td>
-                                    <td>{row.Factor}</td>
-                                    <td>{row.Qty}</td>
-                                </tr>
-                            ))}
-                            <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
-                                <td className="text-left pl-2">Total</td>
-                                <td>{coalRehandlingTotal.Trip}</td>
-                                <td></td>
-                                <td>{coalRehandlingTotal.Qty}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
 
                 {/* OB Rehandling */}
                 <div>
@@ -212,77 +255,54 @@ export default function TentativeReportTable({ data, loading }) {
                             {obRehandling.map((row, i) => (
                                 <tr key={i}>
                                     <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                    <td>{row.Trip}</td>
+                                    <td>{fmt(row.Trip)}</td>
                                     <td>{row.Factor}</td>
-                                    <td>{row.Qty}</td>
+                                    <td>{fmt(row.Qty)}</td>
                                 </tr>
                             ))}
                             <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
                                 <td className="text-left pl-2">Total</td>
-                                <td>{obRehandlingTotal.Trip}</td>
+                                <td>{fmt(obRehandlingTotal.Trip)}</td>
                                 <td></td>
-                                <td>{obRehandlingTotal.Qty}</td>
+                                <td>{fmt(obRehandlingTotal.Qty)}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-            </div>
-
-            {/* 5. Waste Handling (Moved to bottom) */}
-            <div className="mb-6">
-                {/* Section Header */}
-                <div className={styles.sectionTitle}>
-                    Waste Handling
-                </div>
-                <table className={styles.table}>
-                    <thead>
-                        <tr className={styles.blueHeader}>
-                            <th>Model</th>
-                            <th>OB/IB</th>
-                            <th>Factor</th>
-                            <th>Top Soil</th>
-                            <th>Factor</th>
-                            <th>Total Trip</th>
-                            <th>Qty (BCM)</th>
-                            {/* Mapio Columns */}
-                            <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
-                            <th>Qty (BCM)</th>
-                            <th>Diff.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {wasteHandling.map((row, i) => (
-                            <tr key={i}>
-                                <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
-                                <td>{row.OverBurden}</td>
-                                <td>{row.OverBurdenFactor}</td>
-                                <td>{row.TopSoil}</td>
-                                <td>{row.TopSoilFactor}</td>
-                                <td>{row.TotalTrip}</td>
-                                <td>{row.QtyBcm}</td>
-                                {/* Mapio Data */}
-                                <td className="border-l-2 border-slate-800">{row.MapioTrip}</td>
-                                <td>{row.MapioQty}</td>
-                                <td>{row.Diff}</td>
+                {/* Coal Rehandling */}
+                <div>
+                    <div className={styles.sectionTitle}>
+                        Coal Rehandling Quantity
+                    </div>
+                    <table className={styles.table}>
+                        <thead>
+                            <tr className={styles.blueHeader}>
+                                <th>Model</th>
+                                <th>Trip</th>
+                                <th>Factor</th>
+                                <th>Qty (MT)</th>
                             </tr>
-                        ))}
-                        {/* Total Row */}
-                        <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
-                            <td className="text-left pl-2">Total</td>
-                            <td>{wasteTotal.OverBurden}</td>
-                            <td></td>
-                            <td>{wasteTotal.TopSoil}</td>
-                            <td></td>
-                            <td>{wasteTotal.TotalTrip}</td>
-                            <td>{wasteTotal.QtyBcm}</td>
-                            {/* Mapio Total */}
-                            <td className="border-l-2 border-slate-800">0</td>
-                            <td>0</td>
-                            <td>{wasteTotal.Diff}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {coalRehandling.map((row, i) => (
+                                <tr key={i}>
+                                    <td className="text-left pl-2 font-semibold">{row.EquipmentGroup}</td>
+                                    <td>{fmt(row.Trip)}</td>
+                                    <td>{row.Factor}</td>
+                                    <td>{fmt(row.Qty)}</td>
+                                </tr>
+                            ))}
+                            <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
+                                <td className="text-left pl-2">Total</td>
+                                <td>{fmt(coalRehandlingTotal.Trip)}</td>
+                                <td></td>
+                                <td>{fmt(coalRehandlingTotal.Qty)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
 
 

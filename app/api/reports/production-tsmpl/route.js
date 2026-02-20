@@ -90,7 +90,7 @@ export async function POST(request) {
             .input('BreakTime', sql.Int, breakTime || 0)
             .input('Blasting', sql.Int, blasting || 0)
             .input('Others', sql.Int, others || 0)
-            .execute('SPReportTentativeForTMPL');
+            .execute('PMS2_New_Sp_ProductionTSMPLReport');
 
         // RS 0: Summary (Prod, Inputs, Calc Hrs)
         // RS 1: Crusher Details

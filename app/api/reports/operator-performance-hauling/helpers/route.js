@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const operators = await executeQuery(
-            "SELECT SlNo as id, OperatorName as name FROM [Master].[TblOperator] WHERE IsDelete = 0 AND IsActive = 1 ORDER BY OperatorName"
+            "SELECT SlNo as id, CONCAT(OperatorName, ' (', OperatorId, ')') as name FROM [Master].[TblOperator] WHERE IsDelete = 0 AND IsActive = 1 ORDER BY OperatorName"
         );
 
         const equipment = await executeQuery(

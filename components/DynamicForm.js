@@ -252,8 +252,15 @@ export default function DynamicForm({ columns, formData, setFormData, errors, se
                     return Number(a) - Number(b);
                 });
 
-                return sortedKeys.map(key => (
-                    <div key={key} className={styles.formRow} style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', gridColumn: '1 / -1' }}>
+                return sortedKeys.map((key, rowIdx) => (
+                    <div key={key} className={styles.formRow} style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        marginBottom: '1rem',
+                        gridColumn: '1 / -1',
+                        zIndex: 100 - rowIdx, // Descending z-index so top rows overlay bottom rows
+                        position: 'relative'
+                    }}>
                         {groups[key].map((col, idx) => renderField(col, idx, true))}
                     </div>
                 ));

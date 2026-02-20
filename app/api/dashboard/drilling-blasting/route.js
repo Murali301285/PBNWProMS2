@@ -25,7 +25,7 @@ export async function GET(req) {
         // [3]: Blasting Supplier
         // [4]: Blasting Explosive Summary
         // [5]: Blasting Details Log
-        const resultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetDrillingBlastingStats', params);
+        const resultSets = await executeStoredProcedure('PMS2_New_Dash_SP_GetDrillingBlastingStats', params);
 
         return NextResponse.json({
             success: true,

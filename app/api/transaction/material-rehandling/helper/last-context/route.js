@@ -105,9 +105,11 @@ export async function POST(req) {
                 console.log("❌ [MR-Context] No Loading Data found either.");
             }
 
-        } else if (!ShiftId) {
-            // Fallback to History (Last Entry Ever) - ONLY if Strict Shift is NOT enabled
-            console.log("⚠️ [MR-Context] No entry for Date", date, ". Fetching Latest History...");
+        } else if (!ShiftId && !date) {
+            // Updated Logic (User Request 1983/2006):
+            // Fallback to History (Last Entry Ever) - ONLY if NO Shift and NO Date provided.
+            // If Date is provided but no data found, return null (do not overwrite the selected date).
+            console.log("⚠️ [MR-Context] No Date/Shift Filter. Fetching Latest History for Init...");
 
             // New Request for History
             const pool2 = await getDbConnection();

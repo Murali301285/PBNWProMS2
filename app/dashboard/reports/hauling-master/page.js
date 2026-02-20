@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 export default function HaulingMasterReportPage() {
     const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [conversionFactor, setConversionFactor] = useState(1.55); // Default
 
     // State for Filter
     const [fromDate, setFromDate] = useState('');
@@ -83,6 +84,12 @@ export default function HaulingMasterReportPage() {
                     toast.success(data.message);
                 } else {
                     setReportData(data);
+                    if (data.length > 0 && data[0].ConversionFactor) {
+                        setConversionFactor(data[0].ConversionFactor);
+                    } else {
+                        setConversionFactor(1.55);
+                    }
+
                     if (data.length === 0) toast.info("No data found for selected range");
                 }
             } else {
@@ -113,6 +120,11 @@ export default function HaulingMasterReportPage() {
                 onFilterClick={() => setModalOpen(true)}
                 filterSummary={filterSummary}
                 filterCount={Object.values(filters).filter(f => Array.isArray(f) && f.length > 0).length}
+                extraContent={
+                    <div className="text-sm font-semibold text-blue-600">
+                        BCM Conversion Factor : {conversionFactor}
+                    </div>
+                }
             />
 
             <div className="mt-8">

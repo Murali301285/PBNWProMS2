@@ -31,7 +31,7 @@ export default function ProductionNtpcTable({ data, loading, date }) {
                 </div>
             </div>
 
-            <div className="space-y-16">
+            <div className="space-y-12 max-w-4xl mx-auto">
 
                 {/* 1. Production Quantity */}
                 <div className={styles.tableContainer}>
@@ -39,12 +39,12 @@ export default function ProductionNtpcTable({ data, loading, date }) {
                     <table className={styles.table}>
                         <tbody>
                             <tr className={styles.totalRow}>
-                                <th className="w-1/2 text-center text-black">COAL</th>
-                                <td className="font-bold text-left pl-4 text-black">{summary.ProdCoal} MT</td>
+                                <th className="w-1/2 text-left pl-8 text-black">COAL</th>
+                                <td className="font-bold text-right pr-8 text-black">{summary.ProdCoal?.toLocaleString('en-IN')} MT</td>
                             </tr>
                             <tr className={styles.totalRow}>
-                                <th className="text-center text-black">OB</th>
-                                <td className="font-bold text-left pl-4 text-black">{summary.ProdOB} BCM</td>
+                                <th className="text-left pl-8 text-black">OB</th>
+                                <td className="font-bold text-right pr-8 text-black">{summary.ProdOB?.toLocaleString('en-IN')} BCM</td>
                             </tr>
                         </tbody>
                     </table>
@@ -56,12 +56,12 @@ export default function ProductionNtpcTable({ data, loading, date }) {
                     <table className={styles.table}>
                         <tbody>
                             <tr className={styles.totalRow}>
-                                <th className="w-1/2 text-center text-black">COAL</th>
-                                <td className="font-bold text-left pl-4 text-black">{summary.WPCoalQty} MT</td>
+                                <th className="w-1/2 text-left pl-8 text-black">COAL</th>
+                                <td className="font-bold text-right pr-8 text-black">{summary.WPCoalQty?.toLocaleString('en-IN')} MT</td>
                             </tr>
                             <tr className={styles.totalRow}>
-                                <th className="text-center text-black">OB</th>
-                                <td className="font-bold text-left pl-4 text-black">{summary.WPObQty} BCM</td>
+                                <th className="text-left pl-8 text-black">OB</th>
+                                <td className="font-bold text-right pr-8 text-black">{summary.WPObQty?.toLocaleString('en-IN')} BCM</td>
                             </tr>
                         </tbody>
                     </table>
@@ -73,23 +73,23 @@ export default function ProductionNtpcTable({ data, loading, date }) {
                     <table className={styles.table}>
                         <thead>
                             <tr className={styles.totalRow}>
-                                <th className="text-left pl-2 text-black">PLANT</th>
-                                <th className="text-black">HRS</th>
-                                <th className="text-black">QTY (MT)</th>
+                                <th className="text-left pl-4 text-black">PLANT</th>
+                                <th className="text-right pr-8 text-black">HRS</th>
+                                <th className="text-right pr-8 text-black">QTY (MT)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {crusher.map((row, i) => (
                                 <tr key={i}>
-                                    <td className="text-left pl-2 font-semibold">{row.Plant}</td>
-                                    <td className="text-left pl-10 font-bold">{row.RunningHr?.toFixed(2)}</td>
-                                    <td className="text-left pl-10 font-bold">{row.TotalQty}</td>
+                                    <td className="text-left pl-4 font-semibold">{row.Plant}</td>
+                                    <td className="text-right pr-8 font-bold">{row.RunningHr?.toFixed(2)}</td>
+                                    <td className="text-right pr-8 font-bold">{row.TotalQty?.toLocaleString('en-IN')}</td>
                                 </tr>
                             ))}
                             <tr className={styles.totalRow}>
-                                <td className="text-left pl-2 text-black">Total</td>
-                                <td className="text-left pl-10 text-black">{totalCrusherHrs.toFixed(2)}</td>
-                                <td className="text-left pl-10 text-black">{totalCrusherQty}</td>
+                                <td className="text-left pl-4 text-black">Total</td>
+                                <td className="text-right pr-8 text-black">{totalCrusherHrs.toFixed(2)}</td>
+                                <td className="text-right pr-8 text-black">{totalCrusherQty?.toLocaleString('en-IN')}</td>
                             </tr>
                         </tbody>
                     </table>

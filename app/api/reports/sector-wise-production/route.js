@@ -18,7 +18,7 @@ export async function POST(req) {
             request.input('ShiftId', sql.Int, shiftId);
         }
 
-        const result = await request.query('EXEC ProMS2_SPReportSectorWiseProduction @Date, ' + (shiftId ? '@ShiftId' : 'NULL'));
+        const result = await request.query('EXEC PMS2_New_sp_SectorWiseProductionReport @Date, ' + (shiftId ? '@ShiftId' : 'NULL'));
 
         return NextResponse.json({ success: true, data: result.recordset || [] });
     } catch (error) {

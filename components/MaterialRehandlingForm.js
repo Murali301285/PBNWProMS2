@@ -28,6 +28,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
     const prevDateRef = useRef(new Date().toISOString().split('T')[0]);
     const remarksRef = useRef(null);
     const saveBtnRef = useRef(null);
+    const isFirstLoadRef = useRef(true); // Track Initial Load for Context
 
     // Initial Form State
     const today = new Date().toISOString().split('T')[0];
@@ -229,16 +230,25 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
             } catch (e) { console.error("User Parse Error", e); }
 
             try {
-                console.log("🚀 [MaterialRehandling] Fetching Context from: /api/transaction/material-rehandling/helper/last-context");
+                // LOGIC UPDATE (Request 1983/2019):
+                // 1. First Load: Send NO DATE so Backend fetches Last Available History (Fallback).
+                // 2. Subsequent Loads: Send Selected Date. Backend will return NULL if no data found for that specific date (preventing overwrite).
+                const dateToSend = isFirstLoadRef.current ? '' : formData.Date;
+
+                console.log(`🚀 [MaterialRehandling] Fetching Context. FirstLoad: ${isFirstLoadRef.current}, DateToSend: ${dateToSend || 'Empty(History)'}`);
+
                 const res = await fetch('/api/transaction/material-rehandling/helper/last-context', {
                     method: 'POST',
                     body: JSON.stringify({
-                        date: formData.Date,
+                        date: dateToSend,
                         ShiftId: formData.ShiftId,
                         moduleType,
                         UserId: userId
                     })
                 }).then(r => r.json());
+
+                // Mark First Load as Done
+                if (isFirstLoadRef.current) isFirstLoadRef.current = false;
 
                 // If Result Found -> Apply
                 if (res.success && res.data) {

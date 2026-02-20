@@ -30,7 +30,7 @@ export async function POST(req) {
 
         // SQL Query provided by USER
         // Note: Using pool.request().query() for multiple statements in one go.
-        const query = `EXEC ProMS2_SPReportTentativeProduction @Date = @dateInput, @ShiftId = @shiftIdInput`;
+        const query = `EXEC PMS2_New_Sp_TentativeProductionQty @Date = @dateInput, @ShiftId = @shiftIdInput`;
 
         const request = pool.request();
         request.input('dateInput', sql.Date, date);

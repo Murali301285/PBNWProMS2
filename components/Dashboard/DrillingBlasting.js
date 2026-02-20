@@ -1,13 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
-import RecoveryChart from './Charts/RecoveryChart';
-import SMEChart from './Charts/SMEChart';
-import ExplosiveDonut from './Charts/ExplosiveDonut';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import styles from '../../app/dashboard/page.module.css'; // Reusing dashboard styles
+import DrillingDetailsTable from './DrillingDetailsTable';
 
 export default function DrillingBlasting() {
     const [data, setData] = useState(null);
@@ -106,7 +104,9 @@ export default function DrillingBlasting() {
 
                 {/* Section 1: Drilling */}
                 <section>
-                    <h2 className={styles.sectionTitle}>1. Drilling Performance Overview</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <h2 className={styles.sectionTitle} style={{ margin: 0 }}>1. Drilling Performance Overview</h2>
+                    </div>
 
                     {/* KPI Cards */}
                     <div className={styles.gridThree}>
@@ -133,114 +133,8 @@ export default function DrillingBlasting() {
                         </div>
                     </div>
 
-
-                    {/* Redesign: Chart Left, Detailed Table Right */}
-                    <div className={styles.gridTwo} style={{ alignItems: 'start' }}>
-
-                        {/* LEFT: Recovery Chart */}
-                        <div className={styles.chartContainer}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Production Recovery</h3>
-                            {data?.drilling?.recovery && <RecoveryChart data={data.drilling.recovery} />}
-                        </div>
-
-                        {/* RIGHT: Detailed Machine Performance */}
-                        <div className={styles.chartContainer} style={{ height: 'auto', minHeight: '400px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Drill-wise Performance (Today)</h3>
-
-                            <table className={styles.detailTable}>
-                                <thead>
-                                    <tr>
-                                        <th>Drill No.</th>
-                                        <th style={{ textAlign: 'right' }}>Shift (m)</th>
-                                        <th style={{ textAlign: 'right' }}>Day (m)</th>
-                                        <th style={{ textAlign: 'right' }}>Ach %</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data?.drilling?.performance?.map((row, idx) => (
-                                        <tr key={idx}>
-                                            <td style={{ fontWeight: 500 }}>{row.EquipmentName} {row.Remarks && <span style={{ color: 'red', fontSize: '0.7em' }}>({row.Remarks})</span>}</td>
-                                            <td style={{ textAlign: 'right' }}>{row.ShiftMeters}</td>
-                                            <td style={{ textAlign: 'right' }}>{row.DayMeters}</td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                <span style={{
-                                                    padding: '2px 8px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '0.75rem',
-                                                    background: row.Achievement >= 90 ? '#dcfce7' : row.Achievement >= 50 ? '#fef9c3' : '#fee2e2',
-                                                    color: row.Achievement >= 90 ? '#166534' : row.Achievement >= 50 ? '#854d0e' : '#991b1b',
-                                                    fontWeight: 700
-                                                }}>
-                                                    {row.Achievement}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Section 2: Blasting */}
-                <section style={{ marginTop: '2rem' }}>
-                    <h2 className={styles.sectionTitle}>2. Blasting Performance Overview</h2>
-
-                    <div className={styles.gridTwo}>
-                        {/* SME Supplier Chart */}
-                        <div className={styles.chartContainer}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Supplier Analysis</h3>
-                            {data?.blasting?.supplier && <SMEChart data={data.blasting.supplier} />}
-                        </div>
-
-                        {/* Explosive Donut */}
-                        <div className={styles.chartContainer}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Explosive Type Distribution</h3>
-                            <div style={{ width: '60%', margin: '0 auto' }}>
-                                {data?.blasting?.explosive && <ExplosiveDonut data={data.blasting.explosive} />}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bottom: Detailed Blasting Log */}
-                    <div className={styles.chartContainer} style={{ height: 'auto', marginTop: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Blasting Patterns Executed</h3>
-                        <table className={styles.detailTable}>
-                            <thead>
-                                <tr>
-                                    <th>Location</th>
-                                    <th>Pattern ID</th>
-                                    <th style={{ textAlign: 'right' }}>Holes</th>
-                                    <th style={{ textAlign: 'right' }}>Explosive (Kg)</th>
-                                    <th>Type</th>
-                                    <th>Supplier</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data?.blasting?.details?.map((row, idx) => (
-                                    <tr key={idx}>
-                                        <td>{row.Location}</td>
-                                        <td style={{ fontFamily: 'monospace' }}>{row.Pattern}</td>
-                                        <td style={{ textAlign: 'right' }}>{row.Holes}</td>
-                                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{row.Explosive.toLocaleString()}</td>
-                                        <td>
-                                            <span style={{
-                                                padding: '2px 6px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.7em',
-                                                border: '1px solid var(--border)',
-                                                background: 'var(--secondary)',
-                                                color: 'var(--secondary-foreground)'
-                                            }}>
-                                                {row.Type}
-                                            </span>
-                                        </td>
-                                        <td>{row.Supplier}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    {/* Inline Details Table replacing Charts */}
+                    <DrillingDetailsTable date={date} />
 
                 </section>
 

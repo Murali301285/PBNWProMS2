@@ -14,7 +14,7 @@ export async function POST(req) {
         request.input('Date', sql.Date, date);
         request.input('ShiftId', sql.Int, shiftId);
 
-        const result = await request.query('EXEC ProMS2_SPReportShiftProduction @Date, @ShiftId');
+        const result = await request.query('EXEC PMS2_New_sp_ShiftReport @Date, @ShiftId');
 
         // Result Sets Mapping based on SP definition:
         // 0: Incharge Details
@@ -39,6 +39,8 @@ export async function POST(req) {
             sectionD_Waste: result.recordsets[7] || [],
             sectionE_Coal: result.recordsets[8] || [],
             sectionE_Waste: result.recordsets[9] || [],
+            crushingDetails: result.recordsets[10] || [],
+            dewateringDetails: result.recordsets[11] || [],
             inchargeDetails: { LargeScale: null, SmallScale: null }
         };
 
@@ -64,45 +66,7 @@ export async function POST(req) {
             console.error("Error fetching manual incharge details:", e);
         }
 
-        // --- Fetch Crushing Details (Section F) ---
-        try {
-            const crusherQuery = `
-                SELECT 
-                    c.SlNo,
-                    p.Name as EquipmentName,
-                    c.RunningHr,
-                    c.TotalQty,
-                    0 as Budget,
-                    c.TotalQty as Actual
-                FROM Trans.TblCrusher c
-                LEFT JOIN Master.TblPlant p ON c.PlantId = p.SlNo
-                WHERE c.Date = @Date AND c.ShiftId = @ShiftId
-            `;
-            const crusherRes = await request.query(crusherQuery);
-            data.crushingDetails = crusherRes.recordset;
-        } catch (e) {
-            console.error("Error fetching crusher details:", e);
-            data.crushingDetails = [];
-        }
 
-        // --- Fetch Dewatering Pump Details (Section G) ---
-        try {
-            const dewateringQuery = `
-                SELECT 
-                    r.SlNo,
-                    e.EquipmentName as Pump,
-                    (r.EndReading - r.StartReading) as RunHr -- Assuming this calc
-                FROM Trans.TblEquipmentReading r
-                JOIN Master.TblEquipment e ON r.EquipmentId = e.EquipmentId
-                WHERE r.ReadingDate = @Date AND r.ShiftId = @ShiftId
-                AND e.ActivityId = 10 -- Pump
-            `;
-            const dewateringRes = await request.query(dewateringQuery);
-            data.dewateringDetails = dewateringRes.recordset;
-        } catch (e) {
-            console.error("Error fetching dewatering details:", e);
-            data.dewateringDetails = [];
-        }
 
         return NextResponse.json({ success: true, data });
     } catch (error) {

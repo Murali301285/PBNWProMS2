@@ -4,16 +4,17 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req) {
     try {
-        const { date, shiftId } = await req.json(); // Expecting 'date' from singleDate filter
+        const { fromDate, toDate, shiftId } = await req.json();
 
-        if (!date) {
-            return NextResponse.json({ success: false, message: 'Date is required' }, { status: 400 });
+        if (!fromDate || !toDate) {
+            return NextResponse.json({ success: false, message: 'From Date and To Date are required' }, { status: 400 });
         }
 
-        const query = `EXEC ProMS2_SPReportWaterTankerEntry @Date = @dateInput, @ShiftId = @shiftInput`;
+        const query = `EXEC ProMS2_SPReportWaterTankerEntry @FromDate = @fromDateInput, @ToDate = @toDateInput, @ShiftId = @shiftInput`;
 
         const data = await executeQuery(query, [
-            { name: 'dateInput', value: date },
+            { name: 'fromDateInput', value: fromDate },
+            { name: 'toDateInput', value: toDate },
             { name: 'shiftInput', value: shiftId || null } // Pass null if 'All' or empty
         ]);
 

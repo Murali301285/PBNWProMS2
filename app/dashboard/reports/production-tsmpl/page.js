@@ -116,6 +116,17 @@ export default function ProductionTsmplPage() {
         }
     };
 
+    // Helper for Indian Number Format
+    const formatNumber = (num, digits = 2) => {
+        if (num === null || num === undefined) return '';
+        const val = typeof num === 'string' ? parseFloat(num) : num;
+        if (isNaN(val)) return num;
+
+        return new Intl.NumberFormat('en-IN', {
+            maximumFractionDigits: digits
+        }).format(val);
+    };
+
     const handlePrint = () => window.print();
 
     const handleExportExcel = () => {
@@ -126,37 +137,45 @@ export default function ProductionTsmplPage() {
         const wsData = [];
 
         // Title & Header Info
-        wsData.push(["Production TSMPL"]);
-        wsData.push([`Date: ${headerInfo?.Date || '-'}`, "", `Shift: ${headerInfo?.ShiftName || '-'}`]);
+        wsData.push(["THRIVENI SAINIK MINING PRIVATE LIMITED"]);
+        wsData.push(["PAKRI BARWADIH COAL MINING PROJECT"]);
+        wsData.push(["PRODUCTION TSMPL REPORT"]);
+        wsData.push([`Date: ${headerInfo?.Date || '-'} | Shift: ${headerInfo?.ShiftName || '-'}`]);
         wsData.push([]);
 
         // 1. Time Breakdown Table
         wsData.push(["Participle", "Shift Change", "Break fast/Tea Time", "Blasting", "Others", "Total"]);
-        wsData.push(["Mins", summary.ShiftChange, summary.BreakTime, summary.Blasting, summary.Others, summary.Totalmin]);
-        wsData.push(["Hrs", summary.TotalShiftChangeHrs, summary.TotalBreakTimeHrs, summary.TotalBlastingHrs, summary.TotalOthersHrs, summary.TotalHrs]);
-        wsData.push(["Total working hrs", "", "", "", "", summary.TotalWorkingHrs]);
+        wsData.push(["Mins", formatNumber(summary.ShiftChange, 0), formatNumber(summary.BreakTime, 0), formatNumber(summary.Blasting, 0), formatNumber(summary.Others, 0), formatNumber(summary.Totalmin, 0)]);
+        wsData.push(["Hrs", formatNumber(summary.TotalShiftChangeHrs, 1), formatNumber(summary.TotalBreakTimeHrs, 1), formatNumber(summary.TotalBlastingHrs, 1), formatNumber(summary.TotalOthersHrs, 1), formatNumber(summary.TotalHrs, 1)]);
+        wsData.push(["Total working hrs", "", "", "", "", formatNumber(summary.TotalWorkingHrs, 1)]);
         wsData.push([]);
 
         // 2. Production Quantity
         wsData.push(["Production Quantity"]);
         wsData.push(["Material", "Shift Qty.", "Per Hour"]);
-        wsData.push(["COAL", `${summary.ProdCoal} MT`, `${summary.ProdCoalPerHrs} MT`]);
-        wsData.push(["OB", `${summary.ProdOB} BCM`, `${summary.ProdOBPerHrs} BCM`]);
+        wsData.push(["COAL", `${formatNumber(summary.ProdCoal)} MT`, `${formatNumber(summary.ProdCoalPerHrs, 0)} MT`]);
+        wsData.push(["OB", `${formatNumber(summary.ProdOB)} BCM`, `${formatNumber(summary.ProdOBPerHrs, 0)} BCM`]);
         wsData.push([]);
 
         // 3. WP-3 Quantity
         wsData.push(["WP-3 Quantity"]);
-        wsData.push(["COAL", `${summary.WPCoalQty} MT`]);
-        wsData.push(["OB", `${summary.WPObQty} BCM`]);
+        wsData.push(["COAL", `${formatNumber(summary.WPCoalQty)} MT`]);
+        wsData.push(["OB", `${formatNumber(summary.WPObQty)} BCM`]);
         wsData.push([]);
 
         // 4. Carpeting Quantity
         wsData.push(["Carpeting Quantity"]);
         wsData.push(["Material", "Shift Qty."]);
-        wsData.push(["OB", `${summary.CarpettingObQty} BCM`]);
+        wsData.push(["OB", `${formatNumber(summary.CarpettingObQty)} BCM`]);
         wsData.push([]);
 
-        // 5. Crusher Details
+        // 5. Coal Rehandling
+        wsData.push(["Coal Rehandling"]);
+        wsData.push(["Material", "Shift Qty."]);
+        wsData.push(["COAL", `${formatNumber(summary.RehandlingCoalQty)} MT`]);
+        wsData.push([]);
+
+        // 6. Crusher Details
         wsData.push(["Crusher Details"]);
         wsData.push(["Plant", "W. Hours", "Quantity (MT)"]);
 
@@ -164,12 +183,12 @@ export default function ProductionTsmplPage() {
         let totalQty = 0;
 
         crusher.forEach(row => {
-            wsData.push([row.Plant, row.RunningHr, row.TotalQty]);
+            wsData.push([row.Plant, formatNumber(row.RunningHr), formatNumber(row.TotalQty)]);
             totalHrs += (row.RunningHr || 0);
             totalQty += (row.TotalQty || 0);
         });
 
-        wsData.push(["Total", totalHrs.toFixed(2), totalQty]);
+        wsData.push(["Total", formatNumber(totalHrs), formatNumber(totalQty)]);
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
 
@@ -194,7 +213,7 @@ export default function ProductionTsmplPage() {
                 const rowVal = wsData[R];
                 const firstColVal = rowVal[0];
 
-                if (firstColVal === "Production Quantity" || firstColVal === "WP-3 Quantity" || firstColVal === "Carpeting Quantity" || firstColVal === "Crusher Details") {
+                if (firstColVal === "Production Quantity" || firstColVal === "WP-3 Quantity" || firstColVal === "Carpeting Quantity" || firstColVal === "Coal Rehandling" || firstColVal === "Crusher Details") {
                     cellStyle.font.bold = true;
                     cellStyle.fill = { fgColor: { rgb: "B4C6E7" } };
                 }

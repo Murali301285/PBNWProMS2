@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UIProvider } from "@/contexts/UIContext";
 import "./globals.css";
+import "./print.css";
 
 export const metadata = {
     title: "ProMS - Production Management System",

@@ -7,13 +7,13 @@ export const dynamic = 'force-dynamic';
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { date, operatorIds } = body;
+        const { fromDate, toDate, operatorIds } = body;
 
-        console.log("Operator Report Request:", { date, operatorIds });
+        console.log("Operator Report Request:", { fromDate, toDate, operatorIds });
 
         const params = [
-            { name: 'FromDate', value: date },
-            { name: 'ToDate', value: date },
+            { name: 'FromDate', value: fromDate },
+            { name: 'ToDate', value: toDate },
             { name: 'OperatorIds', value: operatorIds && operatorIds.length > 0 ? operatorIds.join(',') : null }
         ];
 

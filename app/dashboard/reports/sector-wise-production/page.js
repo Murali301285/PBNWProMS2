@@ -24,10 +24,15 @@ export default function SectorWiseProductionPage() {
                 const res = await fetch('/api/master/shift');
                 if (res.ok) {
                     const data = await res.json();
+                    let fetchedShifts = [];
                     if (Array.isArray(data)) {
-                        setShifts(data);
+                        fetchedShifts = data;
                     } else if (data.success && Array.isArray(data.data)) {
-                        setShifts(data.data);
+                        fetchedShifts = data.data;
+                    }
+                    setShifts(fetchedShifts);
+                    if (fetchedShifts.length > 0) {
+                        setShiftId(fetchedShifts[0].SlNo.toString());
                     }
                 } else {
                     console.warn("Could not fetch shifts");
@@ -109,7 +114,7 @@ export default function SectorWiseProductionPage() {
                         r.EquipmentName,
                         r.PatchName,
                         r.Trips,
-                        r.QtyBCM,
+                        r.QtyBCM?.toLocaleString('en-IN'),
                         r.OBHrs,
                         r.TargetBCMHr,
                         Number(r.BCMHr).toFixed(2),
@@ -124,7 +129,7 @@ export default function SectorWiseProductionPage() {
                 wsData.push([
                     "Total", "", "",
                     secTrips,
-                    secQty,
+                    secQty?.toLocaleString('en-IN'),
                     secHrs.toFixed(1),
                     "-",
                     secHrs > 0 ? (secQty / secHrs).toFixed(2) : "0.00",
@@ -140,7 +145,7 @@ export default function SectorWiseProductionPage() {
             wsData.push([
                 "Grand Total", "", "",
                 grandTrips,
-                grandQty,
+                grandQty?.toLocaleString('en-IN'),
                 grandHrs.toFixed(1),
                 "-",
                 grandHrs > 0 ? (grandQty / grandHrs).toFixed(2) : "0.00",
@@ -188,7 +193,7 @@ export default function SectorWiseProductionPage() {
                         value={shiftId}
                         onChange={(e) => setShiftId(e.target.value)}
                     >
-                        <option value="">All Shifts</option>
+                        {/* <option value="">All Shifts</option> */}
                         {shifts.map((s) => (
                             <option key={s.SlNo} value={s.SlNo}>
                                 {s.ShiftName}

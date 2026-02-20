@@ -9,7 +9,7 @@ const TableHeader = () => (
             <th>Equipment Name</th>
             <th>Patch</th>
             <th>Trip</th>
-            <th>Tentative Production Qty</th>
+            <th>Qty(BCM)</th>
             <th>OB Hrs</th>
             <th>Target BCM/Hr</th>
             <th>BCM/Hr</th>
@@ -27,7 +27,7 @@ export default function SectorWiseProductionTable({ data, date, shiftName }) {
         return `${day}/${m}/${y}`;
     };
 
-    const fmt = (val) => val != null ? Number(val).toLocaleString('en-IN') : '0';
+    const fmt = (val) => val != null ? Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0';
     const fmtDec = (val) => val != null ? Number(val).toFixed(2) : '0.00';
 
     // Group Data by Sector
@@ -108,7 +108,9 @@ export default function SectorWiseProductionTable({ data, date, shiftName }) {
                         <TableHeader />
                         <tbody>
                             <tr className="bg-yellow-300 font-bold border-t-2 border-black" style={{ fontSize: '1.1rem' }}>
-                                <td colSpan="3" className="text-right pr-4 py-3">Grand Total</td>
+                                <td></td>
+                                <td className="text-center">Grand Total</td>
+                                <td></td>
                                 <td>{data.reduce((s, r) => s + (r.Trips || 0), 0)}</td>
                                 <td>{fmt(data.reduce((s, r) => s + (r.QtyBCM || 0), 0))}</td>
                                 <td>{data.reduce((s, r) => s + (r.OBHrs || 0), 0).toFixed(1)}</td>

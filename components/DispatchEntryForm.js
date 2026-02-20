@@ -74,7 +74,7 @@ export default function DispatchEntryForm({ mode = 'create', initialData = null 
         const fetchMasters = async () => {
             try {
                 const [locRes, unitRes] = await Promise.all([
-                    fetch('/api/master/location').then(r => r.json()),
+                    fetch('/api/transaction/dispatch-entry/locations').then(r => r.json()),
                     fetch('/api/master/unit').then(r => r.json())
                 ]);
 

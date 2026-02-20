@@ -13,7 +13,7 @@ export async function POST(req) {
         const request = pool.request();
         request.input('Date', sql.Date, date);
 
-        const result = await request.query('EXEC ProMS2_SPReportDailyProduction @Date');
+        const result = await request.query('EXEC PMS2_New_Sp_DailyProductionReport @Date');
 
         // Map result sets
         // 0: Shift Prod Coal

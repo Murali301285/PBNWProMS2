@@ -39,7 +39,9 @@ export default function DashboardLayout({ children }) {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
-            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            <div className="no-print">
+                <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+            </div>
             <div style={{
                 flex: 1,
                 // Adjust margin based on collapsed state logic
@@ -48,8 +50,10 @@ export default function DashboardLayout({ children }) {
                 display: 'flex',
                 flexDirection: 'column',
                 minWidth: 0,
-            }}>
-                <Header toggleSidebar={toggleSidebar} isSidebarOpen={!isSidebarCollapsed} />
+            }} className="print:ml-0 print:m-0">
+                <div className="no-print">
+                    <Header toggleSidebar={toggleSidebar} isSidebarOpen={!isSidebarCollapsed} />
+                </div>
                 <main style={{ flex: 1, padding: '.5rem', overflowY: 'auto' }}>
                     {children}
                 </main>

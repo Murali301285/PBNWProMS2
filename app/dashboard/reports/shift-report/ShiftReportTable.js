@@ -42,7 +42,7 @@ export default function ShiftReportTable({ data, date, shiftName }) {
 
             {/* SECTION A: TRIP-QUANTITY */}
             <h3 className={styles.sectionHeader}>A. TRIP-QUANTITY DETAILS</h3>
-            <div className="flex gap-4 mb-6">
+            <div className="flex flex-col mb-6">
                 {/* Coal */}
                 <div className="flex-1">
                     <table className={styles.table}>
@@ -67,22 +67,22 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                                 </tr>
                             ))}
                             {/* Total */}
-                            <tr className="font-bold bg-yellow-200">
-                                <td className="text-right pr-2">Total</td>
-                                <td>{fmt(sectionA_Coal.reduce((s, r) => s + r.Shift_Trips, 0))}</td>
-                                <td>{fmt(sectionA_Coal.reduce((s, r) => s + r.Shift_Qty, 0))}</td>
-                                <td>{fmt(sectionA_Coal.reduce((s, r) => s + r.FTD_Trips, 0))}</td>
-                                <td>{fmt(sectionA_Coal.reduce((s, r) => s + r.FTD_Qty, 0))}</td>
+                            <tr className="font-bold bg-white text-md border-b">
+                                <td className="text-center font-bold font-sans">Total</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Coal.reduce((s, r) => s + r.Shift_Trips, 0))}</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Coal.reduce((s, r) => s + r.Shift_Qty, 0))}</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Coal.reduce((s, r) => s + r.FTD_Trips, 0))}</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Coal.reduce((s, r) => s + r.FTD_Qty, 0))}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 {/* Waste */}
-                <div className="flex-1">
+                <div className="flex-1 mt-0">
                     <table className={styles.table}>
-                        <thead>
+                        <thead className="border-t-2 border-slate-400">
                             <tr className={styles.blueHeader}>
-                                <th className="bg-green-200">Waste</th>
+                                <th className="bg-green-200">OB</th>
                                 <th colSpan="2" className="text-red-700">SHIFT Production</th>
                                 <th colSpan="2" className="text-red-700">FTD Production</th>
                             </tr>
@@ -100,12 +100,12 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                                     <td>{fmt(r.FTD_Trips)}</td><td>{fmt(r.FTD_Qty)}</td>
                                 </tr>
                             ))}
-                            <tr className="font-bold bg-yellow-200">
-                                <td className="text-right pr-2">Total</td>
-                                <td>{fmt(sectionA_Waste.reduce((s, r) => s + r.Shift_Trips, 0))}</td>
-                                <td>{fmt(sectionA_Waste.reduce((s, r) => s + r.Shift_Qty, 0))}</td>
-                                <td>{fmt(sectionA_Waste.reduce((s, r) => s + r.FTD_Trips, 0))}</td>
-                                <td>{fmt(sectionA_Waste.reduce((s, r) => s + r.FTD_Qty, 0))}</td>
+                            <tr className="font-bold bg-white text-md border-b">
+                                <td className="text-center font-bold font-sans">Total</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Waste.reduce((s, r) => s + r.Shift_Trips, 0))}</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Waste.reduce((s, r) => s + r.Shift_Qty, 0))}</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Waste.reduce((s, r) => s + r.FTD_Trips, 0))}</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionA_Waste.reduce((s, r) => s + r.FTD_Qty, 0))}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -119,7 +119,7 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                     <tr className={styles.blueHeader}>
                         <th>LOADING EQP.</th>
                         <th>OB/IB</th>
-                        <th>TOP SOIL</th>
+                        <th>FREE DIG</th>
                         <th>COAL</th>
                         <th>Total Trip</th>
                         <th>BCM</th>
@@ -144,21 +144,21 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                             <td>{fmt(r.MT)}</td>
                             <td>{r.WHr}</td>
                             <td>-</td>
-                            <td>{r.WHr > 0 ? (r.Total_Trip / r.WHr).toFixed(1) : '-'}</td>
+                            <td>{r.WHr > 0 ? Math.round(r.Total_Trip / r.WHr) : '-'}</td>
                             <td>-</td>
-                            <td>{r.WHr > 0 ? (r.BCM / r.WHr).toFixed(1) : '-'}</td>
+                            <td>{r.WHr > 0 ? Math.round(r.BCM / r.WHr) : '-'}</td>
                             <td className="text-xs">{r.Location}</td>
                         </tr>
                     ))}
                     {/* Total Row */}
-                    <tr className="bg-yellow-200 font-bold border-t border-slate-900">
-                        <td>TOTAL</td>
-                        <td>{sectionB_Loading.reduce((s, r) => s + r.OBIB_Trip, 0)}</td>
-                        <td>{sectionB_Loading.reduce((s, r) => s + r.TopSoil_Trip, 0)}</td>
-                        <td>{sectionB_Loading.reduce((s, r) => s + r.Coal_Trip, 0)}</td>
-                        <td>{sectionB_Loading.reduce((s, r) => s + r.Total_Trip, 0)}</td>
-                        <td>{fmt(sectionB_Loading.reduce((s, r) => s + r.BCM, 0))}</td>
-                        <td>{fmt(sectionB_Loading.reduce((s, r) => s + r.MT, 0))}</td>
+                    <tr className="bg-yellow-200 font-bold border-t-2 border-slate-900 text-md">
+                        <td className="font-bold" style={{ fontWeight: 600 }}>TOTAL</td>
+                        <td className="font-bold" style={{ fontWeight: 600 }}>{sectionB_Loading.reduce((s, r) => s + (r.OBIB_Trip || 0), 0)}</td>
+                        <td className="font-bold" style={{ fontWeight: 600 }}>{sectionB_Loading.reduce((s, r) => s + (r.TopSoil_Trip || 0), 0)}</td>
+                        <td className="font-bold" style={{ fontWeight: 600 }}>{sectionB_Loading.reduce((s, r) => s + (r.Coal_Trip || 0), 0)}</td>
+                        <td className="font-bold" style={{ fontWeight: 600 }}>{sectionB_Loading.reduce((s, r) => s + (r.Total_Trip || 0), 0)}</td>
+                        <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionB_Loading.reduce((s, r) => s + (r.BCM || 0), 0))}</td>
+                        <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionB_Loading.reduce((s, r) => s + (r.MT || 0), 0))}</td>
                         <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td></td>
                     </tr>
                 </tbody>
@@ -189,13 +189,21 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                                     <td>{fmt(r.MT)}</td>
                                 </tr>
                             ))}
+                            {/* C.1 Total Row */}
+                            <tr className="bg-yellow-200 font-bold border-t-2 border-slate-900 text-md">
+                                <td className="font-bold text-center" style={{ fontWeight: 600 }}>Total</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{sectionC_Coal.reduce((s, r) => s + (r.EqCount || 0), 0)}</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionC_Coal.reduce((s, r) => s + (r.MT || 0), 0))}</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
 
                 {/* C.2 Waste */}
                 <div>
-                    <h3 className={styles.sectionHeader}>C.2. Loading Equipment (in Waste)</h3>
+                    <h3 className={styles.sectionHeader}>C.2. Loading Equipment (in OB)</h3>
                     <table className={styles.table}>
                         <thead>
                             <tr className={styles.blueHeader}>
@@ -216,6 +224,14 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                                     <td>{fmt(r.BCM)}</td>
                                 </tr>
                             ))}
+                            {/* C.2 Total Row */}
+                            <tr className="bg-yellow-200 font-bold border-t-2 border-slate-900 text-md">
+                                <td className="font-bold text-center" style={{ fontWeight: 600 }}>Total</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{sectionC_Waste.reduce((s, r) => s + (r.EqCount || 0), 0)}</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(sectionC_Waste.reduce((s, r) => s + (r.BCM || 0), 0))}</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -226,9 +242,9 @@ export default function ShiftReportTable({ data, date, shiftName }) {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <table className={styles.table}>
                     <thead>
-                        <tr className={styles.blueHeader}><th colSpan="3">COAL</th><th colSpan="2">WASTE</th></tr>
+                        <tr className={styles.blueHeader}><th colSpan="3">COAL</th><th colSpan="2">OB</th></tr>
                         <tr className={styles.blueHeader}>
-                            <th>Equip.</th>
+                            <th>Equip. Model</th>
                             <th>Trip</th><th>MT</th>
                             <th>Trip</th><th>BCM</th>
                         </tr>
@@ -236,7 +252,7 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                     <tbody>
                         {(() => {
                             const models = new Set([...sectionD_Coal.map(r => r.Equip), ...sectionD_Waste.map(r => r.Equip)]);
-                            return Array.from(models).map((m, i) => {
+                            const rows = Array.from(models).map((m, i) => {
                                 const c = sectionD_Coal.find(x => x.Equip === m) || {};
                                 const w = sectionD_Waste.find(x => x.Equip === m) || {};
                                 return (
@@ -246,7 +262,22 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                                         <td>{w.Trip || '-'}</td><td>{fmt(w.BCM)}</td>
                                     </tr>
                                 )
-                            })
+                            });
+
+                            const totalCoalTrips = sectionD_Coal.reduce((s, r) => s + (r.Trip || 0), 0);
+                            const totalCoalMT = sectionD_Coal.reduce((s, r) => s + (r.MT || 0), 0);
+                            const totalWasteTrips = sectionD_Waste.reduce((s, r) => s + (r.Trip || 0), 0);
+                            const totalWasteBCM = sectionD_Waste.reduce((s, r) => s + (r.BCM || 0), 0);
+
+                            rows.push(
+                                <tr key="total" className="font-bold bg-yellow-200">
+                                    <td className="text-right pr-2">Total</td>
+                                    <td>{fmt(totalCoalTrips)}</td><td>{fmt(totalCoalMT)}</td>
+                                    <td>{fmt(totalWasteTrips)}</td><td>{fmt(totalWasteBCM)}</td>
+                                </tr>
+                            );
+
+                            return rows;
                         })()}
                     </tbody>
                 </table>
@@ -254,33 +285,53 @@ export default function ShiftReportTable({ data, date, shiftName }) {
 
             {/* SECTION E: DUMP WISE */}
             <h3 className={styles.sectionHeader}>E. Dump Wise Quantity</h3>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr className={styles.blueHeader}><th colSpan="3">COAL</th></tr>
-                            <tr className={styles.blueHeader}><th>Dump</th><th>Trip</th><th>MT</th></tr>
-                        </thead>
-                        <tbody>
-                            {sectionE_Coal.map((r, i) => (
-                                <tr key={i}><td>{r.DumpWise}</td><td>{r.Trips}</td><td>{fmt(r.MT)}</td></tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr className={styles.blueHeader}><th colSpan="3">WASTE</th></tr>
-                            <tr className={styles.blueHeader}><th>Dump</th><th>Trip</th><th>BCM</th></tr>
-                        </thead>
-                        <tbody>
-                            {sectionE_Waste.map((r, i) => (
-                                <tr key={i}><td>{r.DumpWise}</td><td>{r.Trips}</td><td>{fmt(r.BCM)}</td></tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            <div className="mb-6">
+                <table className={styles.table}>
+                    <thead>
+                        <tr className={styles.blueHeader}>
+                            <th>Dump</th>
+                            <th>Coal Trips</th>
+                            <th>Coal Qty(MT)</th>
+                            <th>OB Trips</th>
+                            <th>OB BCM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {(() => {
+                            const dumps = new Set([...sectionE_Coal.map(r => r.DumpWise), ...sectionE_Waste.map(r => r.DumpWise)]);
+                            const rows = Array.from(dumps).map((d, i) => {
+                                const c = sectionE_Coal.find(x => x.DumpWise === d) || {};
+                                const w = sectionE_Waste.find(x => x.DumpWise === d) || {};
+                                return (
+                                    <tr key={i}>
+                                        <td className="text-left pl-2">{d}</td>
+                                        <td>{c.Trips || ''}</td>
+                                        <td>{c.MT ? fmt(c.MT) : ''}</td>
+                                        <td>{w.Trips || ''}</td>
+                                        <td>{w.BCM ? fmt(w.BCM) : ''}</td>
+                                    </tr>
+                                );
+                            });
+
+                            const totalCoalTrips = sectionE_Coal.reduce((s, r) => s + (r.Trips || 0), 0);
+                            const totalCoalMT = sectionE_Coal.reduce((s, r) => s + (r.MT || 0), 0);
+                            const totalOBTrips = sectionE_Waste.reduce((s, r) => s + (r.Trips || 0), 0);
+                            const totalOBBCM = sectionE_Waste.reduce((s, r) => s + (r.BCM || 0), 0);
+
+                            rows.push(
+                                <tr key="total" className="bg-white font-bold border-t-2 border-b-2 border-slate-900 text-md">
+                                    <td className="font-bold text-left pl-2" style={{ fontWeight: 600 }}>Total</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalCoalTrips || ''}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalCoalMT ? fmt(totalCoalMT) : ''}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalOBTrips || ''}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalOBBCM ? fmt(totalOBBCM) : ''}</td>
+                                </tr>
+                            );
+
+                            return rows;
+                        })()}
+                    </tbody>
+                </table>
             </div>
 
             {/* SECTION F: CRUSHING DETAILS */}

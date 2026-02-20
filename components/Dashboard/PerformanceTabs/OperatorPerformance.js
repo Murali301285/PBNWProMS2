@@ -1,118 +1,55 @@
 'use client';
-import { useState } from 'react';
-import SuperTable from '../../Shared/SuperTable';
-import { Settings2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Loader from '../../Shared/Loader';
+import OperatorSection from './OperatorSection';
 
-// Data passed via props
+export default function OperatorPerformance({ dateRange }) {
+    const [filterOptions, setFilterOptions] = useState({ models: [], capacities: [], shifts: [] });
+    const [loadingFilters, setLoadingFilters] = useState(true);
 
-const formatNumber = (num) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+    // Fetch Filters Once on Mount
+    useEffect(() => {
+        const fetchFilters = async () => {
+            try {
+                const res = await fetch('/api/dashboard/performance/filters');
+                const json = await res.json();
+                if (json.success) {
+                    setFilterOptions({
+                        models: json.models,
+                        capacities: json.capacities,
+                        shifts: json.shifts
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching filters:", err);
+            } finally {
+                setLoadingFilters(false);
+            }
+        };
+        fetchFilters();
+    }, []);
 
-const COLS = [
-    { header: 'S.N.', accessor: 'SN', width: '60px', align: 'center', render: (_, __, index) => index },
-    { header: 'Equipment', accessor: 'Equipment' },
-    { header: 'Trip', accessor: 'Trip', align: 'center' },
-    { header: 'Qty (BCM)', accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) },
-    { header: 'Hrs', accessor: 'Hrs', align: 'right', render: (val) => formatNumber(val) },
-    { header: 'Model', accessor: 'Model' },
-    { header: 'Capacity', accessor: 'Capacity' },
-    { header: 'Shift', accessor: 'Shift' },
-];
-
-export default function OperatorPerformance({ data = [] }) {
-    const [rankingMode, setRankingMode] = useState('Top'); // Top | Below
-    const [limit, setLimit] = useState(10); // 5 | 10
-
-    // Filter Data by Type
-    const loadingOps = data.filter(d => d.Type === 'Loading');
-    const haulingOps = data.filter(d => d.Type === 'Hauling');
-
-    const processData = (data) => {
-        const sorted = [...data].sort((a, b) => {
-            return rankingMode === 'Top' ? b.Qty - a.Qty : a.Qty - b.Qty;
-        });
-        return sorted.slice(0, limit);
-    };
-
-    const displayLoading = processData(loadingOps);
-    const displayHauling = processData(haulingOps);
+    if (loadingFilters) return <Loader text="Loading Filters..." />;
 
     return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-            {/* Control Bar */}
-            <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '15px',
-                alignItems: 'center',
-                background: 'white',
-                padding: '1rem',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                marginBottom: '1rem'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Rank:</span>
-                    <select
-                        value={rankingMode}
-                        onChange={e => setRankingMode(e.target.value)}
-                        style={{ padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                    >
-                        <option value="Top">Top</option>
-                        <option value="Below">Below</option>
-                    </select>
-                </div>
+            <OperatorSection
+                title="Loading Operator Performance"
+                type="Loading"
+                dateRange={dateRange}
+                filterOptions={filterOptions}
+                color="blue"
+            />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Count:</span>
-                    <select
-                        value={limit}
-                        onChange={e => setLimit(Number(e.target.value))}
-                        style={{ padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                    >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                    </select>
-                </div>
+            <OperatorSection
+                title="Hauling Operator Performance"
+                type="Hauling"
+                dateRange={dateRange}
+                filterOptions={filterOptions}
+                color="#059669" // Green
+            />
 
-                <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Settings2 size={16} />
-                    <span>Use filters in table header for sorting by Shift/Model</span>
-                </div>
-            </div>
-
-            {/* Tables Container - Vertical Stack */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                {/* 1. Loading Operator Performance */}
-                <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem' }}>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'blue', marginBottom: '1rem' }}>
-                        {rankingMode} {limit} Loading Operator Performance
-                    </h2>
-                    <SuperTable
-                        columns={COLS}
-                        data={displayLoading}
-                        title={`${rankingMode} ${limit} Loading Operator Performance`}
-                        showPagination={false}
-                    />
-                </div>
-
-                {/* 2. Hauling Operator Performance */}
-                <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem' }}>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#059669', marginBottom: '1rem' }}>
-                        {rankingMode} {limit} Hauling Operator Performance
-                    </h2>
-                    <SuperTable
-                        columns={COLS}
-                        data={displayHauling}
-                        title={`${rankingMode} ${limit} Hauling Operator Performance`}
-                        showPagination={false}
-                    />
-                </div>
-
-            </div>
         </div>
     );
 }

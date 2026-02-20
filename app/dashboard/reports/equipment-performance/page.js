@@ -21,6 +21,8 @@ export default function EquipmentPerformanceReport() {
     const [equipmentOptions, setEquipmentOptions] = useState([]);
     const [selectedActivities, setSelectedActivities] = useState([]); // Array of IDs
     const [selectedEquipment, setSelectedEquipment] = useState([]); // Array of IDs
+    const [operatorOptions, setOperatorOptions] = useState([]);
+    const [selectedOperators, setSelectedOperators] = useState([]);
 
     // Master Data (Full list to filter locally)
     const [allEquipment, setAllEquipment] = useState([]);
@@ -39,6 +41,7 @@ export default function EquipmentPerformanceReport() {
                 const data = await res.json();
 
                 if (data.activities) setActivityOptions(data.activities);
+                if (data.operators) setOperatorOptions(data.operators);
                 if (data.equipment) {
                     setAllEquipment(data.equipment);
                     setEquipmentOptions(data.equipment); // Default show all
@@ -71,6 +74,7 @@ export default function EquipmentPerformanceReport() {
         { header: 'PMS Code', accessor: 'PMS Code', width: '100px' },
         { header: 'Cost Center', accessor: 'CostCenter', width: '100px' },
         { header: 'Equipment', accessor: 'Equipment', width: '180px' },
+        { header: 'Operator', accessor: 'Operator', width: '150px' },
         { header: 'Activity', accessor: 'Activity', width: '150px' },
 
         // Shift A
@@ -78,24 +82,24 @@ export default function EquipmentPerformanceReport() {
         { header: 'Shift A Qty', accessor: 'Shift ATotal Qty', width: '110px' },
         { header: 'Shift A Hrs', accessor: 'Shift ATotal Hrs', width: '110px' },
         { header: 'Shift A Kms', accessor: 'Shift ATotal Kms', width: '110px' },
-        { header: 'Shift A Trips/Hr', accessor: 'Shift ATrips Per Hr', width: '120px', render: r => Number(r['Shift ATrips Per Hr']).toFixed(2) },
-        { header: 'Shift A Qty/Hr', accessor: 'Shift AQty Per Hr', width: '120px', render: r => Number(r['Shift AQty Per Hr']).toFixed(2) },
+        { header: 'Shift A Trips/Hr', accessor: 'Shift ATrips Per Hr', width: '120px' },
+        { header: 'Shift A Qty/Hr', accessor: 'Shift AQty Per Hr', width: '120px' },
 
         // Shift B
         { header: 'Shift B Trips', accessor: 'Shift BTotal Trips', width: '110px' },
         { header: 'Shift B Qty', accessor: 'Shift BTotal Qty', width: '110px' },
         { header: 'Shift B Hrs', accessor: 'Shift BTotal Hrs', width: '110px' },
         { header: 'Shift B Kms', accessor: 'Shift BTotal Kms', width: '110px' },
-        { header: 'Shift B Trips/Hr', accessor: 'Shift BTrips Per Hr', width: '120px', render: r => Number(r['Shift BTrips Per Hr']).toFixed(2) },
-        { header: 'Shift B Qty/Hr', accessor: 'Shift BQty Per Hr', width: '120px', render: r => Number(r['Shift BQty Per Hr']).toFixed(2) },
+        { header: 'Shift B Trips/Hr', accessor: 'Shift BTrips Per Hr', width: '120px' },
+        { header: 'Shift B Qty/Hr', accessor: 'Shift BQty Per Hr', width: '120px' },
 
         // Shift C
         { header: 'Shift C Trips', accessor: 'Shift CTotal Trips', width: '110px' },
         { header: 'Shift C Qty', accessor: 'Shift CTotal Qty', width: '110px' },
         { header: 'Shift C Hrs', accessor: 'Shift CTotal Hrs', width: '110px' },
         { header: 'Shift C Kms', accessor: 'Shift CTotal Kms', width: '110px' },
-        { header: 'Shift C Trips/Hr', accessor: 'Shift CTrips Per Hr', width: '120px', render: r => Number(r['Shift CTrips Per Hr']).toFixed(2) },
-        { header: 'Shift C Qty/Hr', accessor: 'Shift CQty Per Hr', width: '120px', render: r => Number(r['Shift CQty Per Hr']).toFixed(2) },
+        { header: 'Shift C Trips/Hr', accessor: 'Shift CTrips Per Hr', width: '120px' },
+        { header: 'Shift C Qty/Hr', accessor: 'Shift CQty Per Hr', width: '120px' },
 
         // FTD
         { header: 'FTD Trips', accessor: 'FTDTotal Trips', width: '110px' },
@@ -103,8 +107,8 @@ export default function EquipmentPerformanceReport() {
         { header: 'FTD Hrs', accessor: 'FTDTotal Hrs', width: '110px' },
         { header: 'FTD Kms', accessor: 'FTDTotal Kms', width: '110px' },
         { header: 'FTD Fuel', accessor: 'FTDTotal Fuel', width: '110px' },
-        { header: 'FTD Trips/Hr', accessor: 'FTDTrips Per Hr', width: '120px', render: r => Number(r['FTDTrips Per Hr']).toFixed(2) },
-        { header: 'FTD Qty/Hr', accessor: 'FTDQty Per Hr', width: '120px', render: r => Number(r['FTDQty Per Hr']).toFixed(2) },
+        { header: 'FTD Trips/Hr', accessor: 'FTDTrips Per Hr', width: '120px' },
+        { header: 'FTD Qty/Hr', accessor: 'FTDQty Per Hr', width: '120px' },
         { header: 'FTD Fuel/Hr', accessor: 'FTDFuel Per Hr', width: '120px', render: r => Number(r['FTDFuel Per Hr']).toFixed(2) },
         { header: 'FTD KMPL', accessor: 'FTDKMPL', width: '110px', render: r => Number(r['FTDKMPL']).toFixed(2) },
 
@@ -114,8 +118,8 @@ export default function EquipmentPerformanceReport() {
         { header: 'MTD Hrs', accessor: 'MTDTotal Hrs', width: '110px' },
         { header: 'MTD Kms', accessor: 'MTDTotal Kms', width: '110px' },
         { header: 'MTD Fuel', accessor: 'MTDTotal Fuel', width: '110px' },
-        { header: 'MTD Trips/Hr', accessor: 'MTDTrips Per Hr', width: '120px', render: r => Number(r['MTDTrips Per Hr']).toFixed(2) },
-        { header: 'MTD Qty/Hr', accessor: 'MTDQty Per Hr', width: '120px', render: r => Number(r['MTDQty Per Hr']).toFixed(2) },
+        { header: 'MTD Trips/Hr', accessor: 'MTDTrips Per Hr', width: '120px' },
+        { header: 'MTD Qty/Hr', accessor: 'MTDQty Per Hr', width: '120px' },
         { header: 'MTD Fuel/Hr', accessor: 'MTDFuel Per Hr', width: '120px', render: r => Number(r['MTDFuel Per Hr']).toFixed(2) },
         { header: 'MTD KMPL', accessor: 'MTDKMPL', width: '110px', render: r => Number(r['MTDKMPL']).toFixed(2) },
 
@@ -131,7 +135,10 @@ export default function EquipmentPerformanceReport() {
             const payload = {
                 date,
                 activityIds: selectedActivities,
-                equipmentIds: selectedEquipment
+                date,
+                activityIds: selectedActivities,
+                equipmentIds: selectedEquipment,
+                operatorIds: selectedOperators
             };
 
             const response = await fetch('/api/reports/equipment-performance', {
@@ -203,6 +210,18 @@ export default function EquipmentPerformanceReport() {
                         onChange={(e) => setSelectedEquipment(e.target.value)}
                         multiple
                         placeholder="All Equipment"
+                    />
+                </div>
+
+                {/* Operator Filter */}
+                <div className={styles.inputGroup} style={{ minWidth: '200px' }}>
+                    <label className={styles.label}>Operator</label>
+                    <SearchableSelect
+                        options={operatorOptions}
+                        value={selectedOperators}
+                        onChange={(e) => setSelectedOperators(e.target.value)}
+                        multiple
+                        placeholder="All Operators"
                     />
                 </div>
 

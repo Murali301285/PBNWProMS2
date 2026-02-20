@@ -11,7 +11,8 @@ import styles from './WaterTankerReport.module.css';
 export default function WaterTankerReport() {
     const today = new Date().toISOString().split('T')[0];
     const [filter, setFilter] = useState({
-        date: today,
+        fromDate: today,
+        toDate: today,
         shiftId: ''
     });
 
@@ -43,8 +44,8 @@ export default function WaterTankerReport() {
     }, []);
 
     const fetchData = async () => {
-        if (!filter.date) {
-            toast.error('Please select a date');
+        if (!filter.fromDate || !filter.toDate) {
+            toast.error('Please select both dates');
             return;
         }
 
@@ -56,7 +57,7 @@ export default function WaterTankerReport() {
             const res = await fetch('/api/reports/water-tanker-entry', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date: filter.date, shiftId: filter.shiftId })
+                body: JSON.stringify({ fromDate: filter.fromDate, toDate: filter.toDate, shiftId: filter.shiftId })
             });
             const result = await res.json();
 
@@ -81,12 +82,13 @@ export default function WaterTankerReport() {
     // Columns Configuration for ReportTable
     const columns = useMemo(() => [
         { header: 'S.N.', accessor: 'SlNo', width: '60px' },
-        { header: 'Water Tanker Equipment', accessor: 'WaterTankerEquipment', width: '200px' },
+        { header: 'Date', accessor: 'Date', width: '100px' }, // Added Date Column
+        { header: 'Water Tanker Equipment', accessor: 'Water Tanker Equipment', width: '200px' },
         { header: 'Trip', accessor: 'Trip', width: '80px', render: r => fmt0(r.Trip) },
-        { header: 'Tanker Capacity (Cub mtr)', accessor: 'TankerCapacity', width: '150px', render: r => fmt0(r.TankerCapacity) },
+        { header: 'Tanker Capacity (Cub mtr)', accessor: 'Tanker Capacity', width: '150px', render: r => fmt0(r['Tanker Capacity']) }, // Updated accessor
         { header: 'Qty.', accessor: 'Qty', width: '100px', render: r => fmt3(r.Qty) },
-        { header: 'Filling Point', accessor: 'FillingPoint', width: '150px' },
-        { header: 'Filling Pump', accessor: 'FillingPump', width: '150px' },
+        { header: 'Filling Point', accessor: 'Filling Point', width: '150px' }, // Updated accessor
+        { header: 'Filling Pump', accessor: 'Filling Pump', width: '150px' }, // Updated accessor
         { header: 'Destination', accessor: 'Destination', width: '150px' },
         { header: 'Remarks', accessor: 'Remarks', width: '200px' },
     ], []);
@@ -105,14 +107,23 @@ export default function WaterTankerReport() {
             {/* Filter Container */}
             <div className={styles.filterContainer}>
 
-                {/* Date Input */}
+                {/* Date Inputs */}
                 <div className={styles.inputGroup}>
-                    <label className={styles.label}>Date</label>
+                    <label className={styles.label}>From Date</label>
                     <input
                         type="date"
                         className={styles.input}
-                        value={filter.date}
-                        onChange={(e) => setFilter({ ...filter, date: e.target.value })}
+                        value={filter.fromDate}
+                        onChange={(e) => setFilter({ ...filter, fromDate: e.target.value })}
+                    />
+                </div>
+                <div className={styles.inputGroup}>
+                    <label className={styles.label}>To Date</label>
+                    <input
+                        type="date"
+                        className={styles.input}
+                        value={filter.toDate}
+                        onChange={(e) => setFilter({ ...filter, toDate: e.target.value })}
                     />
                 </div>
 
@@ -160,8 +171,8 @@ export default function WaterTankerReport() {
                 loading={loading}
                 generated={generated}
                 reportName="Water Tanker Performance"
-                fromDate={filter.date}
-                toDate={filter.date}
+                fromDate={filter.fromDate}
+                toDate={filter.toDate}
             />
         </div>
     );

@@ -79,14 +79,14 @@ export default function ProductionNtpcPage() {
 
         // 1. Production Quantity
         wsData.push(["Production Quantity"]);
-        wsData.push(["COAL", `${summary.ProdCoal} MT`]);
-        wsData.push(["OB", `${summary.ProdOB} BCM`]);
+        wsData.push(["COAL", `${summary.ProdCoal?.toLocaleString('en-IN')} MT`]);
+        wsData.push(["OB", `${summary.ProdOB?.toLocaleString('en-IN')} BCM`]);
         wsData.push([]);
 
         // 2. WP-3 Quantity
         wsData.push(["WP-3 Quantity"]);
-        wsData.push(["COAL", `${summary.WPCoalQty} MT`]);
-        wsData.push(["OB", `${summary.WPObQty} BCM`]);
+        wsData.push(["COAL", `${summary.WPCoalQty?.toLocaleString('en-IN')} MT`]);
+        wsData.push(["OB", `${summary.WPObQty?.toLocaleString('en-IN')} BCM`]);
         wsData.push([]);
 
         // 3. Crusher Details
@@ -97,12 +97,12 @@ export default function ProductionNtpcPage() {
         let totalQty = 0;
 
         crusher.forEach(row => {
-            wsData.push([row.Plant, row.RunningHr, row.TotalQty]);
+            wsData.push([row.Plant, row.RunningHr, row.TotalQty?.toLocaleString('en-IN')]);
             totalHrs += (row.RunningHr || 0);
             totalQty += (row.TotalQty || 0);
         });
 
-        wsData.push(["Total", totalHrs.toFixed(2), totalQty]);
+        wsData.push(["Total", totalHrs.toFixed(2), totalQty?.toLocaleString('en-IN')]);
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
 

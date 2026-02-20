@@ -40,7 +40,7 @@ export async function POST(request) {
         const result = await pool.request()
             .input('Date', sql.Date, date)
             .input('ShiftId', sql.Int, shiftId)
-            .execute('SPReportProductionNTPC');
+            .execute('PMS2_New_Sp_ProductionNTPCReport');
 
         // Map Result Sets
         const summaryData = result.recordsets[0]?.[0] || {};

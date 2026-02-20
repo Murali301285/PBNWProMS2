@@ -25,7 +25,7 @@ export async function GET(req) {
         // [1]: Details (Breakdown by Category)
         // [2]: Hauling Chart Data
         // [3]: Loading Chart Data
-        const resultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetAnalyticalStats', params);
+        const resultSets = await executeStoredProcedure('PMS2_New_Dash_SP_GetAnalyticalStats', params);
 
         return NextResponse.json({
             success: true,

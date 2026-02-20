@@ -40,17 +40,17 @@ export default function DailyProductionTable({ data, date }) {
             // New mappings based on requirements
             setCrusherCoalQty(data[6] || []);
             // data[7] is Blasting
-            // data[8] is Itiz Rehandling
-            // data[9] is WP-1 Excavation (Assuming, user said 7. WP-1)
-            setWp1Excavation(data[9] || []);
+            // data[8] is Itiz Rehandling (Placeholder)
             // data[10] is SMASL Quantity
             setSmaslQuantity(data[10] || []);
             // data[11] is Inpit Dumping
             setInpitDumping(data[11] || []);
             // data[12] is WP-3 Excavation
             setWp3Excavation(data[12] || []);
-
-            setRemarks(data[13] || []);
+            // data[13] is Dumper Loader Details
+            setDumperLoaderDetails(data[13] || []);
+            // data[14] is Remarks
+            setRemarks(data[14] || []);
         }
     }, [data]);
 
@@ -93,21 +93,23 @@ export default function DailyProductionTable({ data, date }) {
         // 2. Build Rows (Group by Dumper)
         const dumperMap = {};
         dumperLoaderDetails.forEach(r => {
-            if (!dumperMap[r.Dumper]) {
-                dumperMap[r.Dumper] = {
-                    Dumper: r.Dumper,
-                    Factor: r.FACTOR,
+            const dumperName = r.Dumper || 'Unknown';
+            if (!dumperMap[dumperName]) {
+                dumperMap[dumperName] = {
+                    Dumper: dumperName,
+                    Factor: r.FACTOR || 100,
                     Total: 0,
                     ...shifts.reduce((acc, s) => ({ ...acc, [s]: {} }), {})
                 };
             }
             const s = r.ShiftName?.toUpperCase().replace('-', '').trim();
             const loader = r.Loader || 'Unknown';
+            const tripVal = Number(r.Trip) || 0;
 
-            if (dumperMap[r.Dumper][s]) {
-                dumperMap[r.Dumper][s][loader] = (dumperMap[r.Dumper][s][loader] || 0) + r.Trip;
+            if (dumperMap[dumperName][s]) {
+                dumperMap[dumperName][s][loader] = (dumperMap[dumperName][s][loader] || 0) + tripVal;
             }
-            dumperMap[r.Dumper].Total += r.Trip;
+            dumperMap[dumperName].Total += tripVal;
         });
 
         const rows = Object.values(dumperMap).sort((a, b) => a.Dumper.localeCompare(b.Dumper));
@@ -272,19 +274,31 @@ export default function DailyProductionTable({ data, date }) {
             rows[key].MTD += Number(r.Qty_MTD || 0);
             rows[key].YTD += Number(r.Qty_YTD || 0);
         });
-        return Object.values(rows);
+
+        const rowValues = Object.values(rows);
+        const totalRow = { Type: 'Total', FTD: 0, MTD: 0, YTD: 0 };
+        rowValues.forEach(r => {
+            totalRow.FTD += r.FTD;
+            totalRow.MTD += r.MTD;
+            totalRow.YTD += r.YTD;
+        });
+        if (rowValues.length > 0) rowValues.push(totalRow);
+        return rowValues;
     }, [inpitDumping]);
 
     const wp3Aggregated = useMemo(() => {
         const agg = { OB: { FTD: 0, MTD: 0, YTD: 0 }, Coal: { FTD: 0, MTD: 0, YTD: 0 } };
         if (!wp3Excavation || wp3Excavation.length === 0) return agg;
         wp3Excavation.forEach(r => {
-            agg.OB.FTD += Number(r.OB_FTD || 0);
-            agg.OB.MTD += Number(r.OB_MTD || 0);
-            agg.OB.YTD += Number(r.OB_YTD || 0);
-            agg.Coal.FTD += Number(r.Coal_FTD || 0);
-            agg.Coal.MTD += Number(r.Coal_MTD || 0);
-            agg.Coal.YTD += Number(r.Coal_YTD || 0);
+            if (r.Type === 'COAL') {
+                agg.Coal.FTD += Number(r.Qty_FTD || 0);
+                agg.Coal.MTD += Number(r.Qty_MTD || 0);
+                agg.Coal.YTD += Number(r.Qty_YTD || 0);
+            } else if (r.Type === 'OB' || r.Type === 'OVER BURDEN') {
+                agg.OB.FTD += Number(r.Qty_FTD || 0);
+                agg.OB.MTD += Number(r.Qty_MTD || 0);
+                agg.OB.YTD += Number(r.Qty_YTD || 0);
+            }
         });
         return agg;
     }, [wp3Excavation]);
@@ -331,13 +345,13 @@ export default function DailyProductionTable({ data, date }) {
                         </tr>
                         <tr className={styles.blueHeader}>
                             <th colSpan="2">COAL</th>
-                            <th colSpan="2">WASTE</th>
+                            <th colSpan="2">OB</th>
                             <th colSpan="2">COAL</th>
-                            <th colSpan="2">WASTE</th>
+                            <th colSpan="2">OB</th>
                             <th colSpan="2">COAL</th>
-                            <th colSpan="2">WASTE</th>
+                            <th colSpan="2">OB</th>
                             <th colSpan="2">COAL</th>
-                            <th colSpan="2">WASTE</th>
+                            <th colSpan="2">OB</th>
                         </tr>
                         <tr className={styles.blueHeader}>
                             <th>TRIPS</th><th>QTY.</th>
@@ -378,6 +392,30 @@ export default function DailyProductionTable({ data, date }) {
                                 </tr>
                             );
                         })}
+                        {/* Total Row */}
+                        <tr className="bg-yellow-200 font-bold border-t-2 border-slate-900 text-md">
+                            <td colSpan="2" className="text-right pr-2 font-bold" style={{ fontWeight: 600 }}>Total</td>
+
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.ShiftA.Trip || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.ShiftA.Qty || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.ShiftA.Trip || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.ShiftA.Qty || 0), 0))}</td>
+
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.ShiftB.Trip || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.ShiftB.Qty || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.ShiftB.Trip || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.ShiftB.Qty || 0), 0))}</td>
+
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.ShiftC.Trip || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.ShiftC.Qty || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.ShiftC.Trip || 0), 0))}</td>
+                            <td className="font-bold" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.ShiftC.Qty || 0), 0))}</td>
+
+                            <td className="font-bold bg-yellow-50" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.Total.Trip || 0), 0))}</td>
+                            <td className="font-bold bg-yellow-50" style={{ fontWeight: 600 }}>{fmt(coalShiftPivot.reduce((s, r) => s + (r.Total.Qty || 0), 0))}</td>
+                            <td className="font-bold bg-yellow-50" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.Total.Trip || 0), 0))}</td>
+                            <td className="font-bold bg-yellow-50" style={{ fontWeight: 600 }}>{fmt(wasteShiftPivot.reduce((s, r) => s + (r.Total.Qty || 0), 0))}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -386,11 +424,11 @@ export default function DailyProductionTable({ data, date }) {
             <div className="mb-8">
                 <h3 className={styles.sectionHeader}>2. TRIP-QUANTITY DETAILS</h3>
 
-                <div className="flex gap-8">
+                <div className="flex flex-col gap-4">
                     {/* COAL TABLE */}
-                    <div className="flex-1">
-                        <div className="font-bold text-center border border-b-0 border-slate-900 bg-slate-200 py-1 uppercase">COAL</div>
-                        <table className={styles.table}>
+                    <div className="w-full">
+                        <div className="font-bold text-left uppercase text-md mb-1 uppercase">COAL</div>
+                        <table className={`${styles.table} w-full`}>
                             <thead>
                                 <tr className={styles.blueHeader}>
                                     <th rowSpan="2" className="min-w-[120px]">Scale / Model</th>
@@ -427,10 +465,10 @@ export default function DailyProductionTable({ data, date }) {
                         </table>
                     </div>
 
-                    {/* WASTE TABLE */}
-                    <div className="flex-1">
-                        <div className="font-bold text-center border border-b-0 border-slate-900 bg-slate-200 py-1 uppercase">WASTE</div>
-                        <table className={styles.table}>
+                    {/* OB TABLE */}
+                    <div className="w-full mt-4">
+                        <div className="font-bold text-left uppercase text-md mb-1 uppercase">OB</div>
+                        <table className={`${styles.table} w-full`}>
                             <thead>
                                 <tr className={styles.blueHeader}>
                                     <th rowSpan="2" className="min-w-[120px]">Scale / Model</th>
@@ -572,23 +610,7 @@ export default function DailyProductionTable({ data, date }) {
                         </table>
                     </div>
 
-                    <h3 className={styles.sectionHeader}>6. Itiz DUMPING REHNADLING</h3>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr className={styles.blueHeader}>
-                                <th>Type</th>
-                                <th>Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {itizRehandling.map((r, i) => (
-                                <tr key={i}>
-                                    <td>Total Qty</td>
-                                    <td>{fmt(r.mangQty)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+
                 </div>
             </div>
 
@@ -597,28 +619,11 @@ export default function DailyProductionTable({ data, date }) {
             {/* GRID FOR SECTIONS 7, 8, 9, 10 (2x2 Grid) */}
             <div className="grid grid-cols-2 gap-8 mt-8">
 
-                {/* 7. WP-1 EXCAVATION DETAIL */}
-                <div>
-                    <h3 className={styles.sectionHeader}>7. WP-1 EXCAVATION DETAIL</h3>
-                    <table className={`${styles.table} w-full text-center`}>
-                        <thead>
-                            <tr className={styles.blueHeader}>
-                                <th className="border border-slate-400"></th>
-                                <th className="border border-slate-400 text-red-600">FTD</th>
-                                <th className="border border-slate-400 text-red-600">MTD</th>
-                                <th className="border border-slate-400 text-red-600">YTD</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr className="font-bold"><td className="text-left pl-2">Waste</td><td>{fmt(wp1Aggregated.Waste.FTD)}</td><td>{fmt(wp1Aggregated.Waste.MTD)}</td><td>{fmt(wp1Aggregated.Waste.YTD)}</td></tr>
-                            <tr className="font-bold"><td className="text-left pl-2">Coal</td><td>{fmt(wp1Aggregated.Coal.FTD)}</td><td>{fmt(wp1Aggregated.Coal.MTD)}</td><td>{fmt(wp1Aggregated.Coal.YTD)}</td></tr>
-                        </tbody>
-                    </table>
-                </div>
 
-                {/* 8. SMASL QUANTITY (FTD) */}
+
+                {/* 6. SMASL QUANTITY (FTD) */}
                 <div>
-                    <h3 className={styles.sectionHeader}>8. SMASL Quantity (FTD)</h3>
+                    <h3 className={styles.sectionHeader}>6. SMASL Quantity (FTD)</h3>
                     <table className={`${styles.table} w-full text-center`}>
                         <thead>
                             <tr className={styles.blueHeader}>
@@ -627,15 +632,15 @@ export default function DailyProductionTable({ data, date }) {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="font-bold"><td className="text-left pl-2">Waste(BCM)</td><td>{fmt(smaslAggregated.WasteQty)}</td></tr>
+                            <tr className="font-bold"><td className="text-left pl-2">OB (BCM)</td><td>{fmt(smaslAggregated.WasteQty)}</td></tr>
                             <tr className="font-bold"><td className="text-left pl-2">Coal(MT)</td><td>{fmt(smaslAggregated.CoalQty)}</td></tr>
                         </tbody>
                     </table>
                 </div>
 
-                {/* 9. INPIT DUMPING */}
+                {/* 7. INPIT DUMPING */}
                 <div>
-                    <h3 className={styles.sectionHeader}>9. INPIT DUMPING</h3>
+                    <h3 className={styles.sectionHeader}>7. INPIT DUMPING</h3>
                     <table className={`${styles.table} w-full text-center`}>
                         <thead>
                             <tr className={styles.blueHeader}>
@@ -658,9 +663,9 @@ export default function DailyProductionTable({ data, date }) {
                     </table>
                 </div>
 
-                {/* 10. WP-3 EXCAVATION DETAIL */}
+                {/* 8. WP-3 EXCAVATION DETAIL */}
                 <div>
-                    <h3 className={styles.sectionHeader}>10. WP-3 EXCAVATION DETAIL</h3>
+                    <h3 className={styles.sectionHeader}>8. WP-3 EXCAVATION DETAIL</h3>
                     <table className={`${styles.table} w-full text-center`}>
                         <thead>
                             <tr className={styles.blueHeader}>

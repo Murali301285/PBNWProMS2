@@ -1,0 +1,38 @@
+@media print {
+
+    /* Hide Toasts */
+    [data-sonner-toaster],
+    [data-cy="toast-container"],
+    .sonner-toast,
+    [role="status"] {
+        display: none !important;
+    }
+
+    /* Hide Browser Defaults */
+    @page {
+        margin: 0mm;
+    }
+
+    /* Hide Specific Elements */
+    .print-hidden,
+    .no-print,
+    .hidePrint,
+    .hiddenPrint,
+    [class*="ProductionTsmpl_filterContainer"],
+    [class*="ProductionTsmpl_headingWrapper"],
+    [class*="ProductionTsmpl_breakdownSection"] {
+        display: none !important;
+    }
+
+    /* Force background colors */
+    body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background-color: white !important;
+    }
+
+    /* Hide scrollbars */
+    ::-webkit-scrollbar {
+        display: none !important;
+    }
+}

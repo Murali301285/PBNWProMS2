@@ -393,7 +393,8 @@
 /* Performance Charts Section */
 .chartGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    grid-template-columns: 1fr;
+    /* Full width for each chart row */
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -457,14 +458,15 @@
 
 .chartBody {
     position: relative;
-    height: 300px;
+    height: 320px;
+    /* Slightly taller */
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
     gap: 1.5rem;
-    /* Increased gap for fewer bars (10 total) */
-    padding: 1rem 0 2rem;
-    /* Space for x-axis labels */
+    /* Space for x-axis labels below */
+    padding: 1rem 3.5rem 6rem 0;
+    /* Added heavier right padding for long labels */
     margin-left: 3rem;
 }
 
@@ -543,23 +545,16 @@
 
 .barLabel {
     position: absolute;
-    bottom: 10px;
+    top: calc(100% + 5px);
     left: 50%;
-    transform: translateX(-50%) rotate(-90deg);
-    transform-origin: center center;
+    transform: translateX(-50%) rotate(-45deg);
+    transform-origin: top center;
     font-size: 0.65rem;
     font-weight: 600;
-    color: white;
+    color: var(--muted-foreground);
     white-space: nowrap;
     z-index: 5;
     pointer-events: none;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.barWorst .barLabel {
-    color: #333;
-    text-shadow: none;
-    font-weight: 700;
 }
 
 .barValue {

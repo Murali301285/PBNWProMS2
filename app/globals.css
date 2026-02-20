@@ -221,3 +221,41 @@ select:focus,
 .scale-largest {
   zoom: 1.25;
 }
+
+/* Print Overrides - Added via Antigravity */
+@media print {
+
+  .no-print,
+  .print-hidden {
+    display: none !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: white !important;
+  }
+
+  /* Force Main Content Full Width */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide Scrollbars */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide Toasts */
+  [data-sonner-toaster],
+  [data-cy="toast-container"] {
+    display: none !important;
+  }
+
+  /* Hide Browser Defaults (Header/Footer/Date) */
+  @page {
+    margin: 0mm;
+  }
+}

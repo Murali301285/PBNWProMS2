@@ -216,11 +216,7 @@ const DailyProgressTable = ({ data, date }) => {
                     </table>
                 </div>
 
-                {/* Footer Signature */}
-                <div className="flex justify-between mt-12 px-12 pb-4">
-                    <div className="text-center font-bold border-t border-black w-48 pt-2">Production Head</div>
-                    <div className="text-center font-bold border-t border-black w-48 pt-2">Operation Head</div>
-                </div>
+
 
             </div>
         </div>

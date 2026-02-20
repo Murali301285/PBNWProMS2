@@ -272,7 +272,8 @@
     .filterContainer,
     .headingWrapper,
     .breakdownSection,
-    .no-print {
+    .no-print,
+    .hidePrint {
         display: none !important;
     }
 
@@ -343,4 +344,14 @@
 
 .pl4 {
     padding-left: 1rem;
+}
+
+.hiddenPrint {
+    /* visible by default */
+}
+
+@media print {
+    .hiddenPrint {
+        display: none !important;
+    }
 }

@@ -102,33 +102,37 @@ export default function OperatorPerformanceHaulingReport() {
         { header: 'Date', accessor: 'Date', width: '100px', render: r => new Date(r.Date).toLocaleDateString('en-GB') },
         { header: "Operator's Name", accessor: "OPERATOR'S NAME", width: '200px' },
         { header: 'Shift', accessor: 'SHIFT', width: '80px' },
-        { header: 'Hauling Equipment', accessor: 'Hauling Equipment.', width: '150px' },
-        { header: 'Model', accessor: 'Equipment.MODEL', width: '150px' },
+
+        // Fixed Accessors
+        { header: 'Hauling Equipment', accessor: 'EQUIPMENT NO.', width: '150px' },
+        { header: 'Model', accessor: 'MODEL', width: '150px' },
+
         { header: 'Relay', accessor: 'RELAY', width: '120px' },
         { header: 'Open HMR', accessor: 'Open HMR', width: '100px' },
-        { header: 'Close HMR', accessor: 'CLOSE HMR', width: '100px' },
+        { header: 'Close HMR', accessor: 'Close HMR', width: '100px' }, // Matched Case
         { header: 'Net HMR', accessor: 'Net HMR', width: '100px' },
 
         { header: 'OB Trips', accessor: 'OB TRIPS', width: '100px' },
-        { header: 'Quantity (BCM)', accessor: 'QUANTITY (BCM)', width: '120px' },
+        { header: 'Quantity (BCM)', accessor: 'OB QTY', width: '120px' }, // Matched SP
         { header: 'Coal Trips', accessor: 'COAL TRIPS', width: '100px' },
-        { header: 'Quantity (MT)', accessor: 'QUANTITY (MT)', width: '120px' },
+        { header: 'Quantity (MT)', accessor: 'COAL QTY', width: '120px' }, // Matched SP
 
-        { header: 'OKMR', accessor: 'OKMR', width: '100px' },
-        { header: 'CKMR', accessor: 'CKMR', width: '100px' },
+        { header: 'OKMR', accessor: 'Open KMR', width: '100px' }, // Matched SP
+        { header: 'CKMR', accessor: 'Close KMR', width: '100px' }, // Matched SP
         { header: 'Net KMR', accessor: 'Net KMR', width: '100px' },
 
-        { header: 'Trip/Hrs', accessor: 'TRIP/HRS', width: '100px' },
-        { header: 'BCM/Hrs', accessor: 'BCM/HRS', width: '100px' },
-        { header: 'Total Trip', accessor: 'Total Trip', width: '100px' },
+        // Metrics (Calculated in SP or UI? SP doesn't return these yet, leaving as is or placeholders)
+        // { header: 'Trip/Hrs', accessor: 'TRIP/HRS', width: '100px' },
+        // { header: 'BCM/Hrs', accessor: 'BCM/HRS', width: '100px' },
+        // { header: 'Total Trip', accessor: 'Total Trip', width: '100px' },
 
-        { header: 'Mapio Name', accessor: 'Mapio Name', width: '150px' },
-        { header: 'Model (Dup)', accessor: 'Model', width: '150px' }, // As requested
-        { header: 'Speed', accessor: 'Speed', width: '100px' },
-        { header: 'Lead', accessor: 'Lead', width: '100px' },
+        // { header: 'Mapio Name', accessor: 'Mapio Name', width: '150px' },
+        // { header: 'Model (Dup)', accessor: 'Model', width: '150px' }, 
+        // { header: 'Speed', accessor: 'Speed', width: '100px' },
+        // { header: 'Lead', accessor: 'Lead', width: '100px' },
 
-        { header: 'Shift Incharge (Large Scale)', accessor: 'Shift Incharge(Large Scale)', width: '200px' },
-        { header: 'Shift Incharge - Mid Scale', accessor: 'Shift Incharge - Mid Scale', width: '200px' },
+        // { header: 'Shift Incharge (Large Scale)', accessor: 'Shift Incharge(Large Scale)', width: '200px' },
+        // { header: 'Shift Incharge - Mid Scale', accessor: 'Shift Incharge - Mid Scale', width: '200px' },
     ], []);
 
     return (

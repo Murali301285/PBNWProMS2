@@ -57,6 +57,7 @@ export default function DailyProgressPage() {
         // Title
         wsData.push([{ v: "DAILY PROGRESS REPORT", s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }]);
         wsData.push([{ v: `Date: ${displayDate}`, s: { alignment: { horizontal: "center" } } }]);
+        wsData.push([{ v: `Conversion Factor: ${headerInfo?.ConversionFactor || '1.55'}`, s: { alignment: { horizontal: "center" }, font: { italic: true } } }]);
         wsData.push([""]);
 
         // --- Production Details ---
@@ -178,6 +179,7 @@ export default function DailyProgressPage() {
         <div className={styles.container}>
             <div className={`print:hidden ${styles.headingWrapper}`}>
                 <h1 className={styles.title}>Daily Progress Report</h1>
+
             </div>
 
             <div className={styles.filterContainer}>
@@ -198,6 +200,12 @@ export default function DailyProgressPage() {
                 >
                     {loading ? 'Generating...' : 'Show Report'}
                 </button>
+
+                {reportData?.headerInfo?.ConversionFactor && (
+                    <div className="ml-4 font-semibold text-blue-600 flex items-center">
+                        BCM Conversion Factor : {reportData.headerInfo.ConversionFactor}
+                    </div>
+                )}
 
                 <div style={{ flex: 1 }}></div>
 

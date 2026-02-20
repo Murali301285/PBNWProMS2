@@ -20,19 +20,16 @@ export async function GET(req) {
             { name: 'ToDate', type: sql.Date, value: toDate }
         ];
 
-        // Fetch Legacy Data (for other tabs)
-        const legacyResultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetPerformanceStats', params);
-
-        // Fetch New Highest Production Data
-        const newResultSets = await executeStoredProcedure('PMS2_New_Sp_Dash_GetPerformanceStats', params);
+        // Fetch All Performance Data from Single New SP
+        const resultSets = await executeStoredProcedure('PMS2_New_Dash_SP_PerformanceDashboard', params);
 
         return NextResponse.json({
             success: true,
-            highestProduction: newResultSets[0] || [], // Use New SP result
-            crusherWise: legacyResultSets[1] || [],    // Keep Legacy
-            sectorWise: legacyResultSets[2] || [],     // Keep Legacy
-            operatorPerformance: legacyResultSets[3] || [], // Keep Legacy
-            loadingPerformance: legacyResultSets[4] || []   // Keep Legacy
+            highestProduction: resultSets[0] || [],
+            crusherWise: resultSets[1] || [],
+            sectorWise: resultSets[2] || [],
+            operatorPerformance: resultSets[3] || [],
+            loadingPerformance: resultSets[4] || []
         });
 
     } catch (error) {

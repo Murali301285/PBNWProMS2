@@ -14,7 +14,7 @@ const sections = [
         icon: Layers,
         bgClass: styles.themePeach,
         hasDetails: true,
-        data: { ftd: 45000, mtd: 1819692, avg: 58000, ytd: 25000000 }
+        data: { ftd: 0, mtd: 0, avg: 0, ytd: 0 }
     },
     {
         id: 'ob_rem',
@@ -22,7 +22,7 @@ const sections = [
         icon: Truck,
         bgClass: styles.themeBlue,
         hasDetails: true,
-        data: { ftd: 110000, mtd: 3502100, avg: 115000, ytd: 42000000 }
+        data: { ftd: 0, mtd: 0, avg: 0, ytd: 0 }
     },
     {
         id: 'crushing',
@@ -30,7 +30,7 @@ const sections = [
         icon: Anchor,
         bgClass: styles.themePink,
         hasDetails: true,
-        data: { ftd: 42000, mtd: 1750000, avg: 56000, ytd: 24000000 }
+        data: { ftd: 0, mtd: 0, avg: 0, ytd: 0 }
     },
     {
         id: 'dispatch',
@@ -38,7 +38,7 @@ const sections = [
         icon: Send,
         bgClass: styles.themeGrey,
         hasDetails: true,
-        data: { ftd: 40000, mtd: 1600000, avg: 53000, ytd: 23000000 }
+        data: { ftd: 0, mtd: 0, avg: 0, ytd: 0 }
     },
     {
         id: 'coal_re',
@@ -46,7 +46,7 @@ const sections = [
         icon: Box,
         bgClass: styles.themeYellow,
         hasDetails: false, // No Details for now
-        data: { ftd: 12000, mtd: 500000, avg: 16000, ytd: 6000000 }
+        data: { ftd: 0, mtd: 0, avg: 0, ytd: 0 }
     },
     {
         id: 'ob_re',
@@ -54,7 +54,7 @@ const sections = [
         icon: Recycle,
         bgClass: styles.themeGreen,
         hasDetails: false, // No Details for now
-        data: { ftd: 8000, mtd: 320000, avg: 10000, ytd: 4000000 }
+        data: { ftd: 0, mtd: 0, avg: 0, ytd: 0 }
     }
 ];
 
@@ -229,9 +229,9 @@ export default function Dashboard() {
 
         return displayData.map(d => ({
             name: d.EquipmentName,
-            val: d.Productivity,
-            hrs: d.WorkingHours,
-            displayVal: metric === 'time' ? d.WorkingHours : d.Productivity,
+            val: Math.round(d.Productivity || 0),
+            hrs: Math.round(d.WorkingHours || 0),
+            displayVal: Math.round(metric === 'time' ? d.WorkingHours : d.Productivity || 0),
             heightItems: Math.min(((metric === 'time' ? d.WorkingHours : d.Productivity) / normalizer) * 100, 100),
             colorClass: metric === 'time'
                 ? (type === 'hauling' ? styles.barHaulingTime : styles.barLoadingTime)

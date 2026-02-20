@@ -24,7 +24,7 @@ export async function GET(req) {
         // [0]: Transactions (Production List)
         // [1]: Stoppages (Summary for Chart)
         // [2]: Stoppage Log (Detailed)
-        const resultSets = await executeStoredProcedure('ProMS2_Dash_SP_GetCrushingStats', params);
+        const resultSets = await executeStoredProcedure('PMS2_New_Dash_SP_CrushingDashboard', params);
 
         return NextResponse.json({
             success: true,

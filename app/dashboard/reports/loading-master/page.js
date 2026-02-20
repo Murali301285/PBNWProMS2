@@ -16,6 +16,7 @@ export default function LoadingMasterReportPage() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [filters, setFilters] = useState({});
     const [filterSummary, setFilterSummary] = useState('');
+    const [conversionFactor, setConversionFactor] = useState(1.55);
 
     const handleApplyFilters = (newFilters, summary) => {
         setFilters(newFilters);
@@ -88,6 +89,14 @@ export default function LoadingMasterReportPage() {
                     toast.success(data.message);
                 } else {
                     setReportData(data);
+                    // Extract Conversion Factor from the first record if available
+                    if (data.length > 0 && data[0].ConversionFactor) {
+                        setConversionFactor(data[0].ConversionFactor);
+                    } else {
+                        // Reset or keep default if no data or not present
+                        setConversionFactor(1.55);
+                    }
+
                     if (data.length === 0) toast.info("No data found for selected range");
                 }
             } else {
@@ -118,6 +127,11 @@ export default function LoadingMasterReportPage() {
                 onFilterClick={() => setModalOpen(true)}
                 filterSummary={filterSummary}
                 filterCount={Object.values(filters).filter(f => Array.isArray(f) && f.length > 0).length}
+                extraContent={
+                    <div className="text-sm font-semibold text-blue-600">
+                        BCM Conversion Factor : {conversionFactor}
+                    </div>
+                }
             />
 
             <div className="mt-8">
@@ -140,3 +154,4 @@ export default function LoadingMasterReportPage() {
         </div>
     );
 }
+

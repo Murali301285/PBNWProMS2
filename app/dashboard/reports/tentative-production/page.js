@@ -103,6 +103,8 @@ export default function TentativeProductionPage() {
         const obRehandlingTotal = calculateRehandlingTotal(obRehandling);
         const coalRehandlingTotal = calculateRehandlingTotal(coalRehandling);
 
+        const fmt = (val) => (val !== undefined && val !== null) ? Number(val).toLocaleString('en-IN') : '0';
+
         const wb = XLSX.utils.book_new();
         const wsData = [];
 
@@ -120,19 +122,19 @@ export default function TentativeProductionPage() {
         wasteHandling.forEach(row => {
             wsData.push([
                 row.EquipmentGroup,
-                row.OverBurden,
+                fmt(row.OverBurden),
                 row.OverBurdenFactor,
-                row.TopSoil,
+                fmt(row.TopSoil),
                 row.TopSoilFactor,
-                row.TotalTrip,
-                row.QtyBcm,
-                row.MapioTrip,
-                row.MapioQty,
-                row.Diff
+                fmt(row.TotalTrip),
+                fmt(row.QtyBcm),
+                fmt(row.MapioTrip),
+                fmt(row.MapioQty),
+                fmt(row.Diff)
             ]);
         });
         // Total Waste
-        wsData.push(["Total", wasteTotal.OverBurden, "", wasteTotal.TopSoil, "", wasteTotal.TotalTrip, wasteTotal.QtyBcm, 0, 0, wasteTotal.Diff]);
+        wsData.push(["Total", fmt(wasteTotal.OverBurden), "", fmt(wasteTotal.TopSoil), "", fmt(wasteTotal.TotalTrip), fmt(wasteTotal.QtyBcm), 0, 0, fmt(wasteTotal.Diff)]);
         wsData.push([]);
 
         // --- Coal Production ---
@@ -141,16 +143,16 @@ export default function TentativeProductionPage() {
         coalProduction.forEach(row => {
             wsData.push([
                 row.EquipmentGroup,
-                row.RomCoal,
+                fmt(row.RomCoal),
                 row.Factor,
-                row.Qty,
+                fmt(row.Qty),
                 "",
-                row.MapioTrip,
-                row.MapioQty,
-                row.Diff
+                fmt(row.MapioTrip),
+                fmt(row.MapioQty),
+                fmt(row.Diff)
             ]);
         });
-        wsData.push(["Total", coalTotal.RomCoal, "", coalTotal.Qty, "", 0, 0, coalTotal.Diff]);
+        wsData.push(["Total", fmt(coalTotal.RomCoal), "", fmt(coalTotal.Qty), "", 0, 0, fmt(coalTotal.Diff)]);
         wsData.push([]);
 
         // --- WP-3 ---
@@ -159,32 +161,32 @@ export default function TentativeProductionPage() {
         wp3.forEach(row => {
             wsData.push([
                 row.EquipmentGroup,
-                row.OverBurden,
+                fmt(row.OverBurden),
                 row.OverBurdenFactor,
-                row.TopSoil,
+                fmt(row.TopSoil),
                 row.TopSoilFactor,
-                row.TotalTrip,
-                row.QtyBcm
+                fmt(row.TotalTrip),
+                fmt(row.QtyBcm)
             ]);
         });
-        wsData.push(["Total", wp3Total.OverBurden, "", wp3Total.TopSoil, "", wp3Total.TotalTrip, wp3Total.QtyBcm]);
+        wsData.push(["Total", fmt(wp3Total.OverBurden), "", fmt(wp3Total.TopSoil), "", fmt(wp3Total.TotalTrip), fmt(wp3Total.QtyBcm)]);
         wsData.push([]);
 
         // --- Rehandling ---
         wsData.push(["OB Rehandling/Carpeting Quantity"]);
         wsData.push(["Model", "Trip", "Factor", "Qty (BCM)"]);
         obRehandling.forEach(row => {
-            wsData.push([row.EquipmentGroup, row.Trip, row.Factor, row.Qty]);
+            wsData.push([row.EquipmentGroup, fmt(row.Trip), row.Factor, fmt(row.Qty)]);
         });
-        wsData.push(["Total", obRehandlingTotal.Trip, "", obRehandlingTotal.Qty]);
+        wsData.push(["Total", fmt(obRehandlingTotal.Trip), "", fmt(obRehandlingTotal.Qty)]);
         wsData.push([]);
 
         wsData.push(["Coal Rehandling Quantity"]);
         wsData.push(["Model", "Trip", "Factor", "Qty (MT)"]);
         coalRehandling.forEach(row => {
-            wsData.push([row.EquipmentGroup, row.Trip, row.Factor, row.Qty]);
+            wsData.push([row.EquipmentGroup, fmt(row.Trip), row.Factor, fmt(row.Qty)]);
         });
-        wsData.push(["Total", coalRehandlingTotal.Trip, "", coalRehandlingTotal.Qty]);
+        wsData.push(["Total", fmt(coalRehandlingTotal.Trip), "", fmt(coalRehandlingTotal.Qty)]);
 
 
         // Create Sheet

@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req) {
     try {
-        const { fromDate, toDate } = await req.json();
+        const body = await req.json();
+        const { fromDate, toDate } = body;
 
         // 1. Validate Input
         if (!fromDate || !toDate) {

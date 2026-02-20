@@ -37,7 +37,8 @@ export default function ReportFilter({
     children, // NEW: Allow injecting custom inputs
     onFilterClick,
     filterSummary,
-    filterCount
+    filterCount,
+    extraContent // NEW: Content to render next to buttons
 }) {
     const router = useRouter(); // Initialize router
 
@@ -159,7 +160,7 @@ export default function ReportFilter({
                 </div>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
                 <button
                     onClick={handleGenerate}
                     disabled={loading}
@@ -178,6 +179,12 @@ export default function ReportFilter({
                     )}
                 </button>
             </div>
+
+            {extraContent && (
+                <div className="ml-auto">
+                    {extraContent}
+                </div>
+            )}
         </div>
     );
 }

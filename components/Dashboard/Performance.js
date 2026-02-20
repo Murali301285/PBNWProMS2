@@ -9,6 +9,11 @@ import CrusherWise from './PerformanceTabs/CrusherWise';
 import SectorWise from './PerformanceTabs/SectorWise';
 import OperatorPerformance from './PerformanceTabs/OperatorPerformance';
 import LoadingPerformance from './PerformanceTabs/LoadingPerformance';
+import CoalOBProductionDetails from './PerformanceTabs/CoalOBProductionDetails';
+import CrusherProductionDetails from './PerformanceTabs/CrusherProductionDetails';
+
+// Shared Components
+import Loader from '../Shared/Loader';
 
 export default function Performance() {
     const [activeTab, setActiveTab] = useState('highest');
@@ -22,7 +27,9 @@ export default function Performance() {
         crusherWise: [],
         sectorWise: [],
         operatorPerformance: [],
-        loadingPerformance: []
+        loadingPerformance: [],
+        coalOBProduction: [],
+        crusherProduction: []
     });
     const [loading, setLoading] = useState(false);
 
@@ -37,8 +44,29 @@ export default function Performance() {
                     crusherWise: json.crusherWise,
                     sectorWise: json.sectorWise,
                     operatorPerformance: json.operatorPerformance,
-                    loadingPerformance: json.loadingPerformance
+                    loadingPerformance: json.loadingPerformance,
+                    coalOBProduction: [] // Will be updated below
                 });
+
+                // Fetch Coal & OB Details
+                const res2 = await fetch(`/api/dashboard/performance/coal-ob-production?fromDate=${dateRange.from}&toDate=${dateRange.to}`);
+                const json2 = await res2.json();
+                if (json2.success) {
+                    setDashboardData(prev => ({
+                        ...prev,
+                        coalOBProduction: json2.data
+                    }));
+                }
+
+                // Fetch Crusher Production Data
+                const res3 = await fetch(`/api/dashboard/performance/crusher-production?fromDate=${dateRange.from}&toDate=${dateRange.to}`);
+                const json3 = await res3.json();
+                if (json3.success) {
+                    setDashboardData(prev => ({
+                        ...prev,
+                        crusherProduction: json3.data
+                    }));
+                }
             }
         } catch (error) {
             console.error(error);
@@ -56,14 +84,16 @@ export default function Performance() {
     };
 
     const renderTab = () => {
-        if (loading && !dashboardData.highestProduction.length) return <div>Loading...</div>;
+        if (loading) return <Loader text="Loading Performance Data..." />;
 
         switch (activeTab) {
             case 'highest': return <HighestProduction data={dashboardData.highestProduction} />;
             case 'crusher': return <CrusherWise data={dashboardData.crusherWise} />;
             case 'sector': return <SectorWise data={dashboardData.sectorWise} />;
-            case 'operator': return <OperatorPerformance data={dashboardData.operatorPerformance} />;
+            case 'operator': return <OperatorPerformance dateRange={dateRange} />;
             case 'loading': return <LoadingPerformance data={dashboardData.loadingPerformance} />;
+            case 'coalOB': return <CoalOBProductionDetails data={dashboardData.coalOBProduction} />;
+            case 'crusherProd': return <CrusherProductionDetails data={dashboardData.crusherProduction} />;
             default: return <HighestProduction data={dashboardData.highestProduction} />;
         }
     };
@@ -74,6 +104,8 @@ export default function Performance() {
         { id: 'sector', label: 'Sector Wise' },
         { id: 'operator', label: 'Operator Performance' },
         { id: 'loading', label: 'Loading Performance' },
+        { id: 'coalOB', label: 'Coal & OB Production Details' },
+        { id: 'crusherProd', label: 'Crusher Production Details' },
     ];
 
     return (

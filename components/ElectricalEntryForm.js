@@ -402,10 +402,15 @@ export default function ElectricalEntryForm({ mode = 'create', initialData = nul
                     setFormData(prev => ({ ...prev, UnitId: defaultUnit.SlNo }));
                 }
 
+                // Filter Equipment: fuel-type = Electrical (ID: 1)
+                const electricalEquipment = parseRes(eqRes)
+                    .filter(e => e.FuelTypeId === 1) // 1 = Electrical
+                    .map(e => ({ id: String(e.SlNo), name: e.EquipmentName }));
+
                 setMasters({
                     shift: parseRes(shiftRes).map(s => ({ id: String(s.SlNo), name: s.ShiftName })),
                     relay: parseRes(relayRes).map(r => ({ id: String(r.SlNo), name: r.Name })),
-                    equipment: parseRes(eqRes).map(e => ({ id: String(e.SlNo), name: e.EquipmentName })),
+                    equipment: electricalEquipment,
                     plant: parseRes(plantRes).map(p => ({ id: String(p.SlNo), name: p.Name })),
                     unit: units.map(u => ({ id: String(u.SlNo), name: u.Name }))
                 });
