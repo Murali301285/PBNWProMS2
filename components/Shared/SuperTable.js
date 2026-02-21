@@ -20,6 +20,7 @@ export default function SuperTable({
     pageSizeDefault = 10,
     showPagination = true,
     showSearch = true,
+    showExport = true,
     title = 'Data Export'
 }) {
     // State
@@ -187,9 +188,11 @@ export default function SuperTable({
                 </div>
 
                 <div className={styles.rightTools}>
-                    <button onClick={handleExport} className={styles.exportBtn}>
-                        <Download size={14} /> Export
-                    </button>
+                    {showExport && (
+                        <button onClick={handleExport} className={styles.exportBtn}>
+                            <Download size={14} /> Export
+                        </button>
+                    )}
                 </div>
             </div>
 

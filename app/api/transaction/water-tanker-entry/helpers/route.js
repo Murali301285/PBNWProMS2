@@ -14,11 +14,20 @@ export async function GET() {
             ORDER BY ShiftName
         `);
 
-        // 2. Destinations (Locations with IsDestination = 1)
+        // 2. Destinations (Filtered by Mapped LocationType = 'Water Tanker')
         const destinations = await executeQuery(`
-            SELECT SlNo, LocationName FROM [Master].[TblLocation] 
-            WHERE IsDelete = 0 AND IsActive = 1 AND IsDestination = 1
-            ORDER BY LocationName
+            SELECT DISTINCT L.SlNo, L.LocationName 
+            FROM [Master].[TblLocation] L
+            INNER JOIN [Master].[TblLocationTypeMapping] M ON L.SlNo = M.LocationId
+            INNER JOIN [Master].[TblLocationType] T ON M.LocationTypeId = T.SlNo
+            WHERE L.IsDelete = 0 
+              AND L.IsActive = 1
+              AND M.IsDelete = 0 
+              AND M.IsActive = 1
+              AND T.IsDelete = 0 
+              AND T.IsActive = 1
+              AND T.LocationType = 'Water Tanker'
+            ORDER BY L.LocationName ASC
         `);
 
         // 3. Filling Points

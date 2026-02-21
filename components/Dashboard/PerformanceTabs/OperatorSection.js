@@ -5,19 +5,18 @@ import { Filter, RefreshCw } from 'lucide-react';
 import Loader from '../../Shared/Loader';
 import SearchableSelect from '../../Shared/SearchableSelect';
 
-const formatNumber = (num) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+const formatNumber = (num, decimals = 2) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(num);
 
 const COLS = [
-    { header: 'S.N.', accessor: 'SN', width: '60px', align: 'center', render: (_, __, index) => index },
+    { header: 'S.N.', accessor: 'SN', width: '60px', align: 'center', render: (_, __, index) => index + 1 },
     { header: 'Operator Name', accessor: 'OperatorName', width: '220px' },
     { header: 'Equipment', accessor: 'Equipment', width: '150px' },
-    { header: 'Trip', accessor: 'Trip', align: 'center', width: '80px' },
-    { header: 'Qty (BCM)', accessor: 'Qty', align: 'right', render: (val) => formatNumber(val), width: '120px' },
-    { header: 'Hrs', accessor: 'Hrs', align: 'right', render: (val) => formatNumber(val), width: '80px' },
     { header: 'Model', accessor: 'Model', width: '120px' },
     { header: 'Capacity', accessor: 'Capacity', width: '100px' },
-    { header: 'Date', accessor: 'Date', width: '120px' },
-    { header: 'Shift', accessor: 'Shift', width: '100px' },
+    { header: 'Total Qty (BCM)', accessor: 'Qty', align: 'center', render: (val) => formatNumber(val || 0, 0), width: '120px' },
+    { header: 'Total Hrs', accessor: 'Hrs', align: 'center', render: (val) => formatNumber(val || 0, 2), width: '80px' },
+    { header: 'Trips/Hr', accessor: 'TripsPerHr', align: 'center', render: (val) => Math.round(val || 0).toString(), width: '100px' },
+    { header: 'BCM/Hr', accessor: 'BCMPerHr', align: 'center', render: (val) => Math.round(val || 0).toString(), width: '100px' }
 ];
 
 export default function OperatorSection({ title, type, dateRange, filterOptions, color }) {
@@ -166,6 +165,7 @@ export default function OperatorSection({ title, type, dateRange, filterOptions,
                     data={displayData}
                     title={`${rankingMode} ${limit} ${title}`}
                     showPagination={false}
+                    showExport={false}
                 />
             )}
         </div>

@@ -3,16 +3,18 @@ import WaterTankerForm from '@/components/WaterTankerForm';
 
 export const dynamic = 'force-dynamic';
 
+import { GET } from '@/app/api/transaction/water-tanker-entry/helpers/route';
+
 async function getHelpers() {
     try {
-        // Fetch from our local API
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const res = await fetch(`${baseUrl}/api/transaction/water-tanker-entry/helpers`, { cache: 'no-store' });
+        // Call the API handler directly instead of using fetch() during server component render
+        const res = await GET();
 
         if (!res.ok) {
-            console.error("Failed to fetch helpers");
+            console.error("Failed to fetch helpers internally");
             return {};
         }
+
         return await res.json();
     } catch (e) {
         console.error("Helper fetch failed:", e);

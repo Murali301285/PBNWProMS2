@@ -13,7 +13,10 @@ export default function ReportTable({
     reportName,
     fromDate,
     toDate,
-    generated
+    generated,
+    stickyLeft = 0,
+    stickyBgColor = null,
+    columnGroups = []
 }) {
     return (
         <div className={styles.container}>
@@ -31,6 +34,9 @@ export default function ReportTable({
                             fromDate: fromDate,
                             toDate: toDate
                         }}
+                        stickyLeft={stickyLeft}
+                        stickyBgColor={stickyBgColor}
+                        columnGroups={columnGroups}
                     />
                 </div>
             ) : (

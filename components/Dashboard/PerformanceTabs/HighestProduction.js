@@ -1,5 +1,8 @@
 'use client';
 import SuperTable from '../../Shared/SuperTable';
+import * as XLSX from 'xlsx';
+import { Download } from 'lucide-react';
+import styles from '../../../app/dashboard/page.module.css';
 
 
 
@@ -15,6 +18,24 @@ const COLS = [
 
 export default function HighestProduction({ data = [] }) {
 
+    const handleDownloadExcel = () => {
+        if (!data || data.length === 0) return;
+
+        const exportData = data.map((d, i) => ({
+            'SlNo': i + 1,
+            'Category': d.Category,
+            'Period Type': d.PeriodType,
+            'Date/Month': d.Date ? new Date(d.Date).toLocaleDateString('en-IN') : (d.Month || '-'),
+            'Shift': d.Shift || '-',
+            'Quantity': d.Qty
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Highest Production');
+        XLSX.writeFile(wb, 'Performance_Highest_Production.xlsx');
+    };
+
     // Helper: Get data for specific Category and Period
     const getData = (category, period) => {
         return data.filter(d => d.Category === category && d.PeriodType === period);
@@ -29,6 +50,7 @@ export default function HighestProduction({ data = [] }) {
                 data={periodData}
                 showPagination={false}
                 showSearch={false}
+                showExport={false}
                 pageSizeDefault={5}
                 title={title}
             />
@@ -76,6 +98,12 @@ export default function HighestProduction({ data = [] }) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 1rem' }}>
+                <button onClick={handleDownloadExcel} className={`${styles.iconButton} ${styles.btnGreen}`} style={{ padding: '6px 12px', fontSize: '0.9rem' }}>
+                    <Download size={16} /> Export Excel
+                </button>
+            </div>
+
             {sections.map((sec, idx) => (
                 <div key={idx} style={{ background: 'white', borderRadius: '8px', padding: '1rem', border: '1px solid var(--border)' }}>
                     <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'blue', marginBottom: '1rem' }}>{sec.title}</h2>

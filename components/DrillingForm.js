@@ -73,7 +73,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 const [eqRes, matRes, locRes, secRes, scRes, strRes, dsRes, drRemRes, unitRes, daRes] = await Promise.all([
                     fetch('/api/master/equipment'),
                     fetch('/api/master/material'),
-                    fetch('/api/master/location'),
+                    fetch('/api/transaction/drilling/locations'),
                     fetch('/api/master/sector'),
                     fetch('/api/master/scale'),
                     fetch('/api/master/strata'),
@@ -101,7 +101,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 setMasters({
                     equipment: getArr(eqData).filter(i => i.IsActive && !i.IsDelete && i.ActivityId === 7),
                     material: getArr(matData).filter(i => i.IsActive && !i.IsDelete),
-                    location: getArr(locData).filter(i => i.IsActive && !i.IsDelete),
+                    location: getArr(locData), // Already filtered by custom API
                     sector: getArr(secData).filter(i => i.IsActive && !i.IsDelete),
                     scale: getArr(scData).filter(i => i.IsActive && !i.IsDelete),
                     strata: getArr(strData).filter(i => i.IsActive && !i.IsDelete),

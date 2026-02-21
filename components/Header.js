@@ -22,6 +22,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
     const pathname = usePathname();
     const isTransactionPage = pathname?.startsWith('/dashboard/transaction');
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const menuTimeoutRef = useRef(null);
     // const [profileModalOpen, setProfileModalOpen] = useState(false); // Removed
     const [dbInfo, setDbInfo] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
@@ -246,8 +247,15 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
 
                 <div
                     className={styles.profile}
-                    onMouseEnter={() => setUserMenuOpen(true)}
-                    onMouseLeave={() => setUserMenuOpen(false)}
+                    onMouseEnter={() => {
+                        if (menuTimeoutRef.current) clearTimeout(menuTimeoutRef.current);
+                        setUserMenuOpen(true);
+                    }}
+                    onMouseLeave={() => {
+                        menuTimeoutRef.current = setTimeout(() => {
+                            setUserMenuOpen(false);
+                        }, 3000); // 3-second delay
+                    }}
                 >
                     <div className={styles.avatar}>
                         {userInfo?.ProfileImage ? (

@@ -19,7 +19,9 @@ export default function DataTable({
     reportHeader = null, // New Prop: For Fancy Export Header { title, fromDate, toDate }
     enableColumnVisibility = false, // New Prop: Helper to show/hide column toggle if needed (default visible in my implementation above)
     customHeight = null, // New Prop: Allow overriding default height
-    stickyLeft = 0 // New Prop: Number of columns to stick to the left
+    stickyLeft = 0, // New Prop: Number of columns to stick to the left
+    stickyBgColor = null, // New Prop: Custom Background Color for Sticky Columns
+    columnGroups = [] // New Prop: Array of { title, colSpan } for multi-level headers
 }) {
     const tableContainerRef = useRef(null);
 
@@ -340,6 +342,49 @@ export default function DataTable({
 
                 <table className={styles.table}>
                     <thead>
+                        {/* Render Column Groups (if any) */}
+                        {columnGroups && columnGroups.length > 0 && (
+                            <tr>
+                                {columnGroups.map((group, gIdx) => {
+                                    // Calculate if this group header should be sticky based on columns it covers
+                                    // We need to know which actual columns this group spans to calculate offset
+                                    // For simplicity, if it's the very first group covering sticky columns, make it sticky
+
+                                    // Determine the starting column index for this group
+                                    let startColIdx = 0;
+                                    for (let i = 0; i < gIdx; i++) startColIdx += columnGroups[i].colSpan;
+
+                                    const isStickyGroup = startColIdx < (stickyLeft || 0);
+                                    let groupLeftOffset = 0;
+                                    if (isStickyGroup && startColIdx > 0) {
+                                        groupLeftOffset = getLeftOffset(startColIdx);
+                                    }
+
+                                    return (
+                                        <th
+                                            key={`group-${gIdx}`}
+                                            colSpan={group.colSpan}
+                                            className={styles.th}
+                                            style={{
+                                                position: isStickyGroup ? 'sticky' : 'sticky',
+                                                top: 0,
+                                                left: isStickyGroup ? groupLeftOffset : undefined,
+                                                backgroundColor: isStickyGroup ? (stickyBgColor || '#f8fafc') : '#f0f9ff',
+                                                zIndex: isStickyGroup ? 40 : 30,
+                                                textAlign: 'center',
+                                                borderRight: '1px solid #cbd5e1',
+                                                borderBottom: '1px solid #cbd5e1',
+                                                boxShadow: isStickyGroup ? '2px 0 5px -2px rgba(0,0,0,0.1)' : undefined,
+                                                fontWeight: 'bold',
+                                                color: '#1e293b'
+                                            }}
+                                        >
+                                            {group.title}
+                                        </th>
+                                    );
+                                })}
+                            </tr>
+                        )}
                         <tr>
                             {columns.map((col, index) => {
                                 if (col.accessor === 'SlNo' && !showSerialNo) return null;
@@ -356,14 +401,14 @@ export default function DataTable({
                                         className={styles.th}
                                         style={{
                                             position: (isSticky || isAction) ? 'sticky' : 'sticky',
-                                            top: 0,
+                                            top: columnGroups && columnGroups.length > 0 ? 35 : 0, // Push down if there's a group header
                                             left: isSticky ? leftOffset : undefined,
                                             right: isAction ? 0 : undefined,
                                             maxWidth: col.width,
                                             minWidth: col.width,
                                             width: col.width,
                                             zIndex: isAction ? 41 : (isSticky ? 40 : 30),
-                                            backgroundColor: isFiltered ? '#fef9c3' : (isSticky || isAction ? '#f8fafc' : undefined),
+                                            backgroundColor: isFiltered ? '#fef9c3' : (isSticky ? (stickyBgColor || '#f8fafc') : (isAction ? '#f8fafc' : undefined)),
                                             borderBottom: isFiltered ? '2px solid #eab308' : undefined,
                                             boxShadow: isSticky ? '2px 0 5px -2px rgba(0,0,0,0.1)' : (isAction ? '-2px 0 5px -2px rgba(0,0,0,0.1)' : undefined)
                                         }}
@@ -485,7 +530,7 @@ export default function DataTable({
                                                     position: (col.accessor === 'actions' || isSticky) ? 'sticky' : undefined,
                                                     right: col.accessor === 'actions' ? 0 : undefined,
                                                     left: isSticky ? leftOffset : undefined,
-                                                    backgroundColor: (col.accessor === 'actions' || isSticky) ? (rIdx % 2 === 0 ? '#f8fafc' : 'white') : undefined,
+                                                    backgroundColor: isSticky ? (stickyBgColor || (rIdx % 2 === 0 ? '#f8fafc' : 'white')) : (col.accessor === 'actions' ? (rIdx % 2 === 0 ? '#f8fafc' : 'white') : undefined),
                                                     zIndex: col.accessor === 'actions' ? 10 : (isSticky ? 5 : 1),
                                                     boxShadow: isSticky ? '2px 0 5px -2px rgba(0,0,0,0.1)' : (col.accessor === 'actions' ? '-2px 0 5px -2px rgba(0,0,0,0.1)' : undefined)
                                                 }}

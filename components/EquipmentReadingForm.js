@@ -43,7 +43,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
         ActivityId: '',
         EquipmentId: '',
-        OperatorId: [], // Array (Driver)
+        OperatorId: '', // Single string instead of array
 
         // HMR
         OHMR: '',
@@ -122,7 +122,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     ...prev,
                     // Keep Date (Shift is already empty in formData if this triggers)
                     ShiftInchargeId: '', MidScaleInchargeId: '', RelayId: '',
-                    ActivityId: '', EquipmentId: '', OperatorId: [],
+                    ActivityId: '', EquipmentId: '', OperatorId: '',
                     OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
                     DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '', RunningBDMaintenanceHr: '',
                     TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
@@ -169,7 +169,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
                         // REST OF FIELDS: RESET TO DEFAULT/EMPTY
                         EquipmentId: '',
-                        OperatorId: [],
+                        OperatorId: '',
                         OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
                         DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '',
                         RunningBDMaintenanceHr: '', TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
@@ -201,7 +201,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                         ...prev,
                         // Keep Date & Shift
                         ShiftInchargeId: '', MidScaleInchargeId: '', RelayId: '',
-                        ActivityId: '', EquipmentId: '', OperatorId: [],
+                        ActivityId: '', EquipmentId: '', OperatorId: '',
                         OHMR: '', CHMR: '', NetHMR: '', OKMR: '', CKMR: '', NetKMR: '',
                         DevelopmentHrMining: '', FaceMarchingHr: '', DevelopmentHrNonMining: '', BlastingMarchingHr: '', RunningBDMaintenanceHr: '',
                         TotalWorkingHr: '', BDHr: '', MaintenanceHr: '', IdleHr: '',
@@ -376,19 +376,15 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                 if (safeData[key] === null) safeData[key] = '';
             });
 
-            // Helper to parse multi-select values (Handle Array, CSV String, Single Value)
-            const parseMultiSelect = (val) => {
-                if (!val) return [];
-                if (Array.isArray(val)) return val.map(Number); // Ensure numbers
-                if (typeof val === 'string') {
-                    if (val.includes(',')) return val.split(',').map(v => Number(v.trim())); // CSV
-                    return [Number(val)]; // Single String
-                }
-                if (typeof val === 'number') return [val]; // Single Number
-                return [];
-            };
-
-            const parsedOperator = parseMultiSelect(safeData.OperatorId);
+            // Convert OperatorId array format to single string if it was saved as array (retro-compatibility)
+            let parsedOperator = safeData.OperatorId || '';
+            if (Array.isArray(parsedOperator) && parsedOperator.length > 0) {
+                parsedOperator = String(parsedOperator[0]);
+            } else if (typeof parsedOperator === 'string' && parsedOperator.includes(',')) {
+                parsedOperator = parsedOperator.split(',')[0].trim();
+            } else if (typeof parsedOperator === 'number') {
+                parsedOperator = String(parsedOperator);
+            }
 
             setFormData({
                 ...safeData,
@@ -520,7 +516,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
         // 2. Context (Mandatory)
         if (!formData.ActivityId) errs.ActivityId = REQ_MSG;
         if (!formData.EquipmentId) errs.EquipmentId = REQ_MSG;
-        if (!formData.OperatorId?.length) errs.OperatorId = REQ_MSG;
+        if (!formData.OperatorId) errs.OperatorId = REQ_MSG;
 
         // 3. HMR (Mandatory)
         if (formData.OHMR === '') errs.OHMR = REQ_MSG;
@@ -638,7 +634,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     setFormData(prev => ({
                         ...prev,
                         EquipmentId: '',
-                        OperatorId: [], // Reset Operator
+                        OperatorId: '', // Reset Operator
 
                         // Reset Meters
                         OHMR: '', CHMR: '', NetHMR: '',
@@ -920,9 +916,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                             options={options.operatorsDriver}
                             value={formData.OperatorId}
                             onChange={(e) => setFormData({ ...formData, OperatorId: e.target.value })}
-                            placeholder="Select Driver(s)"
-                            multiple={true}
-                            closeOnSelect={true} // V19.2: Auto-Close on Select
+                            placeholder="Select Operator"
                             error={errors.OperatorId}
                         />
                         {errors.OperatorId && <div className={styles.errorMsg}>{errors.OperatorId}</div>}

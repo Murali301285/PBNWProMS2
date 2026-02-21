@@ -60,6 +60,26 @@ export default function DailyProgressPage() {
         wsData.push([{ v: `Conversion Factor: ${headerInfo?.ConversionFactor || '1.55'}`, s: { alignment: { horizontal: "center" }, font: { italic: true } } }]);
         wsData.push([""]);
 
+        const calculateTotal = (dataArr, fields) => {
+            return dataArr.reduce((acc, row) => {
+                fields.forEach(f => {
+                    // Remove commas and handle NaN cases properly
+                    const valStr = String(row[f] || '').replace(/,/g, '');
+                    const num = Number(valStr);
+                    acc[f] = (acc[f] || 0) + (isNaN(num) ? 0 : num);
+                });
+                return acc;
+            }, {});
+        };
+
+        const formatNum = (num) => {
+            if (!num || isNaN(num)) return 0;
+            return new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        };
+
         // --- Production Details ---
         wsData.push([{ v: "PRODUCTION DETAILS", s: { font: { bold: true } } }]);
         const prodHeaders = ["Sl No.", "Material", "Unit", "For The Day", "", "For The Month", "", "For The Year", ""];
@@ -69,9 +89,13 @@ export default function DailyProgressPage() {
         wsData.push(prodSubHeaders.map(h => ({ v: h, s: subHeaderStyle })));
 
         production.forEach(row => {
+            let displayMaterial = row.MaterialName;
+            if (displayMaterial === 'Waste') displayMaterial = 'OB';
+            if (displayMaterial === 'TOTAL WASTE') displayMaterial = 'TOTAL OB';
+
             wsData.push([
                 { v: row.SlNo, s: centerStyle },
-                { v: row.MaterialName, s: leftStyle },
+                { v: displayMaterial, s: leftStyle },
                 { v: row.Unit, s: centerStyle },
                 { v: row.DayTrip, s: centerStyle },
                 { v: row.DayQty, s: rightStyle },
@@ -84,6 +108,7 @@ export default function DailyProgressPage() {
         wsData.push([""]);
 
         // --- Drilling Details ---
+        const drillTotals = calculateTotal(drilling, ['Holes_FTD', 'Holes_MTD', 'Holes_YTD', 'Drilling_FTD', 'Drilling_MTD', 'Drilling_YTD', 'Hrs_FTD', 'Hrs_MTD', 'Hrs_YTD']);
         wsData.push([{ v: "DRILLING DETAILS", s: { font: { bold: true } } }]);
         const drillHeaders = ["Sl No.", "Material Type", "No. of Holes Drilled", "", "", "Drilled Meters", "", "", "Total Hrs", "", "", "Meters/Hr", "", ""];
         const drillSubHeaders = ["", "", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD"];
@@ -107,9 +132,26 @@ export default function DailyProgressPage() {
                 { v: "", s: centerStyle }, { v: "", s: centerStyle }, { v: "", s: centerStyle }
             ]);
         });
+        if (drilling.length > 0) {
+            wsData.push([
+                { v: "", s: centerStyle },
+                { v: "TOTAL", s: leftStyle },
+                { v: formatNum(drillTotals.Holes_FTD), s: centerStyle },
+                { v: formatNum(drillTotals.Holes_MTD), s: centerStyle },
+                { v: formatNum(drillTotals.Holes_YTD), s: centerStyle },
+                { v: formatNum(drillTotals.Drilling_FTD), s: centerStyle },
+                { v: formatNum(drillTotals.Drilling_MTD), s: centerStyle },
+                { v: formatNum(drillTotals.Drilling_YTD), s: centerStyle },
+                { v: formatNum(drillTotals.Hrs_FTD), s: centerStyle },
+                { v: formatNum(drillTotals.Hrs_MTD), s: centerStyle },
+                { v: formatNum(drillTotals.Hrs_YTD), s: centerStyle },
+                { v: "", s: centerStyle }, { v: "", s: centerStyle }, { v: "", s: centerStyle }
+            ]);
+        }
         wsData.push([""]);
 
         // --- Blasting Details ---
+        const blastTotals = calculateTotal(blasting, ['Holes_FTD', 'Holes_MTD', 'Holes_YTD', 'Exp_FTD', 'Exp_MTD', 'Exp_YTD', 'TotalVolume_FTD', 'TotalVolume_MTD', 'TotalVolume_YTD']);
         wsData.push([{ v: "BLASTING DETAILS", s: { font: { bold: true } } }]);
         const blastHeaders = ["Sl No.", "No. of Holes", "", "", "Total Explosive Used", "", "", "Blasted Volume", "", "", "Powder Factor", "", ""];
         const blastSubHeaders = ["", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD"];
@@ -134,9 +176,25 @@ export default function DailyProgressPage() {
                 { v: row.PowderFactor_YTD, s: centerStyle },
             ]);
         });
+        if (blasting.length > 0) {
+            wsData.push([
+                { v: "TOTAL", s: centerStyle },
+                { v: formatNum(blastTotals.Holes_FTD), s: centerStyle },
+                { v: formatNum(blastTotals.Holes_MTD), s: centerStyle },
+                { v: formatNum(blastTotals.Holes_YTD), s: centerStyle },
+                { v: formatNum(blastTotals.Exp_FTD), s: centerStyle },
+                { v: formatNum(blastTotals.Exp_MTD), s: centerStyle },
+                { v: formatNum(blastTotals.Exp_YTD), s: centerStyle },
+                { v: formatNum(blastTotals.TotalVolume_FTD), s: centerStyle },
+                { v: formatNum(blastTotals.TotalVolume_MTD), s: centerStyle },
+                { v: formatNum(blastTotals.TotalVolume_YTD), s: centerStyle },
+                { v: "", s: centerStyle }, { v: "", s: centerStyle }, { v: "", s: centerStyle }
+            ]);
+        }
         wsData.push([""]);
 
         // --- Crusher Details ---
+        const crusherTotals = calculateTotal(crusher, ['Hrs_FTD', 'Hrs_MTD', 'Hrs_YTD', 'Qty_FTD', 'Qty_MTD', 'Qty_YTD', 'KWH_FTD', 'KWH_MTD', 'KWH_YTD']);
         wsData.push([{ v: "CRUSHER PRODUCTION", s: { font: { bold: true } } }]);
         const crushHeaders = ["Plant", "Hrs Run", "", "", "Production Qty.", "", "", "KWH", "", "", "KWH/Hrs", "", ""];
         const crushSubHeaders = ["", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD", "FTD", "MTD", "YTD"];
@@ -161,6 +219,21 @@ export default function DailyProgressPage() {
                 { v: row.KWH_HR_YTD, s: centerStyle },
             ]);
         });
+        if (crusher.length > 0) {
+            wsData.push([
+                { v: "TOTAL", s: leftStyle },
+                { v: formatNum(crusherTotals.Hrs_FTD), s: centerStyle },
+                { v: formatNum(crusherTotals.Hrs_MTD), s: centerStyle },
+                { v: formatNum(crusherTotals.Hrs_YTD), s: centerStyle },
+                { v: formatNum(crusherTotals.Qty_FTD), s: centerStyle },
+                { v: formatNum(crusherTotals.Qty_MTD), s: centerStyle },
+                { v: formatNum(crusherTotals.Qty_YTD), s: centerStyle },
+                { v: formatNum(crusherTotals.KWH_FTD), s: centerStyle },
+                { v: formatNum(crusherTotals.KWH_MTD), s: centerStyle },
+                { v: formatNum(crusherTotals.KWH_YTD), s: centerStyle },
+                { v: "", s: centerStyle }, { v: "", s: centerStyle }, { v: "", s: centerStyle }
+            ]);
+        }
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         ws['!cols'] = [

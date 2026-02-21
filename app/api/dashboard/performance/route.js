@@ -23,11 +23,14 @@ export async function GET(req) {
         // Fetch All Performance Data from Single New SP
         const resultSets = await executeStoredProcedure('PMS2_New_Dash_SP_PerformanceDashboard', params);
 
+        // Fetch SectorWise Data from new separate SP
+        const sectorWiseSets = await executeStoredProcedure('PMS2_New_Dash_SP_PerformanceDashboard_Sectorwise', params);
+
         return NextResponse.json({
             success: true,
             highestProduction: resultSets[0] || [],
             crusherWise: resultSets[1] || [],
-            sectorWise: resultSets[2] || [],
+            sectorWise: sectorWiseSets[0] || [],
             operatorPerformance: resultSets[3] || [],
             loadingPerformance: resultSets[4] || []
         });

@@ -12,8 +12,14 @@ export async function GET() {
         );
         console.log(`Fetched ${operators?.length} operators`);
 
+        const activities = await executeQuery(
+            "SELECT SlNo as id, Name as name FROM [Master].[TblActivity] WHERE IsDelete = 0 AND IsActive = 1 ORDER BY Name"
+        );
+        console.log(`Fetched ${activities?.length} activities`);
+
         return NextResponse.json({
-            operators
+            operators,
+            activities
         });
 
     } catch (error) {

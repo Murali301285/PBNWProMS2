@@ -7,14 +7,15 @@ export const dynamic = 'force-dynamic';
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { fromDate, toDate, operatorIds } = body;
+        const { fromDate, toDate, operatorIds, activityIds } = body;
 
-        console.log("Operator Report Request:", { fromDate, toDate, operatorIds });
+        console.log("Operator Report Request:", { fromDate, toDate, operatorIds, activityIds });
 
         const params = [
             { name: 'FromDate', value: fromDate },
             { name: 'ToDate', value: toDate },
-            { name: 'OperatorIds', value: operatorIds && operatorIds.length > 0 ? operatorIds.join(',') : null }
+            { name: 'OperatorIds', value: operatorIds && operatorIds.length > 0 ? operatorIds.join(',') : null },
+            { name: 'ActivityIds', value: activityIds && activityIds.length > 0 ? activityIds.join(',') : null },
         ];
 
         // executeStoredProcedure returns result.recordsets (array of arrays)

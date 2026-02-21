@@ -5,7 +5,6 @@ import styles from '../../app/dashboard/page.module.css';
 
 // Tabs
 import HighestProduction from './PerformanceTabs/HighestProduction';
-import CrusherWise from './PerformanceTabs/CrusherWise';
 import SectorWise from './PerformanceTabs/SectorWise';
 import OperatorPerformance from './PerformanceTabs/OperatorPerformance';
 import LoadingPerformance from './PerformanceTabs/LoadingPerformance';
@@ -24,7 +23,6 @@ export default function Performance() {
 
     const [dashboardData, setDashboardData] = useState({
         highestProduction: [],
-        crusherWise: [],
         sectorWise: [],
         operatorPerformance: [],
         loadingPerformance: [],
@@ -41,7 +39,6 @@ export default function Performance() {
             if (json.success) {
                 setDashboardData({
                     highestProduction: json.highestProduction,
-                    crusherWise: json.crusherWise,
                     sectorWise: json.sectorWise,
                     operatorPerformance: json.operatorPerformance,
                     loadingPerformance: json.loadingPerformance,
@@ -88,7 +85,6 @@ export default function Performance() {
 
         switch (activeTab) {
             case 'highest': return <HighestProduction data={dashboardData.highestProduction} />;
-            case 'crusher': return <CrusherWise data={dashboardData.crusherWise} />;
             case 'sector': return <SectorWise data={dashboardData.sectorWise} />;
             case 'operator': return <OperatorPerformance dateRange={dateRange} />;
             case 'loading': return <LoadingPerformance data={dashboardData.loadingPerformance} />;
@@ -100,7 +96,6 @@ export default function Performance() {
 
     const tabs = [
         { id: 'highest', label: 'Highest Production' },
-        { id: 'crusher', label: 'Crusher Wise' },
         { id: 'sector', label: 'Sector Wise' },
         { id: 'operator', label: 'Operator Performance' },
         { id: 'loading', label: 'Loading Performance' },

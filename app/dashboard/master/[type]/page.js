@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { MASTER_CONFIG } from '@/lib/masterConfig';
 import MasterTable from '@/components/MasterTable';
 import DestinationMaterialMappingPage from '@/app/dashboard/settings/destination-material-mapping/page';
+import LocationMappingPage from '@/app/dashboard/settings/location-mapping/page';
 
 export default function MasterPage({ params }) {
     const { type } = use(params);
@@ -12,6 +13,11 @@ export default function MasterPage({ params }) {
     // Custom Override for Destination Material Mapping
     if (type === 'destination-material-mapping') {
         return <DestinationMaterialMappingPage />;
+    }
+
+    // Custom Override for Location Mapping
+    if (type === 'location-mapping') {
+        return <LocationMappingPage />;
     }
 
     const config = MASTER_CONFIG[type];

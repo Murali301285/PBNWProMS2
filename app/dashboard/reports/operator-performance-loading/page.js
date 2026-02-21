@@ -16,6 +16,9 @@ export default function OperatorPerformanceReport() {
     const [allOperators, setAllOperators] = useState([]);
     const [selectedOperators, setSelectedOperators] = useState([]); // Multi-select ID array
 
+    const [allActivities, setAllActivities] = useState([]);
+    const [selectedActivities, setSelectedActivities] = useState([]); // Multi-select ID array
+
     const [reportData, setReportData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerated, setIsGenerated] = useState(false);
@@ -30,6 +33,7 @@ export default function OperatorPerformanceReport() {
             const res = await fetch('/api/reports/operator-performance-loading/helpers');
             const data = await res.json();
             if (data.operators) setAllOperators(data.operators);
+            if (data.activities) setAllActivities(data.activities);
         } catch (error) {
             console.error("Error fetching helpers:", error);
             toast.error("Failed to load filters");
@@ -48,7 +52,8 @@ export default function OperatorPerformanceReport() {
             const payload = {
                 fromDate,
                 toDate,
-                operatorIds: selectedOperators // Array of IDs
+                operatorIds: selectedOperators, // Array of IDs
+                activityIds: selectedActivities
             };
 
             const res = await fetch('/api/reports/operator-performance-loading', {
@@ -71,11 +76,15 @@ export default function OperatorPerformanceReport() {
         }
     };
 
-    // Format options for SearchableSelect
     const operatorOptions = useMemo(() => allOperators.map(op => ({
         id: op.id,
         name: op.name
     })), [allOperators]);
+
+    const activityOptions = useMemo(() => allActivities.map(act => ({
+        id: act.id,
+        name: act.name
+    })), [allActivities]);
 
     // Define table columns
     const columns = useMemo(() => [
@@ -94,23 +103,30 @@ export default function OperatorPerformanceReport() {
         { header: 'Close HMR', accessor: 'Close HMR', width: '100px' },
         { header: 'Net HMR', accessor: 'Net HMR', width: '100px' },
 
+        { header: 'Working Hr', accessor: 'WORKING HR', width: '100px' },
+        { header: 'Idle Hr', accessor: 'IDLE HR', width: '100px' },
+        { header: 'Maintenance Hr', accessor: 'MAINTENANCE HR', width: '100px' },
+        { header: 'Breakdown Hr', accessor: 'BREAKDOWN HR', width: '100px' },
+
         { header: 'Coal Trips', accessor: 'COAL TRIPS', width: '100px' },
         { header: 'Coal Qty (MT)', accessor: 'QUANTITY (MT)', width: '120px' },
+        { header: 'Coal Trips/Hr', accessor: 'COAL TRIPS/HR', width: '120px' },
+        { header: 'Coal Qty/Hr', accessor: 'COAL QTY/HR', width: '120px' },
 
         { header: 'OB Trips', accessor: 'OB TRIPS', width: '100px' },
         { header: 'OB Qty (BCM)', accessor: 'QUANTITY (BCM)', width: '120px' },
+        { header: 'OB Trips/Hr', accessor: 'OB TRIPS/HR', width: '120px' },
+        { header: 'OB Qty/Hr', accessor: 'OB QTY/HR', width: '120px' },
 
-        { header: 'Coal Trips/Hr', accessor: 'COAL TRIPS/HR', width: '100px' },
-        { header: 'Coal Qty/Hr', accessor: 'COAL QTY/HR', width: '100px' },
-
-        { header: 'OB Trips', accessor: 'OB TRIPS', width: '100px' },
-        { header: 'OB Qty (BCM)', accessor: 'QUANTITY (BCM)', width: '120px' },
-
-        { header: 'Trip/Hrs', accessor: 'OB TRIPS/HR', width: '100px' },
-        { header: 'BCM/Hrs', accessor: 'OB QTY/HR', width: '100px' },
+        { header: 'Total Trips', accessor: 'TOTAL TRIPS', width: '100px' },
+        { header: 'Total Qty', accessor: 'TOTAL QTY', width: '100px' },
+        { header: 'Total Hrs', accessor: 'TOTAL HRS', width: '100px' },
+        { header: 'Total Trips/Hr', accessor: 'TOTAL TRIPS PER HR', width: '120px' },
+        { header: 'Total BCM/Hr', accessor: 'TOTAL BCM/HR', width: '120px' },
 
         { header: 'Shift Incharge (Large Scale)', accessor: 'Shift Incharge(Large Scale)', width: '200px' },
         { header: 'Shift Incharge (Mid Scale)', accessor: 'Shift Incharge - Mid Scale', width: '200px' },
+        { header: 'Remarks', accessor: 'REMARKS', width: '150px' },
     ], []);
 
     return (
@@ -145,6 +161,20 @@ export default function OperatorPerformanceReport() {
                         value={toDate}
                         onChange={(e) => setToDate(e.target.value)}
                         className={styles.input}
+                    />
+                </div>
+
+                {/* Activity Filter */}
+                <div className={styles.inputGroup} style={{ minWidth: '200px' }}>
+                    <label className={styles.label}>
+                        Activity
+                    </label>
+                    <SearchableSelect
+                        options={activityOptions}
+                        value={selectedActivities}
+                        onChange={(e) => setSelectedActivities(e.target.value)}
+                        multiple
+                        placeholder="All Activities"
                     />
                 </div>
 
@@ -191,6 +221,8 @@ export default function OperatorPerformanceReport() {
                 reportName="Operator Performance - Loading"
                 fromDate={fromDate}
                 toDate={toDate}
+                stickyLeft={4}
+                stickyBgColor="#e0f2fe"
             />
         </div>
     );

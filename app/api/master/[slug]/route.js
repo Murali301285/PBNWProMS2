@@ -47,7 +47,8 @@ export async function POST(req, { params }) {
 
         console.log(`[API] Processing ${slug} create request`, { bodyKeys: Object.keys(body) });
 
-        config.columns.forEach(col => {
+        config.columns.forEach(colObj => {
+            const col = colObj.accessor;
             if (body[col] !== undefined) {
                 fields.push(col);
                 values.push(`@${col}`);
@@ -55,14 +56,21 @@ export async function POST(req, { params }) {
                     // Explicitly handle large strings
                     request.input(col, sql.NVarChar(sql.MAX), body[col]);
                 } else {
-                    request.input(col, body[col]);
+                    let val = body[col];
+                    // Handle boolean toggles appropriately
+                    if (typeof val === 'boolean' || val === 'Yes' || val === 'No') {
+                        val = (val === true || val === 'Yes' || val === 1) ? 1 : 0;
+                        request.input(col, sql.Bit, val);
+                    } else {
+                        request.input(col, val);
+                    }
                 }
             }
         });
 
         // Add Standard Fields
-        fields.push('Active', 'IsDelete', 'CreatedDate', 'CreatedBy');
-        values.push('1', '0', 'GETDATE()', '1');
+        fields.push('IsDelete', 'CreatedDate', 'CreatedBy');
+        values.push('0', 'GETDATE()', '1');
 
         const query = `
             INSERT INTO ${config.table} (${fields.join(', ')})
@@ -95,23 +103,23 @@ export async function PUT(req, { params }) {
         const updates = [];
 
         // Handle Standard Columns
-        config.columns.forEach(col => {
+        config.columns.forEach(colObj => {
+            const col = colObj.accessor;
             if (body[col] !== undefined) {
                 updates.push(`${col} = @${col}`);
                 if (col === 'CompanyLogo') {
                     request.input(col, sql.NVarChar(sql.MAX), body[col]);
                 } else {
-                    request.input(col, body[col]);
+                    let val = body[col];
+                    if (typeof val === 'boolean' || val === 'Yes' || val === 'No') {
+                        val = (val === true || val === 'Yes' || val === 1) ? 1 : 0;
+                        request.input(col, sql.Bit, val);
+                    } else {
+                        request.input(col, val);
+                    }
                 }
             }
         });
-
-        // Handle Active Toggle
-        if (body.Active !== undefined) {
-            const activeBit = (body.Active === 'Yes' || body.Active === true || body.Active === 1) ? 1 : 0;
-            updates.push(`Active = @Active`);
-            request.input('Active', sql.Bit, activeBit);
-        }
 
         updates.push('UpdatedDate = GETDATE()', 'UpdatedBy = 1');
 

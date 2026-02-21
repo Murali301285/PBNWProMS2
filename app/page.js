@@ -173,9 +173,9 @@ export default function LoginPage() {
 
                 <div className={styles.footer} style={{ position: 'relative', justifyContent: 'center' }}>
                     <div style={{ position: 'absolute', left: 0, display: 'flex', gap: '8px' }}>
-                        <button className={styles.iconBtn} onClick={handleSettingsClick} title="Settings">
+                        {/* <button className={styles.iconBtn} onClick={handleSettingsClick} title="Settings">
                             <Settings size={18} />
-                        </button>
+                        </button> */}
                         <button className={styles.iconBtn} onClick={toggleTheme} title="Toggle Theme">
                             {theme === 'light' ? '🌙' : '☀️'}
                         </button>
@@ -183,7 +183,7 @@ export default function LoginPage() {
                     <div style={{ textAlign: 'center' }}>
                         <p style={{ fontWeight: '500' }}>ProMS 2.0 © 2026</p>
                         <p style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--primary)', marginTop: '0.25rem' }}>
-                            Version : 2.7.0 , Last Updated on : 16-Feb-2026
+                            Version : 2.8 , Last Updated on : 21-Feb-2026
                         </p>
                     </div>
                 </div>

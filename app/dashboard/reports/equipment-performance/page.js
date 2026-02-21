@@ -70,59 +70,70 @@ export default function EquipmentPerformanceReport() {
 
     // Columns Configuration
     const columns = useMemo(() => [
+        // Fixed Columns
         { header: 'Sl.No', accessor: 'SlNo', width: '60px' },
-        { header: 'PMS Code', accessor: 'PMS Code', width: '100px' },
+        { header: 'Prodsys Code', accessor: 'PMS Code', width: '100px' },
         { header: 'Cost Center', accessor: 'CostCenter', width: '100px' },
-        { header: 'Equipment', accessor: 'Equipment', width: '180px' },
-        { header: 'Operator', accessor: 'Operator', width: '150px' },
+        { header: 'Equ. Name', accessor: 'Equipment', width: '180px' },
         { header: 'Activity', accessor: 'Activity', width: '150px' },
+        { header: 'Operator', accessor: 'Operator', width: '150px' },
 
         // Shift A
-        { header: 'Shift A Trips', accessor: 'Shift ATotal Trips', width: '110px' },
-        { header: 'Shift A Qty', accessor: 'Shift ATotal Qty', width: '110px' },
-        { header: 'Shift A Hrs', accessor: 'Shift ATotal Hrs', width: '110px' },
-        { header: 'Shift A Kms', accessor: 'Shift ATotal Kms', width: '110px' },
-        { header: 'Shift A Trips/Hr', accessor: 'Shift ATrips Per Hr', width: '120px' },
-        { header: 'Shift A Qty/Hr', accessor: 'Shift AQty Per Hr', width: '120px' },
+        { header: 'Total Trips', accessor: 'Shift ATotal Trips', width: '110px' },
+        { header: 'Total Qty', accessor: 'Shift ATotal Qty', width: '110px' },
+        { header: 'Total Hrs', accessor: 'Shift ATotal Hrs', width: '110px' },
+        { header: 'Total Kms', accessor: 'Shift ATotal Kms', width: '110px' },
+        { header: 'Trips Per Hr', accessor: 'Shift ATrips Per Hr', width: '120px' },
+        { header: 'Qty Per Hr', accessor: 'Shift AQty Per Hr', width: '120px' },
 
         // Shift B
-        { header: 'Shift B Trips', accessor: 'Shift BTotal Trips', width: '110px' },
-        { header: 'Shift B Qty', accessor: 'Shift BTotal Qty', width: '110px' },
-        { header: 'Shift B Hrs', accessor: 'Shift BTotal Hrs', width: '110px' },
-        { header: 'Shift B Kms', accessor: 'Shift BTotal Kms', width: '110px' },
-        { header: 'Shift B Trips/Hr', accessor: 'Shift BTrips Per Hr', width: '120px' },
-        { header: 'Shift B Qty/Hr', accessor: 'Shift BQty Per Hr', width: '120px' },
+        { header: 'Total Trips', accessor: 'Shift BTotal Trips', width: '110px' },
+        { header: 'Total Qty', accessor: 'Shift BTotal Qty', width: '110px' },
+        { header: 'Total Hrs', accessor: 'Shift BTotal Hrs', width: '110px' },
+        { header: 'Total Kms', accessor: 'Shift BTotal Kms', width: '110px' },
+        { header: 'Trips Per Hr', accessor: 'Shift BTrips Per Hr', width: '120px' },
+        { header: 'Qty Per Hr', accessor: 'Shift BQty Per Hr', width: '120px' },
 
         // Shift C
-        { header: 'Shift C Trips', accessor: 'Shift CTotal Trips', width: '110px' },
-        { header: 'Shift C Qty', accessor: 'Shift CTotal Qty', width: '110px' },
-        { header: 'Shift C Hrs', accessor: 'Shift CTotal Hrs', width: '110px' },
-        { header: 'Shift C Kms', accessor: 'Shift CTotal Kms', width: '110px' },
-        { header: 'Shift C Trips/Hr', accessor: 'Shift CTrips Per Hr', width: '120px' },
-        { header: 'Shift C Qty/Hr', accessor: 'Shift CQty Per Hr', width: '120px' },
+        { header: 'Total Trips', accessor: 'Shift CTotal Trips', width: '110px' },
+        { header: 'Total Qty', accessor: 'Shift CTotal Qty', width: '110px' },
+        { header: 'Total Hrs', accessor: 'Shift CTotal Hrs', width: '110px' },
+        { header: 'Total Kms', accessor: 'Shift CTotal Kms', width: '110px' },
+        { header: 'Trips Per Hr', accessor: 'Shift CTrips Per Hr', width: '120px' },
+        { header: 'Qty Per Hr', accessor: 'Shift CQty Per Hr', width: '120px' },
 
         // FTD
-        { header: 'FTD Trips', accessor: 'FTDTotal Trips', width: '110px' },
-        { header: 'FTD Qty', accessor: 'FTDTotal Qty', width: '110px' },
-        { header: 'FTD Hrs', accessor: 'FTDTotal Hrs', width: '110px' },
-        { header: 'FTD Kms', accessor: 'FTDTotal Kms', width: '110px' },
-        { header: 'FTD Fuel', accessor: 'FTDTotal Fuel', width: '110px' },
-        { header: 'FTD Trips/Hr', accessor: 'FTDTrips Per Hr', width: '120px' },
-        { header: 'FTD Qty/Hr', accessor: 'FTDQty Per Hr', width: '120px' },
-        { header: 'FTD Fuel/Hr', accessor: 'FTDFuel Per Hr', width: '120px', render: r => Number(r['FTDFuel Per Hr']).toFixed(2) },
-        { header: 'FTD KMPL', accessor: 'FTDKMPL', width: '110px', render: r => Number(r['FTDKMPL']).toFixed(2) },
+        { header: 'Total Trips', accessor: 'FTDTotal Trips', width: '110px' },
+        { header: 'Total Qty', accessor: 'FTDTotal Qty', width: '110px' },
+        { header: 'Total Hrs', accessor: 'FTDTotal Hrs', width: '110px' },
+        { header: 'Total Kms', accessor: 'FTDTotal Kms', width: '110px' },
+        { header: 'Total Fuel', accessor: 'FTDTotal Fuel', width: '110px' },
+        { header: 'Trips Per Hr', accessor: 'FTDTrips Per Hr', width: '120px' },
+        { header: 'Qty Per Hr', accessor: 'FTDQty Per Hr', width: '120px' },
+        { header: 'Fuel Per Hr', accessor: 'FTDFuel Per Hr', width: '120px', render: r => Number(r['FTDFuel Per Hr']).toFixed(2) },
+        { header: 'KMPL', accessor: 'FTDKMPL', width: '110px', render: r => Number(r['FTDKMPL']).toFixed(2) },
 
         // MTD
-        { header: 'MTD Trips', accessor: 'MTDTotal Trips', width: '110px' },
-        { header: 'MTD Qty', accessor: 'MTDTotal Qty', width: '110px' },
-        { header: 'MTD Hrs', accessor: 'MTDTotal Hrs', width: '110px' },
-        { header: 'MTD Kms', accessor: 'MTDTotal Kms', width: '110px' },
-        { header: 'MTD Fuel', accessor: 'MTDTotal Fuel', width: '110px' },
-        { header: 'MTD Trips/Hr', accessor: 'MTDTrips Per Hr', width: '120px' },
-        { header: 'MTD Qty/Hr', accessor: 'MTDQty Per Hr', width: '120px' },
-        { header: 'MTD Fuel/Hr', accessor: 'MTDFuel Per Hr', width: '120px', render: r => Number(r['MTDFuel Per Hr']).toFixed(2) },
-        { header: 'MTD KMPL', accessor: 'MTDKMPL', width: '110px', render: r => Number(r['MTDKMPL']).toFixed(2) },
+        { header: 'Total Trips', accessor: 'MTDTotal Trips', width: '110px' },
+        { header: 'Total Qty', accessor: 'MTDTotal Qty', width: '110px' },
+        { header: 'Total Hrs', accessor: 'MTDTotal Hrs', width: '110px' },
+        { header: 'Total Kms', accessor: 'MTDTotal Kms', width: '110px' },
+        { header: 'Total Fuel', accessor: 'MTDTotal Fuel', width: '110px' },
+        { header: 'Trips Per Hr', accessor: 'MTDTrips Per Hr', width: '120px' },
+        { header: 'Qty Per Hr', accessor: 'MTDQty Per Hr', width: '120px' },
+        { header: 'Fuel Per Hr', accessor: 'MTDFuel Per Hr', width: '120px', render: r => Number(r['MTDFuel Per Hr']).toFixed(2) },
+        { header: 'KMPL', accessor: 'MTDKMPL', width: '110px', render: r => Number(r['MTDKMPL']).toFixed(2) },
 
+    ], []);
+
+    const columnGroups = useMemo(() => [
+        { title: '', colSpan: 4 }, // SlNo to Equ. Name
+        { title: '', colSpan: 2 }, // Activity, Operator (Unfrozen)
+        { title: 'SHIFT A', colSpan: 6 },
+        { title: 'SHIFT B', colSpan: 6 },
+        { title: 'SHIFT C', colSpan: 6 },
+        { title: 'FTD', colSpan: 9 },
+        { title: 'MTD', colSpan: 9 }
     ], []);
 
     const handleGenerate = async () => {
@@ -245,6 +256,9 @@ export default function EquipmentPerformanceReport() {
                 fromDate={date}
                 toDate={date}
                 generated={generated}
+                stickyLeft={4} // SlNo, Prodsys Code, Cost Center, Equ Name
+                stickyBgColor="#e0f2fe"
+                columnGroups={columnGroups}
             />
         </div>
     );

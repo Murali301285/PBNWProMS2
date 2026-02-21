@@ -1,14 +1,18 @@
 'use client';
+import { useState } from 'react';
 import SuperTable from '../../Shared/SuperTable';
 
 const formatNumber = (num) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 
 export default function CrushingHighestProduction({ data = [] }) {
+    const [limit, setLimit] = useState(5);
 
     // Helper: Get data for specific Plant and Period
     const getData = (plant, period) => {
-        // Data structure from SP: { PeriodType, Category (PlantName), Date, Shift, Qty }
-        return data.filter(d => d.Category === plant && d.PeriodType === period);
+        // Data structure from SP: { PeriodType, Category (PlantName), Date/Month, Shift, Qty }
+        const filtered = data.filter(d => d.Category === plant && d.PeriodType === period);
+        // Sort descending by Qty and apply limit
+        return filtered.sort((a, b) => b.Qty - a.Qty).slice(0, limit);
     };
 
     // Render logic for a single Table
@@ -20,7 +24,8 @@ export default function CrushingHighestProduction({ data = [] }) {
                 data={periodData}
                 showPagination={false}
                 showSearch={false}
-                pageSizeDefault={5}
+                showExport={false}
+                pageSizeDefault={limit}
                 title={title}
             />
         </div>
@@ -29,27 +34,27 @@ export default function CrushingHighestProduction({ data = [] }) {
     // Columns Definitions
     const getColumns = (unit, period) => {
         const base = [
-            { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index + 1 },
+            { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
             { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) },
         ];
 
         if (period === 'Shift') {
             return [
-                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index + 1 },
+                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
                 { header: 'Date', accessor: 'Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
                 { header: 'Shift', accessor: 'Shift', align: 'center' },
                 { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) }
             ];
         } else if (period === 'Day') {
             return [
-                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index + 1 },
+                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
                 { header: 'Date', accessor: 'Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
                 { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) }
             ];
         } else if (period === 'Month') {
             return [
-                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index + 1 },
-                { header: 'Month', accessor: 'Date' }, // SP sets Date column to Month String for 'Month' period
+                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
+                { header: 'Month', accessor: 'Month' }, // SP sets Date column to Month String for 'Month' period
                 { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) }
             ];
         }
@@ -66,6 +71,22 @@ export default function CrushingHighestProduction({ data = [] }) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Top N Dropdown Control */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '8px 15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#333' }}>Top Records:</span>
+                    <select
+                        value={limit}
+                        onChange={e => setLimit(Number(e.target.value))}
+                        style={{ padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                    >
+                        <option value={2}>Top 2</option>
+                        <option value={5}>Top 5</option>
+                        <option value={10}>Top 10</option>
+                    </select>
+                </div>
+            </div>
+
             {sections.map((sec, idx) => (
                 <div key={idx} style={{ background: 'white', borderRadius: '8px', padding: '1rem', border: '1px solid var(--border)' }}>
                     <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'blue', marginBottom: '1rem' }}>{sec.title}</h2>

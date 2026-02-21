@@ -284,14 +284,14 @@ export default function Crushing() {
 
     // Excel Download Handler
     const handleDownloadExcel = () => {
-        if (!pivotedData || pivotedData.length === 0) return;
+        if (!pivotedData || pivotedData.length === 0) {
+            toast.error("No data available to export.");
+            return;
+        }
 
         const wb = utils.book_new();
 
-        // Download FILTERED data? Usually users expect what they see. 
-        // Let's export what's in 'filteredData' (Search results), ignoring pagination for export likely preferred.
-        // Or export pivotedData (all pages). Conventionally, export filtered view.
-
+        // --- Sheet 1: Detailed Data ---
         const dataToExport = filteredData;
 
         // Map for Excel
@@ -307,17 +307,26 @@ export default function Crushing() {
         }));
 
         const wsData = utils.json_to_sheet(excelRows);
-
-        // Add styling/merging for headers if we were using a more advanced lib, 
-        // but for standard json_to_sheet, we get flat headers.
-        // We can manually add the merged header row? 
-        // For simplicity in client-side export, flat headers are usually safer, 
-        // but let's stick to the requested structure in the UI. 
-        // For Excel, "Shift A Qty", "Shift B Qty" etc is clear enough.
-
         utils.book_append_sheet(wb, wsData, 'Production Data');
 
-        // Sheet 2: Stoppages
+
+        // --- Sheet 2: Highest Production ---
+        if (highestProductionData && highestProductionData.length > 0) {
+            // Flatten the highestProductionData for Excel since it's segmented by PeriodType and Category
+            const hpExport = highestProductionData.map((row, idx) => ({
+                'Sl No': idx + 1,
+                'Plant / Category': row.Category,
+                'Period Type': row.PeriodType,
+                'Date/Month': row.Date || row.Month || '-',
+                'Shift': row.Shift || '-',
+                'Quantity (MT)': row.Qty
+            }));
+            const wsHp = utils.json_to_sheet(hpExport);
+            utils.book_append_sheet(wb, wsHp, 'Highest Production');
+        }
+
+
+        // --- Sheet 3: Stoppages ---
         if (data.stoppages?.length > 0) {
             const wsStop = utils.json_to_sheet(data.stoppages);
             utils.book_append_sheet(wb, wsStop, 'Stoppage Summary');
@@ -359,9 +368,9 @@ export default function Crushing() {
                     <button onClick={fetchData} className={`${styles.iconButton} ${styles.btnBlue}`}>
                         <RefreshCw size={18} /> Show
                     </button>
-                    {/* <button onClick={handleDownloadExcel} className={`${styles.iconButton} ${styles.btnGreen}`}>
-                        <Download size={18} /> Excel
-                    </button> */}
+                    <button onClick={handleDownloadExcel} className={`${styles.iconButton} ${styles.btnGreen}`}>
+                        <Download size={18} /> Download Excel
+                    </button>
                 </div>
             </div>
 
@@ -421,10 +430,6 @@ export default function Crushing() {
                                     <option value={100}>100</option>
                                     <option value="All">All</option>
                                 </select>
-
-                                <button onClick={handleDownloadExcel} className={`${styles.iconButton} ${styles.btnGreen}`} style={{ padding: '4px 10px', fontSize: '0.85rem' }}>
-                                    <Download size={16} /> Export Excel
-                                </button>
                             </div>
                         </div>
 
