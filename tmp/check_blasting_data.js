@@ -1,4 +1,3 @@
-
 const sql = require('mssql');
 
 const config = {
@@ -6,40 +5,47 @@ const config = {
     password: 'Chennai@42',
     server: 'localhost',
     port: 1433,
-    database: 'ProMS2_Serv',
+    database: 'ProMS2_1602',
     options: {
         encrypt: false,
-        trustServerCertificate: true,
-        enableArithAbort: true,
+        trustServerCertificate: true
     }
 };
 
-async function checkBlastingData() {
+async function checkData() {
     try {
         await sql.connect(config);
+        console.log("Connected to DB");
 
-        console.log("--- Activity: Blasting ---");
-        const activity = await sql.query("SELECT * FROM [Master].[TblActivity] WHERE Name LIKE '%Blasting%'");
-        console.table(activity.recordset);
+        // Check columns of TblDrilling again for Qty/Volume
+        console.log("Checking Drilling Columns for Qty:");
+        const drillCols = await sql.query(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'TblDrilling' AND COLUMN_NAME LIKE '%Qty%' OR COLUMN_NAME LIKE '%Vol%'
+        `);
+        console.table(drillCols.recordset);
 
-        if (activity.recordset.length > 0) {
-            const blastingId = activity.recordset[0].SlNo;
-            console.log(`--- Equipment for ActivityId: ${blastingId} ---`);
-            const equipment = await sql.query(`SELECT SlNo, EquipmentName, ActivityId FROM [Master].[TblEquipment] WHERE ActivityId = ${blastingId}`);
-            console.table(equipment.recordset);
-
-            if (equipment.recordset.length === 0) {
-                console.log("No equipment found for Blasting.");
-            }
-        } else {
-            console.log("Blasting activity not found.");
-        }
+        // Check if BlastingPatchId exists in Drilling
+        console.log("Checking Patch ID Match:");
+        const patchMatch = await sql.query(`
+            SELECT TOP 5 
+                B.BlastingPatchId, 
+                B.SMEQty,
+                D.DrillingPatchId, 
+                D.MaterialId,
+                D.TotalQty AS DrillQty,
+                D.NoofHoles AS DrillHoles
+            FROM Trans.TblBlasting B
+            JOIN Trans.TblDrilling D ON B.BlastingPatchId = D.DrillingPatchId
+        `);
+        console.table(patchMatch.recordset);
 
     } catch (err) {
         console.error("Error:", err);
     } finally {
-        process.exit();
+        await sql.close();
     }
 }
 
-checkBlastingData();
+checkData();

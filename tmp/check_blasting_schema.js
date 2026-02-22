@@ -1,26 +1,37 @@
-
 const sql = require('mssql');
-const { config } = require('./lib/db');
 
-async function checkTable() {
+const config = {
+    user: 'sa',
+    password: 'Chennai@42',
+    server: 'localhost',
+    port: 1433,
+    database: 'ProMS2_1602',
+    options: {
+        encrypt: false,
+        trustServerCertificate: true
+    }
+};
+
+async function checkSchema() {
     try {
         await sql.connect(config);
-        const tableCheck = await sql.query(`
-            SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = 'Trans' AND TABLE_NAME = 'TblBlasting'
-        `);
+        console.log("Connected to DB");
 
-        if (tableCheck.recordset.length > 0) {
-            console.log("Table Found: true");
-            console.table(tableCheck.recordset);
-        } else {
-            console.log("Table Found: false");
-        }
-        await sql.close();
+        const query = `
+            SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME IN ('TblBlasting', 'TblSMESupplier', 'TblLocation', 'TblMaterial')
+            ORDER BY TABLE_NAME, COLUMN_NAME;
+        `;
+
+        const result = await sql.query(query);
+        console.table(result.recordset);
+
     } catch (err) {
-        console.error(err);
+        console.error("Error:", err);
+    } finally {
+        await sql.close();
     }
 }
 
-checkTable();
+checkSchema();

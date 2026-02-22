@@ -1,0 +1,3 @@
+{
+  "/api/transaction/dispatch-entry/list/route": "app/api/transaction/dispatch-entry/list/route.js"
+}

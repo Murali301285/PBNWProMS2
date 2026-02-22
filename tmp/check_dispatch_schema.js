@@ -5,35 +5,45 @@ const config = {
     password: 'Chennai@42',
     server: 'localhost',
     port: 1433,
-    database: 'ProdMS_live',
+    database: 'ProMS2_1602',
     options: {
         encrypt: false,
-        trustServerCertificate: true,
-        enableArithAbort: true,
-    },
+        trustServerCertificate: true
+    }
 };
 
-async function check() {
+async function checkDispatchSchema() {
     try {
         await sql.connect(config);
-        console.log("Checking [Trans].[TblDispatchEntry]...");
-        const cols = await sql.query(`
-            SELECT COLUMN_NAME, DATA_TYPE 
-            FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_NAME = 'TblDispatchEntry' 
-            AND TABLE_SCHEMA = 'Trans'
-            AND COLUMN_NAME IN ('CreatedBy', 'UpdatedBy')
-        `);
-        console.table(cols.recordset);
+        console.log("Connected to DB");
 
-        const data = await sql.query(`SELECT TOP 1 CreatedBy FROM [Trans].[TblDispatchEntry]`);
-        console.table(data.recordset);
+        const tables = ['TblShiftDispatch', 'TblShiftDispatchDetails'];
+
+        for (const tbl of tables) {
+            console.log(`\n--- Schema for Trans.${tbl} ---`);
+            const schema = await sql.query(`
+                SELECT COLUMN_NAME, DATA_TYPE 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = 'Trans' AND TABLE_NAME = '${tbl}'
+            `);
+            console.table(schema.recordset);
+        }
+
+        // Also check if there is a TblShiftIncharge
+        const otherTables = await sql.query(`
+            SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = 'Trans' AND TABLE_NAME LIKE '%Incharge%'
+        `);
+        if (otherTables.recordset.length > 0) {
+            console.log("\n--- Other Incharge Tables ---");
+            console.table(otherTables.recordset);
+        }
 
     } catch (err) {
-        console.error(err);
+        console.error("Error:", err);
     } finally {
         await sql.close();
     }
 }
 
-check();
+checkDispatchSchema();

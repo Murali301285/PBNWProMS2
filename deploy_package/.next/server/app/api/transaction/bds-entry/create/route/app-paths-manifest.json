@@ -1,0 +1,3 @@
+{
+  "/api/transaction/bds-entry/create/route": "app/api/transaction/bds-entry/create/route.js"
+}

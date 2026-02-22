@@ -14,7 +14,7 @@ export async function POST(request) {
         const result = await pool.request()
             .input('FromDate', sql.Date, fromDate)
             .input('ToDate', sql.Date, toDate)
-            .execute('Report.ProMS2_New_Sp_BreakdownTimeAnalysisReport');
+            .execute('dbo.ProMS2_New_Sp_BreakdownTimeAnalysisReport');
 
         return NextResponse.json({
             success: true,

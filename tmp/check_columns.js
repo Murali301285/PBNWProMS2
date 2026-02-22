@@ -1,30 +1,36 @@
-const sql = require('mssql');
+
+const mssql = require('mssql');
 
 const config = {
     user: 'sa',
     password: 'Chennai@42',
     server: 'localhost',
     port: 1433,
-    database: 'ProMS2_Serv',
+    database: 'ProMS2_1602',
     options: {
         encrypt: false,
-        trustServerCertificate: true
+        trustServerCertificate: true,
+        enableArithAbort: true
     }
 };
 
-async function check() {
+async function checkColumns() {
     try {
-        await sql.connect(config);
-        const result = await sql.query(`
-            SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, IS_NULLABLE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = 'TblDrilling' AND COLUMN_NAME = 'RemarkId'
-        `);
-        console.log(JSON.stringify(result.recordset, null, 2));
-        await sql.close();
+        await mssql.connect(config);
+
+        console.log("Checking Trans.TblEquipmentReading columns:");
+        let result = await mssql.query`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'Trans' AND TABLE_NAME = 'TblEquipmentReading'`;
+        console.log(result.recordset.map(r => r.COLUMN_NAME).join(', '));
+
+        console.log("\nChecking Trans.TblLoading columns:");
+        result = await mssql.query`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'Trans' AND TABLE_NAME = 'TblLoading'`;
+        console.log(result.recordset.map(r => r.COLUMN_NAME).join(', '));
+
     } catch (err) {
-        console.error(err);
+        console.error("Error:", err);
+    } finally {
+        await mssql.close();
     }
 }
 
-check();
+checkColumns();

@@ -5,7 +5,7 @@ import styles from './ProductionNtpc.module.css';
 import ProductionNtpcTable from './ProductionNtpcTable';
 import { toast } from 'sonner';
 import { Download, Printer } from 'lucide-react';
-import * as XLSX from 'xlsx-js-style';
+
 
 export default function ProductionNtpcPage() {
     const today = new Date().toISOString().split('T')[0];
@@ -65,97 +65,185 @@ export default function ProductionNtpcPage() {
 
     const handlePrint = () => window.print();
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (!data) return;
         const { summary, crusher, headerInfo } = data;
 
-        const wb = XLSX.utils.book_new();
-        const wsData = [];
+        try {
+            const ExcelJS = await import('exceljs');
+            const { saveAs } = await import('file-saver');
 
-        // Title & Header Info
-        wsData.push(["Production NTPC"]);
-        wsData.push([`Date: ${headerInfo?.Date || '-'}`, "", `Shift: ${headerInfo?.ShiftName || '-'}`]);
-        wsData.push([]);
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Production NTPC');
 
-        // 1. Production Quantity
-        wsData.push(["Production Quantity"]);
-        wsData.push(["COAL", `${summary.ProdCoal?.toLocaleString('en-IN')} MT`]);
-        wsData.push(["OB", `${summary.ProdOB?.toLocaleString('en-IN')} BCM`]);
-        wsData.push([]);
+            ws.columns = [
+                { width: 3 },  // A (padding)
+                { width: 30 }, // B
+                { width: 25 }, // C
+                { width: 25 }, // D
+            ];
 
-        // 2. WP-3 Quantity
-        wsData.push(["WP-3 Quantity"]);
-        wsData.push(["COAL", `${summary.WPCoalQty?.toLocaleString('en-IN')} MT`]);
-        wsData.push(["OB", `${summary.WPObQty?.toLocaleString('en-IN')} BCM`]);
-        wsData.push([]);
-
-        // 3. Crusher Details
-        wsData.push(["Crusher Details"]);
-        wsData.push(["PLANT", "HRS", "QTY (MT)"]);
-
-        let totalHrs = 0;
-        let totalQty = 0;
-
-        crusher.forEach(row => {
-            wsData.push([row.Plant, row.RunningHr, row.TotalQty?.toLocaleString('en-IN')]);
-            totalHrs += (row.RunningHr || 0);
-            totalQty += (row.TotalQty || 0);
-        });
-
-        wsData.push(["Total", totalHrs.toFixed(2), totalQty?.toLocaleString('en-IN')]);
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Styling Loop
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-                if (!ws[cellRef]) continue;
-
-                const cellStyle = {
-                    font: { name: "Calibri", sz: 11 },
-                    border: {
-                        top: { style: "thin" },
-                        bottom: { style: "thin" },
-                        left: { style: "thin" },
-                        right: { style: "thin" }
-                    },
-                    alignment: { vertical: "center", horizontal: "center" }
-                };
-
-                const rowVal = wsData[R];
-                const firstColVal = rowVal[0];
-
-                if (firstColVal === "Production Quantity" || firstColVal === "WP-3 Quantity" || firstColVal === "Crusher Details") {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "B4C6E7" } };
-                }
-                if (firstColVal === "PLANT") {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "D9D9D9" } };
-                }
-                if ((firstColVal === "COAL" || firstColVal === "OB") && C === 0) {
-                    cellStyle.font.bold = true;
-                }
-                if (R > range.s.r && C === 0 && rowVal.length === 3 && firstColVal !== "Total" && firstColVal !== "PLANT") {
-                    cellStyle.alignment.horizontal = "left";
-                }
-                if (rowVal.length === 3 && (C === 1 || C === 2)) {
-                    cellStyle.alignment.horizontal = "left";
-                }
-                if (firstColVal === "Total") {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "B4C6E7" } };
-                }
-
-                ws[cellRef].s = cellStyle;
+            let logoId;
+            try {
+                const logoRes = await fetch('/Asset/Logo.png');
+                const arrayBuffer = await logoRes.arrayBuffer();
+                logoId = wb.addImage({
+                    buffer: arrayBuffer,
+                    extension: 'png',
+                });
+            } catch (e) {
+                console.error('Logo add failed', e);
             }
-        }
 
-        ws['!cols'] = [{ wch: 25 }, { wch: 20 }, { wch: 20 }];
-        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, `ProductionNTPC_${headerInfo?.Date || 'Report'}.xlsx`);
+            const setCell = (cell, value, opts = {}) => {
+                if (value !== undefined) cell.value = value;
+                cell.font = {
+                    name: 'Calibri',
+                    size: opts.fontSize || 10,
+                    bold: opts.bold || false,
+                    underline: opts.underline || false,
+                    color: { argb: opts.color || 'FF000000' }
+                };
+                cell.alignment = {
+                    horizontal: opts.align || 'center',
+                    vertical: 'middle',
+                    wrapText: true
+                };
+                if (opts.bg) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+                }
+                if (opts.border !== false) {
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+                }
+                if (opts.numFmt) {
+                    cell.numFmt = opts.numFmt;
+                }
+            };
+
+            ws.getRow(1).height = 15;
+
+            ws.mergeCells('B2:D2');
+            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+
+            ws.mergeCells('B3:D3');
+            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+
+            ws.mergeCells('B4:D4');
+            setCell(ws.getCell('B4'), "PRODUCTION NTPC REPORT", { bold: true, align: 'center', border: false, underline: true, fontSize: 12 });
+
+            ws.mergeCells('B5:D5');
+            const shiftName = headerInfo?.ShiftName?.replace('SHIFT', 'Shift') || '-';
+            setCell(ws.getCell('B5'), `Shift: ${shiftName}`, { bold: true, align: 'center', border: false, fontSize: 11 });
+
+            ws.mergeCells('B6:D6');
+            let formattedDate = filter.date;
+            if (formattedDate) {
+                const [y, m, d] = formattedDate.split('-');
+                formattedDate = `${d}/${m}/${y}`;
+            } else {
+                formattedDate = headerInfo?.Date || '-';
+            }
+            setCell(ws.getCell('B6'), `Date: ${formattedDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
+
+            ws.getRow(2).height = 30;
+            ws.getRow(3).height = 22;
+            ws.getRow(4).height = 20;
+            ws.getRow(5).height = 18;
+            ws.getRow(6).height = 18;
+
+            if (logoId !== undefined) {
+                ws.addImage(logoId, {
+                    tl: { col: 1, row: 1 },
+                    ext: { width: 100, height: 90 }
+                });
+            }
+
+            ws.getRow(7).height = 10;
+
+            let currentRowIdx = 8;
+
+            const addDataRow = (values, opts = {}) => {
+                const row = ws.getRow(currentRowIdx);
+                values.forEach((val, i) => {
+                    if (val === null) return;
+                    const cOpts = { ...opts };
+                    if (i === 0 && !opts.bold) cOpts.align = 'left';
+                    if (val && typeof val === 'number') {
+                        cOpts.numFmt = '#,##0';
+                        if (val === 0) cOpts.numFmt = '0';
+                    }
+                    setCell(row.getCell(i + 2), val, cOpts);
+                });
+                row.height = opts.height || 18;
+                currentRowIdx++;
+            };
+
+            const fmt = (val) => {
+                if (val === null || val === undefined) return '-';
+                return Number(val).toLocaleString('en-IN');
+            };
+
+            // 1. Production Quantity
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "Production Quantity", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["COAL", null, `${fmt(summary.ProdCoal)} MT`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "COAL", { bold: true, align: 'left' });
+
+            addDataRow(["OB", null, `${fmt(summary.ProdOB)} BCM`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "OB", { bold: true, align: 'left' });
+
+            currentRowIdx++;
+
+            // 2. WP-3 Quantity
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "WP-3 Quantity", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["COAL", null, `${fmt(summary.WPCoalQty)} MT`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "COAL", { bold: true, align: 'left' });
+
+            addDataRow(["OB", null, `${fmt(summary.WPObQty)} BCM`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "OB", { bold: true, align: 'left' });
+
+            currentRowIdx++;
+
+            // 3. Crusher Details
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "Crusher Details", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["PLANT", "HRS", "QTY (MT)"], { bold: true, bg: 'FFBFDBFE' });
+
+            let totalHrs = 0;
+            let totalQty = 0;
+
+            crusher.forEach(row => {
+                addDataRow([row.Plant, row.RunningHr === null ? '-' : Number(row.RunningHr).toFixed(2), fmt(row.TotalQty)], { align: 'right' });
+                ws.getCell(`B${currentRowIdx - 1}`).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+                totalHrs += (row.RunningHr || 0);
+                totalQty += (row.TotalQty || 0);
+            });
+
+            addDataRow(["Total", totalHrs.toFixed(2), fmt(totalQty)], { bold: true, bg: 'FFE5E7EB', align: 'right' });
+            ws.getCell(`B${currentRowIdx - 1}`).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+
+            const buffer = await wb.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `ProductionNTPC_${headerInfo?.Date || 'Report'}.xlsx`);
+            toast.success("Excel exported successfully!");
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Export failed");
+        }
     };
 
     return (

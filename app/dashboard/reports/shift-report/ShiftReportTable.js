@@ -21,22 +21,26 @@ export default function ShiftReportTable({ data, date, shiftName }) {
     return (
         <div>
             {/* HEADERS */}
-            <div className={styles.header}>
-                <h1 className="text-lg font-bold">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2 className="text-md font-bold">PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3 className="text-md mt-2 text-red-600 font-extrabold underline">SHIFT REPORT</h3>
+            {/* HEADERS */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
 
-                <div className="w-full flex justify-between items-end mt-4 px-4">
-                    <div className="text-left font-bold">
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#dc2626', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>SHIFT REPORT</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
                         <div>SHIFT: {shiftName}</div>
-                        {/* Incharge Details - Table Layout */}
-                        <div className="mt-2 text-xs">
-                            <div className="font-bold mb-1 w-fit">
-                                Incharge : {data.inchargeDetails?.LargeScale || '-'}(Large Scale), {data.inchargeDetails?.SmallScale || '-'}(Mid Scale)
-                            </div>
+                        <div>Date: {date ? date.split('-').reverse().join('/') : '-'}</div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginTop: '0.25rem' }}>
+                            Incharge : {data.inchargeDetails?.LargeScale || '-'}(Large Scale), {data.inchargeDetails?.SmallScale || '-'}(Mid Scale)
                         </div>
                     </div>
-                    <div className="text-right font-bold text-red-600">Date: {date ? date.split('-').reverse().join('/') : '-'}</div>
                 </div>
             </div>
 
@@ -305,10 +309,10 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                                 return (
                                     <tr key={i}>
                                         <td className="text-left pl-2">{d}</td>
-                                        <td>{c.Trips || ''}</td>
-                                        <td>{c.MT ? fmt(c.MT) : ''}</td>
-                                        <td>{w.Trips || ''}</td>
-                                        <td>{w.BCM ? fmt(w.BCM) : ''}</td>
+                                        <td>{c.Trips || '-'}</td>
+                                        <td>{c.MT ? fmt(c.MT) : '-'}</td>
+                                        <td>{w.Trips || '-'}</td>
+                                        <td>{w.BCM ? fmt(w.BCM) : '-'}</td>
                                     </tr>
                                 );
                             });
@@ -321,10 +325,10 @@ export default function ShiftReportTable({ data, date, shiftName }) {
                             rows.push(
                                 <tr key="total" className="bg-white font-bold border-t-2 border-b-2 border-slate-900 text-md">
                                     <td className="font-bold text-left pl-2" style={{ fontWeight: 600 }}>Total</td>
-                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalCoalTrips || ''}</td>
-                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalCoalMT ? fmt(totalCoalMT) : ''}</td>
-                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalOBTrips || ''}</td>
-                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalOBBCM ? fmt(totalOBBCM) : ''}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalCoalTrips || '-'}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalCoalMT ? fmt(totalCoalMT) : '-'}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalOBTrips || '-'}</td>
+                                    <td className="font-bold" style={{ fontWeight: 600 }}>{totalOBBCM ? fmt(totalOBBCM) : '-'}</td>
                                 </tr>
                             );
 

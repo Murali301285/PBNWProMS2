@@ -1,0 +1,3 @@
+{
+  "/api/transaction/crusher/list/route": "app/api/transaction/crusher/list/route.js"
+}

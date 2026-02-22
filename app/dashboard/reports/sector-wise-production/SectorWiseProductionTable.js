@@ -28,7 +28,7 @@ export default function SectorWiseProductionTable({ data, date, shiftName }) {
     };
 
     const fmt = (val) => val != null ? Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0';
-    const fmtDec = (val) => val != null ? Number(val).toFixed(2) : '0.00';
+    const fmtDec = (val) => val != null ? Math.round(Number(val)) : '0';
 
     // Group Data by Sector
     const groupedData = useMemo(() => {
@@ -45,12 +45,23 @@ export default function SectorWiseProductionTable({ data, date, shiftName }) {
 
     return (
         <div>
-            <div className={styles.header}>
-                <h1 className="text-xl font-bold">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2 className="text-lg font-bold">PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3 className="text-lg mt-2 text-blue-700 decoration-slate-900 underline underline-offset-4 font-bold">SECTOR WISE PRODUCTION REPORT</h3>
-                <div className="mt-2 text-sm text-slate-800 font-bold uppercase">{shiftName}</div>
-                <div className="text-sm text-slate-600 font-medium">Date: {formatDate(date)}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
+
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}>SECTOR WISE PRODUCTION REPORT</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{shiftName}</div>
+                        <div>Date: {formatDate(date)}</div>
+                    </div>
+                </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -119,10 +130,68 @@ export default function SectorWiseProductionTable({ data, date, shiftName }) {
                                     {(() => {
                                         const tQty = data.reduce((s, r) => s + (r.QtyBCM || 0), 0);
                                         const tHrs = data.reduce((s, r) => s + (r.OBHrs || 0), 0);
-                                        return tHrs > 0 ? fmtDec(tQty / tHrs) : "0.00";
+                                        return tHrs > 0 ? fmtDec(tQty / tHrs) : "0";
                                     })()}
                                 </td>
                                 <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* OB Target vs Achieved Summary Table */}
+                <div className="mt-8 mb-8 w-1/2">
+                    <h3 className={styles.sectionHeader}>Summary</h3>
+                    <table className={styles.table}>
+                        <thead>
+                            <tr className={styles.blueHeader}>
+                                <th rowSpan="2" className="border-r border-slate-300 w-1/3">Location</th>
+                                <th colSpan="3" className="text-center font-bold">OB</th>
+                            </tr>
+                            <tr className={styles.blueHeader}>
+                                <th>Total Qty</th>
+                                <th>Target</th>
+                                <th>Achieved %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sectors.map((sector, sIdx) => {
+                                const rows = groupedData[sector];
+                                const secAchieved = rows.reduce((s, r) => s + (r.QtyBCM || 0), 0);
+                                const secTarget = rows.reduce((s, r) => s + (r.TargetBCMHr || 0), 0); // Need to pull proper target if added to SP later
+                                const percent = secTarget > 0 ? ((secAchieved / secTarget) * 100).toFixed(0) : 0;
+
+                                return (
+                                    <tr key={sector} className="bg-white border-b border-slate-300">
+                                        <td className="text-center font-bold">
+                                            {sector}
+                                        </td>
+                                        <td className="text-center font-bold">{fmt(secAchieved)}</td>
+                                        <td className="text-center text-fuchsia-600 font-bold">{fmt(secTarget)}</td>
+                                        <td className="text-center font-bold relative">
+                                            {percent}%
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {/* Summary Total */}
+                            <tr className="bg-white font-bold border-t-2 border-black">
+                                <td className="text-center font-bold">
+                                    Total
+                                </td>
+                                <td className="text-center">
+                                    {fmt(data.reduce((s, r) => s + (r.QtyBCM || 0), 0))}
+                                </td>
+                                <td className="text-center text-fuchsia-600">
+                                    {fmt(data.reduce((s, r) => s + (r.TargetBCMHr || 0), 0))}
+                                </td>
+                                <td className="text-center relative font-bold">
+                                    {(() => {
+                                        const totalAchieved = data.reduce((s, r) => s + (r.QtyBCM || 0), 0);
+                                        const totalTarget = data.reduce((s, r) => s + (r.TargetBCMHr || 0), 0);
+                                        return totalTarget > 0 ? ((totalAchieved / totalTarget) * 100).toFixed(0) : 0;
+                                    })()}%
+                                </td>
                             </tr>
                         </tbody>
                     </table>

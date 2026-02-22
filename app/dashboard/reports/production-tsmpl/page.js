@@ -5,7 +5,7 @@ import styles from './ProductionTsmpl.module.css';
 import ProductionTsmplTable from './ProductionTsmplTable';
 import { toast } from 'sonner';
 import { Download, Printer } from 'lucide-react';
-import * as XLSX from 'xlsx-js-style';
+
 
 export default function ProductionTsmplPage() {
     const today = new Date().toISOString().split('T')[0];
@@ -129,116 +129,220 @@ export default function ProductionTsmplPage() {
 
     const handlePrint = () => window.print();
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (!data) return;
         const { summary, crusher, headerInfo } = data;
 
-        const wb = XLSX.utils.book_new();
-        const wsData = [];
+        try {
+            const ExcelJS = await import('exceljs');
+            const { saveAs } = await import('file-saver');
 
-        // Title & Header Info
-        wsData.push(["THRIVENI SAINIK MINING PRIVATE LIMITED"]);
-        wsData.push(["PAKRI BARWADIH COAL MINING PROJECT"]);
-        wsData.push(["PRODUCTION TSMPL REPORT"]);
-        wsData.push([`Date: ${headerInfo?.Date || '-'} | Shift: ${headerInfo?.ShiftName || '-'}`]);
-        wsData.push([]);
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Production TSMPL');
 
-        // 1. Time Breakdown Table
-        wsData.push(["Participle", "Shift Change", "Break fast/Tea Time", "Blasting", "Others", "Total"]);
-        wsData.push(["Mins", formatNumber(summary.ShiftChange, 0), formatNumber(summary.BreakTime, 0), formatNumber(summary.Blasting, 0), formatNumber(summary.Others, 0), formatNumber(summary.Totalmin, 0)]);
-        wsData.push(["Hrs", formatNumber(summary.TotalShiftChangeHrs, 1), formatNumber(summary.TotalBreakTimeHrs, 1), formatNumber(summary.TotalBlastingHrs, 1), formatNumber(summary.TotalOthersHrs, 1), formatNumber(summary.TotalHrs, 1)]);
-        wsData.push(["Total working hrs", "", "", "", "", formatNumber(summary.TotalWorkingHrs, 1)]);
-        wsData.push([]);
+            // EXACT MATCH TO NTPC: 3 core columns
+            ws.columns = [
+                { width: 3 },  // A (padding)
+                { width: 30 }, // B
+                { width: 25 }, // C
+                { width: 25 }, // D
+            ];
 
-        // 2. Production Quantity
-        wsData.push(["Production Quantity"]);
-        wsData.push(["Material", "Shift Qty.", "Per Hour"]);
-        wsData.push(["COAL", `${formatNumber(summary.ProdCoal)} MT`, `${formatNumber(summary.ProdCoalPerHrs, 0)} MT`]);
-        wsData.push(["OB", `${formatNumber(summary.ProdOB)} BCM`, `${formatNumber(summary.ProdOBPerHrs, 0)} BCM`]);
-        wsData.push([]);
-
-        // 3. WP-3 Quantity
-        wsData.push(["WP-3 Quantity"]);
-        wsData.push(["COAL", `${formatNumber(summary.WPCoalQty)} MT`]);
-        wsData.push(["OB", `${formatNumber(summary.WPObQty)} BCM`]);
-        wsData.push([]);
-
-        // 4. Carpeting Quantity
-        wsData.push(["Carpeting Quantity"]);
-        wsData.push(["Material", "Shift Qty."]);
-        wsData.push(["OB", `${formatNumber(summary.CarpettingObQty)} BCM`]);
-        wsData.push([]);
-
-        // 5. Coal Rehandling
-        wsData.push(["Coal Rehandling"]);
-        wsData.push(["Material", "Shift Qty."]);
-        wsData.push(["COAL", `${formatNumber(summary.RehandlingCoalQty)} MT`]);
-        wsData.push([]);
-
-        // 6. Crusher Details
-        wsData.push(["Crusher Details"]);
-        wsData.push(["Plant", "W. Hours", "Quantity (MT)"]);
-
-        let totalHrs = 0;
-        let totalQty = 0;
-
-        crusher.forEach(row => {
-            wsData.push([row.Plant, formatNumber(row.RunningHr), formatNumber(row.TotalQty)]);
-            totalHrs += (row.RunningHr || 0);
-            totalQty += (row.TotalQty || 0);
-        });
-
-        wsData.push(["Total", formatNumber(totalHrs), formatNumber(totalQty)]);
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Styling Loop
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-                if (!ws[cellRef]) continue;
-
-                const cellStyle = {
-                    font: { name: "Calibri", sz: 11 },
-                    border: {
-                        top: { style: "thin" },
-                        bottom: { style: "thin" },
-                        left: { style: "thin" },
-                        right: { style: "thin" }
-                    },
-                    alignment: { vertical: "center", horizontal: "center" }
-                };
-
-                const rowVal = wsData[R];
-                const firstColVal = rowVal[0];
-
-                if (firstColVal === "Production Quantity" || firstColVal === "WP-3 Quantity" || firstColVal === "Carpeting Quantity" || firstColVal === "Coal Rehandling" || firstColVal === "Crusher Details") {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "B4C6E7" } };
-                }
-                if (firstColVal === "Material" || firstColVal === "Plant" || firstColVal === "Participle") {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "D9D9D9" } };
-                }
-                if ((firstColVal === "COAL" || firstColVal === "OB" || firstColVal === "Mins" || firstColVal === "Hrs" || firstColVal === "Total working hrs") && C === 0) {
-                    cellStyle.font.bold = true;
-                }
-                if (R > range.s.r && C === 0 && rowVal.length === 3 && firstColVal !== "Total" && firstColVal !== "Plant") {
-                    cellStyle.alignment.horizontal = "left";
-                }
-                if (firstColVal === "Total" || firstColVal === "Total working hrs") {
-                    cellStyle.font.bold = true;
-                    cellStyle.fill = { fgColor: { rgb: "B4C6E7" } };
-                }
-
-                ws[cellRef].s = cellStyle;
+            let logoId;
+            try {
+                const logoRes = await fetch('/Asset/Logo.png');
+                const arrayBuffer = await logoRes.arrayBuffer();
+                logoId = wb.addImage({
+                    buffer: arrayBuffer,
+                    extension: 'png',
+                });
+            } catch (e) {
+                console.error('Logo add failed', e);
             }
-        }
 
-        ws['!cols'] = [{ wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, `ProductionTSMPL_${headerInfo?.Date || 'Report'}.xlsx`);
+            const setCell = (cell, value, opts = {}) => {
+                if (value !== undefined) cell.value = value;
+                cell.font = {
+                    name: 'Calibri',
+                    size: opts.fontSize || 10,
+                    bold: opts.bold || false,
+                    underline: opts.underline || false,
+                    color: { argb: opts.color || 'FF000000' }
+                };
+                cell.alignment = {
+                    horizontal: opts.align || 'center',
+                    vertical: 'middle',
+                    wrapText: true
+                };
+                if (opts.bg) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+                }
+                if (opts.border !== false) {
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+                }
+                if (opts.numFmt) {
+                    cell.numFmt = opts.numFmt;
+                }
+            };
+
+            ws.getRow(1).height = 15;
+
+            ws.mergeCells('B2:D2');
+            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+
+            ws.mergeCells('B3:D3');
+            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+
+            ws.mergeCells('B4:D4');
+            setCell(ws.getCell('B4'), "PRODUCTION TSMPL REPORT", { bold: true, align: 'center', border: false, underline: true, fontSize: 12 });
+
+            ws.mergeCells('B5:D5');
+            const shiftName = headerInfo?.ShiftName?.replace('SHIFT', 'Shift') || '-';
+            setCell(ws.getCell('B5'), `Shift: ${shiftName}`, { bold: true, align: 'center', border: false, fontSize: 11 });
+
+            ws.mergeCells('B6:D6');
+            let formattedDate = filter.date;
+            if (formattedDate) {
+                const [y, m, d] = formattedDate.split('-');
+                formattedDate = `${d}/${m}/${y}`;
+            } else {
+                formattedDate = headerInfo?.Date || '-';
+            }
+            setCell(ws.getCell('B6'), `Date: ${formattedDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
+
+            ws.getRow(2).height = 30;
+            ws.getRow(3).height = 22;
+            ws.getRow(4).height = 20;
+            ws.getRow(5).height = 18;
+            ws.getRow(6).height = 18;
+
+            if (logoId !== undefined) {
+                ws.addImage(logoId, {
+                    tl: { col: 1, row: 1 },
+                    ext: { width: 100, height: 90 }
+                });
+            }
+
+            ws.getRow(7).height = 10;
+
+            let currentRowIdx = 8;
+
+            const addDataRow = (values, opts = {}) => {
+                const row = ws.getRow(currentRowIdx);
+                values.forEach((val, i) => {
+                    if (val === null) return;
+                    const cOpts = { ...opts };
+                    if (i === 0 && !opts.bold) cOpts.align = 'left';
+                    if (val && typeof val === 'number') {
+                        cOpts.numFmt = '#,##0';
+                        if (val === 0) cOpts.numFmt = '0';
+                    }
+                    setCell(row.getCell(i + 2), val, cOpts);
+                });
+                row.height = opts.height || 18;
+                currentRowIdx++;
+            };
+
+            const fmt = (val) => {
+                if (val === null || val === undefined) return '-';
+                return Number(val).toLocaleString('en-IN');
+            };
+
+            // 1. Production Quantity
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "Production Quantity", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["Material", "Shift Qty.", "Per Hour"], { bold: true, bg: 'FFBFDBFE' });
+
+            addDataRow(["COAL", `${fmt(summary.ProdCoal)} MT`, `${fmt(summary.ProdCoalPerHrs)} MT`], { align: 'right' });
+            ws.getCell(`B${currentRowIdx - 1}`).alignment = { horizontal: 'left', vertical: 'middle' };
+            ws.getCell(`B${currentRowIdx - 1}`).font = { bold: true };
+
+            addDataRow(["OB", `${fmt(summary.ProdOB)} BCM`, `${fmt(summary.ProdOBPerHrs)} BCM`], { align: 'right' });
+            ws.getCell(`B${currentRowIdx - 1}`).alignment = { horizontal: 'left', vertical: 'middle' };
+            ws.getCell(`B${currentRowIdx - 1}`).font = { bold: true };
+
+            currentRowIdx++;
+
+            // 2. WP-3 Quantity
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "WP-3 Quantity", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["COAL", null, `${fmt(summary.WPCoalQty)} MT`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "COAL", { bold: true, align: 'left' });
+
+            addDataRow(["OB", null, `${fmt(summary.WPObQty)} BCM`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "OB", { bold: true, align: 'left' });
+
+            currentRowIdx++;
+
+            // 3. Carpeting Quantity
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "Carpeting Quantity", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["Material", null, "Shift Qty."], { bold: true, bg: 'FFBFDBFE' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "Material", { bold: true, align: 'center', bg: 'FFBFDBFE' });
+            setCell(ws.getCell(`D${currentRowIdx - 1}`), "Shift Qty.", { bold: true, align: 'right', bg: 'FFBFDBFE' });
+
+            addDataRow(["OB", null, `${fmt(summary.CarpettingObQty)} BCM`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "OB", { bold: true, align: 'left' });
+
+            currentRowIdx++;
+            
+            // 4. Coal Rehandling
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "Coal Rehandling", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["Material", null, "Shift Qty."], { bold: true, bg: 'FFBFDBFE' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "Material", { bold: true, align: 'center', bg: 'FFBFDBFE' });
+            setCell(ws.getCell(`D${currentRowIdx - 1}`), "Shift Qty.", { bold: true, align: 'right', bg: 'FFBFDBFE' });
+
+            addDataRow(["COAL", null, `${fmt(summary.RehandlingCoalQty)} MT`], { align: 'right' });
+            ws.mergeCells(`B${currentRowIdx - 1}:C${currentRowIdx - 1}`);
+            setCell(ws.getCell(`B${currentRowIdx - 1}`), "COAL", { bold: true, align: 'left' });
+
+            currentRowIdx++;
+
+            // 5. Crusher Details
+            ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
+            setCell(ws.getCell(`B${currentRowIdx}`), "Crusher Details", { bold: true, align: 'left', bg: 'FFE5E7EB' });
+            currentRowIdx++;
+
+            addDataRow(["Plant", "W. Hours", "Quantity (MT)"], { bold: true, bg: 'FFBFDBFE' });
+
+            let totalHrs = 0;
+            let totalQty = 0;
+
+            crusher.forEach(row => {
+                addDataRow([row.Plant, row.RunningHr === null ? '-' : Number(row.RunningHr).toFixed(2), fmt(row.TotalQty)], { align: 'right' });
+                ws.getCell(`B${currentRowIdx - 1}`).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+                totalHrs += (row.RunningHr || 0);
+                totalQty += (row.TotalQty || 0);
+            });
+
+            addDataRow(["Total", totalHrs.toFixed(2), fmt(totalQty)], { bold: true, bg: 'FFE5E7EB', align: 'right' });
+            ws.getCell(`B${currentRowIdx - 1}`).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+
+            const buffer = await wb.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `ProductionTSMPL_${headerInfo?.Date || 'Report'}.xlsx`);
+            toast.success("Excel exported successfully!");
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Export failed");
+        }
     };
 
     return (

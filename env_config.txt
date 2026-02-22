@@ -9,7 +9,7 @@ DB_SERVER=184.168.127.253\SQLEXPRESS
 DB_PORT=1433
 
 # Database Name (Updated)
-DB_DATABASE=ProMS2_test
+DB_DATABASE=ProMS2_2102
 
 # App Config
 JWT_SECRET=supersecretkey123

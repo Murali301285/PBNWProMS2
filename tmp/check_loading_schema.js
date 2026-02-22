@@ -1,38 +1,34 @@
+const sql = require('mssql');
 
 const config = {
     user: 'sa',
     password: 'Chennai@42',
     server: 'localhost',
-    database: 'ProMS2_Serv',
     port: 1433,
+    database: 'ProMS2_1602',
     options: {
         encrypt: false,
-        trustServerCertificate: true,
-        enableArithAbort: true,
-    },
+        trustServerCertificate: true
+    }
 };
-
-const sql = require('mssql');
 
 async function checkSchema() {
     try {
-        console.log(`Connecting to database: ${config.database} on ${config.server}`);
-        const pool = await new sql.ConnectionPool(config).connect();
+        await sql.connect(config);
+        console.log("Connected to DB");
 
-        const checkQuery = `
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = 'TblLoading'
-            ORDER BY ORDINAL_POSITION
-        `;
-        const result = await pool.request().query(checkQuery);
-        console.log("--- TblLoading Columns ---");
+        const result = await sql.query(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = 'Trans' AND TABLE_NAME = 'TblLoading'
+            ORDER BY COLUMN_NAME
+        `);
         console.table(result.recordset);
 
-        await pool.close();
-
-    } catch (error) {
-        console.error('Error executing query:', error);
+    } catch (err) {
+        console.error("Error:", err);
+    } finally {
+        await sql.close();
     }
 }
 

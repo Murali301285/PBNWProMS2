@@ -21,7 +21,8 @@ export default function DataTable({
     customHeight = null, // New Prop: Allow overriding default height
     stickyLeft = 0, // New Prop: Number of columns to stick to the left
     stickyBgColor = null, // New Prop: Custom Background Color for Sticky Columns
-    columnGroups = [] // New Prop: Array of { title, colSpan } for multi-level headers
+    columnGroups = [], // New Prop: Array of { title, colSpan } for multi-level headers
+    onExportExcel = null // Optional override for native ExcelJS exports
 }) {
     const tableContainerRef = useRef(null);
 
@@ -151,7 +152,12 @@ export default function DataTable({
         }));
     };
 
-    const handleExport = () => {
+    const handleExport = async () => {
+        if (onExportExcel) {
+            const visibleCols = columns.filter(c => c.accessor !== 'actions' && (c.accessor !== 'SlNo' || showSerialNo) && columnVisibility[c.accessor] !== false);
+            await onExportExcel(sortedData, visibleCols);
+            return;
+        }
         // Export logic (Excel)
         const visibleCols = columns.filter(c => c.accessor !== 'actions' && (c.accessor !== 'SlNo' || showSerialNo) && columnVisibility[c.accessor] !== false);
         const headers = visibleCols.map(c => c.header || c.accessor);

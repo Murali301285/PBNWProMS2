@@ -70,15 +70,23 @@ export default function TentativeReportTable({ data, loading }) {
     return (
         <div className="p-4 bg-white min-h-screen">
             {/* Header */}
-            <div className="flex flex-col items-center mb-6 w-full" style={{ textAlign: 'center' }}>
-                <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide text-center w-full" style={{ textAlign: 'center' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2 className="text-xl font-bold text-slate-900 uppercase mt-1 text-center w-full" style={{ textAlign: 'center' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3 className="text-xl font-bold text-blue-900 uppercase underline decoration-2 underline-offset-4 mt-2 mb-3 text-center w-full" style={{ textAlign: 'center' }}>TENTATIVE PRODUCTION QTY</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
 
-                <div className="flex flex-col items-center gap-1 text-sm font-bold text-slate-800 uppercase w-full text-center" style={{ textAlign: 'center', alignItems: 'center' }}>
-                    <div>SHIFT: {headerInfo?.ShiftName}</div>
-                    <div>Incharge : {headerInfo?.ShiftIncharge || '-'}</div>
-                    <div>Date: {formatDate(headerInfo?.Date)}</div>
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem' }}>TENTATIVE PRODUCTION QTY</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                        <div>SHIFT: {headerInfo?.ShiftName}</div>
+                        <div>Incharge : {headerInfo?.ShiftIncharge || '-'}</div>
+                        <div>Date: {formatDate(headerInfo?.Date)}</div>
+                    </div>
                 </div>
             </div>
 
@@ -91,17 +99,19 @@ export default function TentativeReportTable({ data, loading }) {
                 <table className={styles.table}>
                     <thead>
                         <tr className={styles.blueHeader}>
-                            <th>Model</th>
-                            <th>OB/IB</th>
-                            <th>Factor</th>
-                            <th>Free Dig</th>
-                            <th>Factor</th>
-                            <th>Total Trip</th>
-                            <th>Qty (BCM)</th>
-                            {/* Mapio Columns */}
+                            <th rowSpan="2">Model</th>
+                            <th rowSpan="2">OB/IB</th>
+                            <th rowSpan="2">Factor</th>
+                            <th rowSpan="2">Free Dig</th>
+                            <th rowSpan="2">Factor</th>
+                            <th rowSpan="2">Total Trip</th>
+                            <th rowSpan="2">Qty (BCM)</th>
+                            <th colSpan="3" className="bg-slate-200 border-l-2 border-slate-800 text-center">Mapio</th>
+                        </tr>
+                        <tr className={styles.blueHeader}>
                             <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
-                            <th>Qty (BCM)</th>
-                            <th>Diff.</th>
+                            <th className="bg-slate-100">Qty (BCM)</th>
+                            <th className="bg-slate-100">Diff.</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,10 +124,9 @@ export default function TentativeReportTable({ data, loading }) {
                                 <td>{row.TopSoilFactor}</td>
                                 <td>{fmt(row.TotalTrip)}</td>
                                 <td>{fmt(row.QtyBcm)}</td>
-                                {/* Mapio Data */}
                                 <td className="border-l-2 border-slate-800">{fmt(row.MapioTrip)}</td>
                                 <td>{fmt(row.MapioQty)}</td>
-                                <td>{fmt(row.Diff)}</td>
+                                <td className={row.Diff < 0 ? 'text-red-500 font-bold' : ''}>{fmt(row.Diff)}</td>
                             </tr>
                         ))}
                         {/* Total Row */}
@@ -129,10 +138,9 @@ export default function TentativeReportTable({ data, loading }) {
                             <td></td>
                             <td>{fmt(wasteTotal.TotalTrip)}</td>
                             <td>{fmt(wasteTotal.QtyBcm)}</td>
-                            {/* Mapio Total */}
                             <td className="border-l-2 border-slate-800">0</td>
                             <td>0</td>
-                            <td>{fmt(wasteTotal.Diff)}</td>
+                            <td className={wasteTotal.Diff < 0 ? 'text-red-500 font-bold' : ''}>{fmt(wasteTotal.Diff)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -146,14 +154,16 @@ export default function TentativeReportTable({ data, loading }) {
                 <table className={styles.table}>
                     <thead>
                         <tr className={styles.blueHeader}>
-                            <th>Model</th>
-                            <th>ROM COAL</th>
-                            <th>Factor</th>
-                            <th>Qty (MT)</th>
-                            {/* Mapio Columns */}
+                            <th rowSpan="2">Model</th>
+                            <th rowSpan="2">ROM COAL</th>
+                            <th rowSpan="2">Factor</th>
+                            <th rowSpan="2">Qty (MT)</th>
+                            <th colSpan="3" className="bg-slate-200 border-l-2 border-slate-800 text-center">Mapio</th>
+                        </tr>
+                        <tr className={styles.blueHeader}>
                             <th className="bg-slate-100 border-l-2 border-slate-800">Trip</th>
-                            <th>Qty (MT)</th>
-                            <th>Diff.</th>
+                            <th className="bg-slate-100">Qty (MT)</th>
+                            <th className="bg-slate-100">Diff.</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -163,10 +173,9 @@ export default function TentativeReportTable({ data, loading }) {
                                 <td>{fmt(row.RomCoal)}</td>
                                 <td>{row.Factor}</td>
                                 <td>{fmt(row.Qty)}</td>
-                                {/* Mapio Data */}
                                 <td className="border-l-2 border-slate-800">{fmt(row.MapioTrip)}</td>
                                 <td>{fmt(row.MapioQty)}</td>
-                                <td>{fmt(row.Diff)}</td>
+                                <td className={row.Diff < 0 ? 'text-red-500 font-bold' : ''}>{fmt(row.Diff)}</td>
                             </tr>
                         ))}
                         <tr className="bg-blue-100 font-bold border-t-2 border-slate-800">
@@ -174,10 +183,9 @@ export default function TentativeReportTable({ data, loading }) {
                             <td>{fmt(coalTotal.RomCoal)}</td>
                             <td></td>
                             <td>{fmt(coalTotal.Qty)}</td>
-                            {/* Mapio Total */}
                             <td className="border-l-2 border-slate-800">0</td>
                             <td>0</td>
-                            <td>{fmt(coalTotal.Diff)}</td>
+                            <td className={coalTotal.Diff < 0 ? 'text-red-500 font-bold' : ''}>{fmt(coalTotal.Diff)}</td>
                         </tr>
                     </tbody>
                 </table>

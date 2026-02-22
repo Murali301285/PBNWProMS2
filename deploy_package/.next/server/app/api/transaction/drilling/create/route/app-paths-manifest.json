@@ -1,0 +1,3 @@
+{
+  "/api/transaction/drilling/create/route": "app/api/transaction/drilling/create/route.js"
+}

@@ -1,4 +1,4 @@
-CREATE   PROCEDURE [dbo].[PMS2_New_Sp_LoadingMasterReport]
+CREATE OR ALTER PROCEDURE [dbo].[PMS2_New_Sp_LoadingMasterReport]
     @FromDate DATE,
     @ToDate DATE,
     @ShiftIds NVARCHAR(MAX) = NULL,

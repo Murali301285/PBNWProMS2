@@ -26,13 +26,19 @@ const DailyProgressTable = ({ data, date }) => {
         }, {});
     };
 
-    const formatNum = (num) => {
-        if (!num || isNaN(num)) return 0;
+    const formatNum = (value) => {
+        if (value === null || value === undefined) return 0;
+
+        // Remove commas if the value is a string and convert to number
+        const cleanStr = String(value).replace(/,/g, '');
+        const num = Number(cleanStr);
+
+        if (isNaN(num)) return 0;
 
         // Format using Indian Number System 
         return new Intl.NumberFormat('en-IN', {
-            minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
-            maximumFractionDigits: 2
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
         }).format(num);
     };
 
@@ -43,11 +49,22 @@ const DailyProgressTable = ({ data, date }) => {
     return (
         <div className="w-full">
             {/* Header */}
-            <div className={styles.reportHeader}>
-                <h1>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2>PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3>DAILY PROGRESS REPORT</h3>
-                <p>Date: {displayDate}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
+
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>DAILY PROGRESS REPORT</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                        <div>Date: {displayDate}</div>
+                    </div>
+                </div>
             </div>
 
             <div className="space-y-6 mt-4">
@@ -82,15 +99,15 @@ const DailyProgressTable = ({ data, date }) => {
 
                                 return (
                                     <tr key={i} style={row.MaterialName.includes("TOTAL") || row.MaterialName.includes("Total") ? { fontWeight: 'bold', backgroundColor: '#f1f5f9' } : {}}>
-                                        <td className="text-center">{row.SlNo || ''}</td>
+                                        <td style={{ textAlign: 'center' }}>{row.SlNo || ''}</td>
                                         <td className="text-left pl-2">{displayMaterial}</td>
-                                        <td className="text-center">{row.Unit}</td>
-                                        <td className="!text-center">{row.DayTrip}</td>
-                                        <td className="!text-right !pr-4">{row.DayQty}</td>
-                                        <td className="!text-center">{row.MonthTrip}</td>
-                                        <td className="!text-right !pr-4">{row.MonthQty}</td>
-                                        <td className="!text-center">{row.YearTrip}</td>
-                                        <td className="!text-right !pr-4">{row.YearQty}</td>
+                                        <td style={{ textAlign: 'center' }}>{row.Unit}</td>
+                                        <td style={{ textAlign: 'center' }}>{formatNum(row.DayTrip)}</td>
+                                        <td style={{ textAlign: 'center' }}>{formatNum(row.DayQty)}</td>
+                                        <td style={{ textAlign: 'center' }}>{formatNum(row.MonthTrip)}</td>
+                                        <td style={{ textAlign: 'center' }}>{formatNum(row.MonthQty)}</td>
+                                        <td style={{ textAlign: 'center' }}>{formatNum(row.YearTrip)}</td>
+                                        <td style={{ textAlign: 'center' }}>{formatNum(row.YearQty)}</td>
                                     </tr>
                                 );
                             })}
@@ -129,38 +146,38 @@ const DailyProgressTable = ({ data, date }) => {
                         <tbody>
                             {drilling.map((row, i) => (
                                 <tr key={i}>
-                                    <td className="text-center">{row.SlNo}</td>
+                                    <td style={{ textAlign: 'center' }}>{row.SlNo}</td>
                                     <td className="text-left pl-2">{row.MaterialType}</td>
-                                    <td className="text-center">{row.Holes_FTD}</td>
-                                    <td className="text-center">{row.Holes_MTD}</td>
-                                    <td className="text-center">{row.Holes_YTD}</td>
-                                    <td className="text-center">{row.Drilling_FTD}</td>
-                                    <td className="text-center">{row.Drilling_MTD}</td>
-                                    <td className="text-center">{row.Drilling_YTD}</td>
-                                    <td className="text-center">{row.Hrs_FTD}</td>
-                                    <td className="text-center">{row.Hrs_MTD}</td>
-                                    <td className="text-center">{row.Hrs_YTD}</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Holes_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Holes_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Holes_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Drilling_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Drilling_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Drilling_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Hrs_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Hrs_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Hrs_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.MetersHr_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.MetersHr_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.MetersHr_YTD)}</td>
                                 </tr>
                             ))}
                             {drilling.length > 0 && (
                                 <tr style={{ fontWeight: 'bold', backgroundColor: '#f1f5f9' }}>
-                                    <td className="text-center"></td>
+                                    <td style={{ textAlign: 'center' }}></td>
                                     <td className="text-left pl-2">TOTAL</td>
-                                    <td className="text-center">{formatNum(drillTotals.Holes_FTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Holes_MTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Holes_YTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Drilling_FTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Drilling_MTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Drilling_YTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Hrs_FTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Hrs_MTD)}</td>
-                                    <td className="text-center">{formatNum(drillTotals.Hrs_YTD)}</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Holes_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Holes_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Holes_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Drilling_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Drilling_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Drilling_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Hrs_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Hrs_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(drillTotals.Hrs_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{drillTotals.Hrs_FTD > 0 ? formatNum(drillTotals.Drilling_FTD / drillTotals.Hrs_FTD) : 0}</td>
+                                    <td style={{ textAlign: 'center' }}>{drillTotals.Hrs_MTD > 0 ? formatNum(drillTotals.Drilling_MTD / drillTotals.Hrs_MTD) : 0}</td>
+                                    <td style={{ textAlign: 'center' }}>{drillTotals.Hrs_YTD > 0 ? formatNum(drillTotals.Drilling_YTD / drillTotals.Hrs_YTD) : 0}</td>
                                 </tr>
                             )}
                         </tbody>
@@ -174,6 +191,7 @@ const DailyProgressTable = ({ data, date }) => {
                         <thead>
                             <tr className={styles.blueHeader}>
                                 <th rowSpan="2">Sl No.</th>
+                                <th rowSpan="2" className="w-48 text-left pl-2">Material Type</th>
                                 <th colSpan="3">No. of Holes</th>
                                 <th colSpan="3">Total Explosive Used</th>
                                 <th colSpan="3">Blasted Volume</th>
@@ -197,36 +215,38 @@ const DailyProgressTable = ({ data, date }) => {
                         <tbody>
                             {blasting.map((row, i) => (
                                 <tr key={i}>
-                                    <td className="text-center">{row.SlNo}</td>
-                                    <td className="text-center">{row.Holes_FTD}</td>
-                                    <td className="text-center">{row.Holes_MTD}</td>
-                                    <td className="text-center">{row.Holes_YTD}</td>
-                                    <td className="text-center">{row.Exp_FTD}</td>
-                                    <td className="text-center">{row.Exp_MTD}</td>
-                                    <td className="text-center">{row.Exp_YTD}</td>
-                                    <td className="text-center">{row.TotalVolume_FTD}</td>
-                                    <td className="text-center">{row.TotalVolume_MTD}</td>
-                                    <td className="text-center">{row.TotalVolume_YTD}</td>
-                                    <td className="text-center">{row.PowderFactor_FTD}</td>
-                                    <td className="text-center">{row.PowderFactor_MTD}</td>
-                                    <td className="text-center">{row.PowderFactor_YTD}</td>
+                                    <td style={{ textAlign: 'center' }}>{row.SlNo}</td>
+                                    <td className="text-left pl-2">{row.MaterialName}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Holes_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Holes_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Holes_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Exp_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Exp_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Exp_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.TotalVolume_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.TotalVolume_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.TotalVolume_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.PowderFactor_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.PowderFactor_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.PowderFactor_YTD)}</td>
                                 </tr>
                             ))}
                             {blasting.length > 0 && (
                                 <tr style={{ fontWeight: 'bold', backgroundColor: '#f1f5f9' }}>
-                                    <td className="text-center">TOTAL</td>
-                                    <td className="text-center">{formatNum(blastTotals.Holes_FTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.Holes_MTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.Holes_YTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.Exp_FTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.Exp_MTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.Exp_YTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.TotalVolume_FTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.TotalVolume_MTD)}</td>
-                                    <td className="text-center">{formatNum(blastTotals.TotalVolume_YTD)}</td>
-                                    <td className="text-center"></td>
-                                    <td className="text-center"></td>
-                                    <td className="text-center"></td>
+                                    <td style={{ textAlign: 'center' }}></td>
+                                    <td className="text-left pl-2">TOTAL</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.Holes_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.Holes_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.Holes_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.Exp_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.Exp_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.Exp_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.TotalVolume_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.TotalVolume_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(blastTotals.TotalVolume_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}></td>
+                                    <td style={{ textAlign: 'center' }}></td>
+                                    <td style={{ textAlign: 'center' }}></td>
                                 </tr>
                             )}
                         </tbody>
@@ -264,35 +284,35 @@ const DailyProgressTable = ({ data, date }) => {
                             {crusher.map((row, i) => (
                                 <tr key={i}>
                                     <td className="text-left pl-2 font-bold">{row.Plant}</td>
-                                    <td className="text-center">{row.Hrs_FTD}</td>
-                                    <td className="text-center">{row.Hrs_MTD}</td>
-                                    <td className="text-center">{row.Hrs_YTD}</td>
-                                    <td className="text-center">{row.Qty_FTD}</td>
-                                    <td className="text-center">{row.Qty_MTD}</td>
-                                    <td className="text-center">{row.Qty_YTD}</td>
-                                    <td className="text-center">{row.KWH_FTD}</td>
-                                    <td className="text-center">{row.KWH_MTD}</td>
-                                    <td className="text-center">{row.KWH_YTD}</td>
-                                    <td className="text-center">{row.KWH_HR_FTD}</td>
-                                    <td className="text-center">{row.KWH_HR_MTD}</td>
-                                    <td className="text-center">{row.KWH_HR_YTD}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Hrs_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Hrs_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Hrs_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Qty_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Qty_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.Qty_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.KWH_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.KWH_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.KWH_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.KWH_HR_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.KWH_HR_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(row.KWH_HR_YTD)}</td>
                                 </tr>
                             ))}
                             {crusher.length > 0 && (
                                 <tr style={{ fontWeight: 'bold', backgroundColor: '#f1f5f9' }}>
                                     <td className="text-left pl-2">TOTAL</td>
-                                    <td className="text-center">{formatNum(crusherTotals.Hrs_FTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.Hrs_MTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.Hrs_YTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.Qty_FTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.Qty_MTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.Qty_YTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.KWH_FTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.KWH_MTD)}</td>
-                                    <td className="text-center">{formatNum(crusherTotals.KWH_YTD)}</td>
-                                    <td className="text-center"></td>
-                                    <td className="text-center"></td>
-                                    <td className="text-center"></td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.Hrs_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.Hrs_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.Hrs_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.Qty_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.Qty_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.Qty_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.KWH_FTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.KWH_MTD)}</td>
+                                    <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.KWH_YTD)}</td>
+                                    <td style={{ textAlign: 'center' }}></td>
+                                    <td style={{ textAlign: 'center' }}></td>
+                                    <td style={{ textAlign: 'center' }}></td>
                                 </tr>
                             )}
                         </tbody>

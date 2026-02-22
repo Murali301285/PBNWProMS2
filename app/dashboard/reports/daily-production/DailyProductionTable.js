@@ -306,7 +306,7 @@ export default function DailyProductionTable({ data, date }) {
 
     // Helper for formatting
     const fmt = (val, decimals = 2) => {
-        if (val === null || val === undefined) return '0';
+        if (val === null || val === undefined || val === '' || val === 0 || val === '0') return '-';
         // Check if value is integer-like for Trips, else decimals
         if (val % 1 === 0 && val < 1000) return val;
         return Number(val).toLocaleString('en-IN', { maximumFractionDigits: decimals });
@@ -318,16 +318,38 @@ export default function DailyProductionTable({ data, date }) {
         return `${day}/${month}/${year}`;
     };
 
+    // Calculate STRIPIING RATIO dynamically
+    const coalTotal_FTD = coalDetails.reduce((s, r) => s + (r.Qty_FTD || 0), 0);
+    const wasteTotal_FTD = wasteDetails.reduce((s, r) => s + (r.Qty_FTD || 0), 0);
+    const sr_FTD = coalTotal_FTD > 0 ? (wasteTotal_FTD / coalTotal_FTD).toFixed(2) : "0.00";
 
+    const coalTotal_MTD = coalDetails.reduce((s, r) => s + (r.Qty_MTD || 0), 0);
+    const wasteTotal_MTD = wasteDetails.reduce((s, r) => s + (r.Qty_MTD || 0), 0);
+    const sr_MTD = coalTotal_MTD > 0 ? (wasteTotal_MTD / coalTotal_MTD).toFixed(2) : "0.00";
+
+    const coalTotal_YTD = coalDetails.reduce((s, r) => s + (r.Qty_YTD || 0), 0);
+    const wasteTotal_YTD = wasteDetails.reduce((s, r) => s + (r.Qty_YTD || 0), 0);
+    const sr_YTD = coalTotal_YTD > 0 ? (wasteTotal_YTD / coalTotal_YTD).toFixed(2) : "0.00";
 
     return (
         <div>
             {/* Headers are mostly handled by page layout now, but the internal report sheet headers remain */}
-            <div className={styles.header}>
-                <h1 className="text-lg font-bold">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2 className="text-md font-bold">PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3 className="text-md mt-2 underline font-bold">DAILY PRODUCTION REPORT</h3>
-                <div className="text-right text-sm text-red-600 mt-2 font-bold">Date: {formatDate(date)}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
+
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>DAILY PRODUCTION REPORT</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                        <div>Date: {formatDate(date)}</div>
+                    </div>
+                </div>
             </div>
 
             {/* SECTION 1 */}
@@ -504,9 +526,9 @@ export default function DailyProductionTable({ data, date }) {
                                 {/* STRIPING RATIO ROW */}
                                 <tr className="font-bold border-t border-slate-400">
                                     <td className="text-left pl-2">STRIPING RATIO</td>
-                                    <td colSpan={2} className="text-center">1 : 1.97</td>
-                                    <td colSpan={2} className="text-center">1 : 4.95</td>
-                                    <td colSpan={2} className="text-center">1 : 4.12</td>
+                                    <td colSpan={2} className="text-center">1 : {sr_FTD}</td>
+                                    <td colSpan={2} className="text-center">1 : {sr_MTD}</td>
+                                    <td colSpan={2} className="text-center">1 : {sr_YTD}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -732,7 +754,7 @@ export default function DailyProductionTable({ data, date }) {
                                     h.loaders.length > 0 ?
                                         h.loaders.map(l => {
                                             const val = row[h.name][l];
-                                            return <td key={l} className="border border-slate-300 text-center">{val || ''}</td>
+                                            return <td key={l} className="border border-slate-300 text-center">{fmt(val)}</td>
                                         })
                                         : <td key={h.name} className="border border-slate-300"></td>
                                 ))}
@@ -749,7 +771,7 @@ export default function DailyProductionTable({ data, date }) {
                                 h.loaders.length > 0 ?
                                     h.loaders.map(l => (
                                         <td key={l} className="border border-slate-400 text-center">
-                                            {dumperPivot.grandTotals[h.name][l] || 0}
+                                            {fmt(dumperPivot.grandTotals[h.name][l] || 0)}
                                         </td>
                                     ))
                                     : <td key={h.name} className="border border-slate-400"></td>

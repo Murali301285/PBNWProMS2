@@ -18,11 +18,22 @@ export default function DayWiseProductionTable({ data, date }) {
     return (
         <div style={{ width: '100%' }}>
 
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                <h1 className="text-xl font-bold text-slate-800 uppercase">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2 className="text-lg font-bold text-slate-800 uppercase">PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3 className="text-lg text-blue-800 decoration-slate-900 underline underline-offset-4 font-bold uppercase" style={{ marginTop: '0.5rem' }}>DAY WISE PRODUCTION REPORT</h3>
-                <div className="mt-1 text-sm text-slate-600">Month: {new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
+
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>DAY WISE PRODUCTION REPORT</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                        <div>Month: {new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+                    </div>
+                </div>
             </div>
 
             <div className="overflow-x-auto">

@@ -16,7 +16,8 @@ export default function ReportTable({
     generated,
     stickyLeft = 0,
     stickyBgColor = null,
-    columnGroups = []
+    columnGroups = [],
+    onExportExcel = null
 }) {
     return (
         <div className={styles.container}>
@@ -37,6 +38,7 @@ export default function ReportTable({
                         stickyLeft={stickyLeft}
                         stickyBgColor={stickyBgColor}
                         columnGroups={columnGroups}
+                        onExportExcel={onExportExcel}
                     />
                 </div>
             ) : (

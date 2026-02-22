@@ -20,14 +20,23 @@ export default function ProductionNtpcTable({ data, loading, date }) {
     return (
         <div className="w-full">
             {/* Header */}
-            <div className={styles.header}>
-                <h1 className="text-lg font-bold">THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                <h2 className="text-md font-bold">PAKRI BARWADIH COAL MINING PROJECT</h2>
-                <h3 className="text-md mt-2 underline font-bold">PRODUCTION NTPC REPORT</h3>
-                <div className="text-sm font-bold text-red-600 mt-2">
-                    Date: {date?.split('-').reverse().join('/')}
-                    <span className="mx-2 text-slate-800">|</span>
-                    Shift: {headerInfo?.ShiftName?.replace('SHIFT', 'Shift')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
+                {/* Logo - Positioned left */}
+                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+                </div>
+
+                {/* Text Block - Centered */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>PRODUCTION NTPC REPORT</h3>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#dc2626', fontWeight: 'bold' }}>
+                        <div>Date: {date?.split('-').reverse().join('/')}</div>
+                        <span style={{ color: '#1e293b' }}>|</span>
+                        <div>Shift: {headerInfo?.ShiftName?.replace('SHIFT', 'Shift')}</div>
+                    </div>
                 </div>
             </div>
 

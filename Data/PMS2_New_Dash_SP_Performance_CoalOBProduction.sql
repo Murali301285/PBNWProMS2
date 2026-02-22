@@ -1,0 +1,88 @@
+CREATE OR ALTER PROCEDURE [dbo].[PMS2_New_Dash_SP_Performance_CoalOBProduction]
+    @FromDate DATE,
+    @ToDate DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Date Range Generation
+    WITH DateRange AS (
+        SELECT @FromDate AS DateValue
+        UNION ALL
+        SELECT DATEADD(DAY, 1, DateValue)
+        FROM DateRange
+        WHERE DateValue < @ToDate
+    ),
+    
+    -- 2. Production Data (Coal & OB from TblLoading)
+    ProductionData AS (
+        SELECT 
+            CAST(L.LoadingDate AS DATE) AS ProductionDate,
+            
+            -- Coal (MaterialId = 7)
+            SUM(CASE WHEN L.MaterialId = 7 AND ISNULL(R.SectorId, 0) <> 5 THEN L.TotalQty ELSE 0 END) AS Coal_MainPit,
+            SUM(CASE WHEN L.MaterialId = 7 AND ISNULL(R.SectorId, 0) = 5 THEN L.TotalQty ELSE 0 END) AS Coal_WP3,
+
+            -- OB (MaterialId IN (1, 2, 3, 4, 5, 10)) -- Assuming all non-7 are OB/Waste
+            -- Actually, let's be specific based on general OB/Waste ids or exclusion of Coal
+            SUM(CASE WHEN L.MaterialId <> 7 AND ISNULL(R.SectorId, 0) <> 5 THEN L.TotalQty ELSE 0 END) AS OB_MainPit,
+            SUM(CASE WHEN L.MaterialId <> 7 AND ISNULL(R.SectorId, 0) = 5 THEN L.TotalQty ELSE 0 END) AS OB_WP3
+
+        FROM Trans.TblLoading L WITH(NOLOCK)
+        LEFT JOIN Trans.TblEquipmentReading R WITH(NOLOCK) 
+            ON L.LoadingMachineEquipmentId = R.EquipmentId 
+            AND L.ShiftId = R.ShiftId 
+            AND CAST(L.LoadingDate AS DATE) = CAST(R.Date AS DATE)
+            AND R.IsDelete = 0
+        WHERE L.IsDelete = 0 
+          AND CAST(L.LoadingDate AS DATE) BETWEEN @FromDate AND @ToDate
+        GROUP BY CAST(L.LoadingDate AS DATE)
+    ),
+
+    -- 3. Rehandling Data (Coal & OB from TblMaterialRehandling)
+    RehandlingData AS (
+        SELECT 
+            CAST(RH.RehandlingDate AS DATE) AS RehandlingDate,
+
+            -- Coal Rehandling (MaterialId IN (6, 7))
+            SUM(CASE WHEN RH.MaterialId IN (6, 7) AND ISNULL(R.SectorId, 0) <> 5 THEN RH.TotalQty ELSE 0 END) AS CoalRehandling_MainPit,
+            SUM(CASE WHEN RH.MaterialId IN (6, 7) AND ISNULL(R.SectorId, 0) = 5 THEN RH.TotalQty ELSE 0 END) AS CoalRehandling_WP3,
+
+            -- OB Rehandling (MaterialId NOT IN (6, 7))
+            SUM(CASE WHEN RH.MaterialId NOT IN (6, 7) AND ISNULL(R.SectorId, 0) <> 5 THEN RH.TotalQty ELSE 0 END) AS OBRehandling_MainPit,
+            SUM(CASE WHEN RH.MaterialId NOT IN (6, 7) AND ISNULL(R.SectorId, 0) = 5 THEN RH.TotalQty ELSE 0 END) AS OBRehandling_WP3
+
+        FROM Trans.TblMaterialRehandling RH WITH(NOLOCK)
+        LEFT JOIN Trans.TblEquipmentReading R WITH(NOLOCK) 
+            ON RH.LoadingMachineEquipmentId = R.EquipmentId 
+            AND RH.ShiftId = R.ShiftId 
+            AND CAST(RH.RehandlingDate AS DATE) = CAST(R.Date AS DATE)
+            AND R.IsDelete = 0
+        WHERE RH.IsDelete = 0
+          AND CAST(RH.RehandlingDate AS DATE) BETWEEN @FromDate AND @ToDate
+        GROUP BY CAST(RH.RehandlingDate AS DATE)
+    )
+
+    -- 4. Final Result using Date Range Left Join
+    SELECT 
+        FORMAT(D.DateValue, 'dd-MMM-yyyy') AS DateDisplay,
+        D.DateValue AS SortDate,
+        
+        ISNULL(P.Coal_MainPit, 0) AS Coal_MainPit,
+        ISNULL(P.Coal_WP3, 0) AS Coal_WP3,
+        
+        ISNULL(P.OB_MainPit, 0) AS OB_MainPit,
+        ISNULL(P.OB_WP3, 0) AS OB_WP3,
+
+        ISNULL(RH.OBRehandling_MainPit, 0) AS OBRehandling_MainPit,
+        ISNULL(RH.OBRehandling_WP3, 0) AS OBRehandling_WP3,
+
+        ISNULL(RH.CoalRehandling_MainPit, 0) AS CoalRehandling_MainPit,
+        ISNULL(RH.CoalRehandling_WP3, 0) AS CoalRehandling_WP3
+
+    FROM DateRange D
+    LEFT JOIN ProductionData P ON D.DateValue = P.ProductionDate
+    LEFT JOIN RehandlingData RH ON D.DateValue = RH.RehandlingDate
+    ORDER BY D.DateValue
+    OPTION (MAXRECURSION 0);
+END

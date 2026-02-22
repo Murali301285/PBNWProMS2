@@ -1,0 +1,3 @@
+{
+  "/api/transaction/bds-entry/bulk-upload/route": "app/api/transaction/bds-entry/bulk-upload/route.js"
+}
