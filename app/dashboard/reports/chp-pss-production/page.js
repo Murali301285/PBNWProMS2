@@ -69,9 +69,12 @@ export default function ChpPssProductionPage() {
         window.print();
     };
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (!reportData) return;
         try {
+            const ExcelJS = await import('exceljs');
+            const { saveAs } = await import('file-saver');
+
             const { production, stoppages, allReasons } = reportData;
             const monthObj = new Date(month + "-01");
             const monthName = monthObj.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -145,64 +148,202 @@ export default function ChpPssProductionPage() {
                 return acc;
             }, { prod: 0, runHr: 0, totalStopHrs: 0, idleHr: 0, totalDay: 0, units: 0, stopMap: {} });
 
-            grand.tph = grand.prod / 18.9;
+            grand.tph = grand.prod > 0 ? grand.prod / 18.9 : 0;
 
-            // Build Excel Data
-            const wb = XLSX.utils.book_new();
-            const wsData = [
-                ["THRIVENI SAINIK MINING PRIVATE LIMITED"],
-                ["CHP PSS PRODUCTION REPORT"],
-                [`Month: ${monthName}`],
-                [],
-                ["Date", "Plant Total Production", "TPH", "Running Hours", ...distinctReasons, "Total Breakdown Hrs", "Total Idle Hour", "Total Stoppage", "Total Day Hour", "Total Unit Consumption", "Remarks"]
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('CHP PSS Production');
+
+            // 1. Column Widths Setup 
+            // A(padding)=3, B(Date)=14, C(Prod)=20, D(TPH)=12, E(RunHr)=16
+            // F... onwards are dynamic reasons (14 each)
+            // Following 5 summary columns (18 each)
+            const dynamicColsCount = distinctReasons.length;
+            const totalCols = 5 + dynamicColsCount + 6; // Padding + 4 fixed + reasons + 5 summary + remarks
+
+            const cols = [
+                { width: 3 },  // A
+                { width: 14 }, // B: Date
+                { width: 22 }, // C: Plant Total Production
+                { width: 12 }, // D: TPH
+                { width: 16 }  // E: Running Hours
             ];
 
-            mergedData.forEach(r => {
-                const row = [
-                    r.date.toLocaleDateString('en-GB'),
-                    r.prod,
-                    r.tph.toFixed(0),
-                    r.runHr.toFixed(2),
-                    ...distinctReasons.map(reason => (r.stopMap[reason] || 0).toFixed(2)),
-                    r.totalStopHrs.toFixed(2),
-                    r.idleHr.toFixed(2),
-                    r.totalStopHrs.toFixed(2),
-                    r.totalDay.toFixed(2),
-                    r.units,
-                    ""
-                ];
-                wsData.push(row);
+            for (let i = 0; i < dynamicColsCount; i++) {
+                cols.push({ width: 16 }); // Dynamic Reason Columns
+            }
+
+            cols.push(
+                { width: 20 }, // Total Breakdown Hrs
+                { width: 18 }, // Total Idle Hour
+                { width: 18 }, // Total Stoppage
+                { width: 18 }, // Total Day Hour
+                { width: 22 }, // Total Unit Consumption
+                { width: 20 }  // Remarks
+            );
+
+            ws.columns = cols;
+
+            // Add Logo
+            let logoId;
+            try {
+                const logoRes = await fetch('/Asset/Logo.png');
+                const arrayBuffer = await logoRes.arrayBuffer();
+                logoId = wb.addImage({
+                    buffer: arrayBuffer,
+                    extension: 'png',
+                });
+            } catch (e) {
+                console.error('Logo add failed', e);
+            }
+
+            // Helper to style a cell
+            const setCell = (cell, value, opts = {}) => {
+                if (value !== undefined) cell.value = value;
+                cell.font = {
+                    name: 'Calibri',
+                    size: opts.fontSize || 10,
+                    bold: opts.bold || false,
+                    underline: opts.underline || false,
+                    color: { argb: opts.color || 'FF000000' }
+                };
+                cell.alignment = {
+                    horizontal: opts.align || 'center',
+                    vertical: 'middle',
+                    wrapText: true
+                };
+                if (opts.bg) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+                }
+                if (opts.border !== false) {
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+                }
+                if (opts.numFmt) {
+                    cell.numFmt = opts.numFmt;
+                }
+            };
+
+            // Get the last column letter for merging headers based on dynamic column length
+            const getColLetter = (colIndex) => {
+                let temp, letter = '';
+                while (colIndex > 0) {
+                    temp = (colIndex - 1) % 26;
+                    letter = String.fromCharCode(temp + 65) + letter;
+                    colIndex = (colIndex - temp - 1) / 26;
+                }
+                return letter;
+            };
+            const lastDataColLetter = getColLetter(totalCols);
+
+            // 2. Headers
+            ws.getRow(1).height = 15; // Empty padding row
+
+            ws.mergeCells(`B2:${lastDataColLetter}2`);
+            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+
+            ws.mergeCells(`B3:${lastDataColLetter}3`);
+            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+
+            ws.mergeCells(`B4:${lastDataColLetter}4`);
+            setCell(ws.getCell('B4'), "CHP PSS PRODUCTION REPORT", { bold: true, align: 'center', border: false, underline: true, fontSize: 13, color: 'FFDC2626' });
+
+            if (logoId !== undefined) {
+                ws.addImage(logoId, {
+                    tl: { col: 1, row: 1 },
+                    ext: { width: 160, height: 60 }
+                });
+            }
+
+            const monthStr = `Month: ${monthName}`;
+            ws.mergeCells(`B5:D5`);
+            setCell(ws.getCell('B5'), monthStr, { bold: true, align: 'left', border: false });
+
+            // Plant Name
+            const plantName = plantList?.find(p => p.SlNo == plantId)?.Name || '';
+            ws.mergeCells(`E5:H5`);
+            if (plantName) {
+                setCell(ws.getCell('E5'), `Plant: ${plantName}`, { bold: true, align: 'left', border: false });
+            }
+
+            // 3. Table Headers
+            const headerRow = ws.getRow(6);
+            if (distinctReasons.length > 5) {
+                headerRow.height = 45; // Taller for reason headers if needed
+            } else {
+                headerRow.height = 30;
+            }
+
+            const headers = [
+                "Date", "Plant Total Production", "TPH", "Running Hours",
+                ...distinctReasons,
+                "Total Breakdown Hrs", "Total Idle Hour", "Total Stoppage", "Total Day Hour", "Total Unit Consumption", "Remarks"
+            ];
+
+            headers.forEach((h, i) => {
+                const cell = ws.getCell(6, i + 2); // B is 2
+                setCell(cell, h, { bold: true, bg: 'FFEAEAEA' });
             });
 
-            // Grand Total Row
-            wsData.push([
-                "Total",
-                grand.prod,
-                grand.tph.toFixed(0),
-                grand.runHr.toFixed(2),
-                ...distinctReasons.map(reason => (grand.stopMap[reason] || 0).toFixed(2)),
-                grand.totalStopHrs.toFixed(2),
-                grand.idleHr.toFixed(2),
-                grand.totalStopHrs.toFixed(2),
-                grand.totalDay.toFixed(2),
-                grand.units,
-                ""
-            ]);
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-            // Merges for Header
-            ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: distinctReasons.length + 10 } },
-                { s: { r: 1, c: 0 }, e: { r: 1, c: distinctReasons.length + 10 } },
+            // Freeze panes
+            ws.views = [
+                { state: 'frozen', xSplit: 0, ySplit: 6 } // Freeze top 6 rows
             ];
 
-            XLSX.utils.book_append_sheet(wb, ws, "ChpPssProduction");
-            XLSX.writeFile(wb, `ChpPssProduction_${month}.xlsx`);
-            toast.success("Excel exported successfully!");
-        } catch (e) {
-            console.error(e);
-            toast.error("Export failed");
+            // 4. Data Rows
+            let currentRow = 7;
+            const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '-';
+
+            mergedData.forEach((row) => {
+                let startCol = 2; // Col B
+
+                setCell(ws.getCell(currentRow, startCol++), fmtDate(row.date));
+                setCell(ws.getCell(currentRow, startCol++), row.prod, { numFmt: '#,##0.00', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), row.tph, { numFmt: '#,##0', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), row.runHr, { numFmt: '#,##0.00', align: 'right' });
+
+                distinctReasons.forEach(reason => {
+                    setCell(ws.getCell(currentRow, startCol++), row.stopMap[reason] || 0, { numFmt: '#,##0.00', align: 'right' });
+                });
+
+                setCell(ws.getCell(currentRow, startCol++), row.totalStopHrs, { numFmt: '#,##0.00', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), row.idleHr, { numFmt: '#,##0.00', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), row.totalStopHrs, { numFmt: '#,##0.00', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), row.totalDay, { numFmt: '#,##0.00', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), row.units, { numFmt: '#,##0', align: 'right' });
+                setCell(ws.getCell(currentRow, startCol++), ""); // Remarks
+
+                currentRow++;
+            });
+
+            // 5. Grand Total Footer
+            ws.getRow(currentRow).height = 20;
+            let footCol = 2;
+            setCell(ws.getCell(currentRow, footCol++), "Grand Total", { bold: true, align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.prod, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.tph, { bold: true, numFmt: '#,##0', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.runHr, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+
+            distinctReasons.forEach(reason => {
+                setCell(ws.getCell(currentRow, footCol++), grand.stopMap[reason] || 0, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+            });
+
+            setCell(ws.getCell(currentRow, footCol++), grand.totalStopHrs, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.idleHr, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.totalStopHrs, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.totalDay, { bold: true, numFmt: '#,##0.00', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), grand.units, { bold: true, numFmt: '#,##0', align: 'right', bg: 'FFF5F5F5' });
+            setCell(ws.getCell(currentRow, footCol++), "", { bold: true, align: 'center', bg: 'FFF5F5F5' }); // Remarks
+
+            // 6. Generate file
+            const buf = await wb.xlsx.writeBuffer();
+            saveAs(new Blob([buf]), `ChpPssProduction_${month}.xlsx`);
+            toast.success("Excel Downloaded Successfully");
+
+        } catch (error) {
+            console.error("Excel Export Error:", error);
+            toast.error("Failed to export Excel");
         }
     };
 

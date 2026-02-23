@@ -45,99 +45,201 @@ export default function CrStoppageCumulativePage() {
         window.print();
     };
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (!reportData) return;
         try {
+            const ExcelJS = await import('exceljs');
+            const { saveAs } = await import('file-saver');
+
             const { plants, metricsMap, stoppageRows, calculatedTotalStop } = reportData;
 
-            const fmtDec2 = (val) => val != null ? Number(val).toFixed(2) : '0';
-            const fmtDec0 = (val) => val != null ? Number(val).toFixed(0) : '0';
+            const fmtDec2 = '#,##0.00';
+            const fmtDec0 = '#,##0';
             const getMetric = (pId, key) => metricsMap[pId]?.[key] || 0;
 
-            const wb = XLSX.utils.book_new();
-            const wsData = [];
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Stoppage Cumulative');
 
-            // Header
-            const headerRow = ["SHIFT COAL CRUSHING REPORT", new Date(date).toLocaleDateString('en-GB')];
-            wsData.push(headerRow);
+            // 1. Column Widths
+            const cols = [
+                { width: 3 },  // A: Padding
+                { width: 8 },  // B: Sl No
+                { width: 35 }, // C: Description
+            ];
 
-            // Columns
-            const cols = ["Sl.No.", "Description", ...plants.map(p => p.name)];
-            wsData.push(cols);
+            // Dynamic width for each plant
+            plants.forEach(() => {
+                cols.push({ width: 14 }); // D, E, F...
+            });
 
-            let slNo = 1;
+            ws.columns = cols;
 
-            // Metric Rows
-            const addMetricRow = (label, key, isInt = false) => {
-                const row = [
-                    slNo++,
-                    label,
-                    ...plants.map(p => isInt ? fmtDec0(getMetric(p.id, key)) : fmtDec2(getMetric(p.id, key)))
-                ];
-                wsData.push(row);
+            // Add Logo
+            let logoId;
+            try {
+                const logoRes = await fetch('/Asset/Logo.png');
+                const arrayBuffer = await logoRes.arrayBuffer();
+                logoId = wb.addImage({
+                    buffer: arrayBuffer,
+                    extension: 'png',
+                });
+            } catch (e) {
+                console.error('Logo add failed', e);
             }
 
+            // Helper to style a cell
+            const setCell = (cell, value, opts = {}) => {
+                if (value !== undefined) cell.value = value;
+                cell.font = {
+                    name: 'Calibri',
+                    size: opts.fontSize || 10,
+                    bold: opts.bold || false,
+                    underline: opts.underline || false,
+                    color: { argb: opts.color || 'FF000000' }
+                };
+                cell.alignment = {
+                    horizontal: opts.align || 'center',
+                    vertical: 'middle',
+                    wrapText: true
+                };
+                if (opts.bg) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+                }
+                if (opts.border !== false) {
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+                }
+                if (opts.numFmt) {
+                    cell.numFmt = opts.numFmt;
+                }
+            };
+
+            const lastDataCol = 3 + plants.length; // A + SlNo + Desc + Plants
+            const getColLetter = (colIndex) => {
+                let temp, letter = '';
+                while (colIndex > 0) {
+                    temp = (colIndex - 1) % 26;
+                    letter = String.fromCharCode(temp + 65) + letter;
+                    colIndex = (colIndex - temp - 1) / 26;
+                }
+                return letter;
+            };
+            const lastDataColLetter = getColLetter(lastDataCol);
+
+            // 2. Headers
+            ws.getRow(1).height = 15; // padding
+
+            ws.mergeCells(`B2:${lastDataColLetter}2`);
+            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+
+            ws.mergeCells(`B3:${lastDataColLetter}3`);
+            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+
+            ws.mergeCells(`B4:${lastDataColLetter}4`);
+            setCell(ws.getCell('B4'), "SHIFT COAL CRUSHING REPORT", { bold: true, align: 'center', border: false, underline: true, fontSize: 13, color: 'FFDC2626' });
+
+            if (logoId !== undefined) {
+                ws.addImage(logoId, {
+                    tl: { col: 1, row: 1 },
+                    ext: { width: 160, height: 60 }
+                });
+            }
+
+            ws.mergeCells('B5:D5');
+            const fmtDate = date.split('-').reverse().join('-');
+            setCell(ws.getCell('B5'), `Date: ${fmtDate}`, { bold: true, align: 'left', border: false });
+
+            // Space
+            ws.getRow(6).height = 10;
+
+            // 3. Table Headers
+            const headerRow = ws.getRow(7);
+            headerRow.height = 30;
+            const headers = ["Sl.No.", "Description", ...plants.map(p => p.name)];
+
+            headers.forEach((h, i) => {
+                setCell(ws.getCell(7, i + 2), h, { bold: true, bg: 'FFEAEAEA' });
+            });
+
+            // Freeze panes
+            ws.views = [
+                { state: 'frozen', xSplit: 0, ySplit: 7 }
+            ];
+
+            // 4. Data Rows
+            let currentRow = 8;
+            let slNoCounter = 1;
+
+            const addMetricRow = (label, key, isInt = false, isBold = false, bg = null) => {
+                let currentStartCol = 2; // Col B
+                setCell(ws.getCell(currentRow, currentStartCol++), label ? slNoCounter++ : "", { align: 'center', bold: isBold, bg: bg });
+                setCell(ws.getCell(currentRow, currentStartCol++), label || "REMARKS:-", { align: 'left', bold: isBold, bg: bg });
+
+                plants.forEach(p => {
+                    const val = getMetric(p.id, key);
+                    setCell(ws.getCell(currentRow, currentStartCol++), val, {
+                        numFmt: isInt ? fmtDec0 : fmtDec2,
+                        align: 'right',
+                        bold: isBold,
+                        bg: bg
+                    });
+                });
+                currentRow++;
+            };
+
+            // Basic Times
             addMetricRow("Apron Starting. Hour", "startingHour", false);
             addMetricRow("Apron Closing Hour", "closingHour", false);
 
-            // Total Running Hour (Blue)
-            const totalRunRow = [
-                slNo++,
-                "Total Running Hour",
-                ...plants.map(p => fmtDec2(getMetric(p.id, "runningHr")))
-            ];
-            wsData.push(totalRunRow);
+            // Total Running (Light Blue equivalent, using light gray for cleanliness)
+            addMetricRow("Total Running Hour", "runningHr", false, true, "FFF5F5F5");
 
             // Stoppages
             stoppageRows.forEach(r => {
-                const row = [
-                    slNo++,
-                    r.reason,
-                    ...plants.map(p => fmtDec2(r.values[p.id] || 0))
-                ];
-                wsData.push(row);
+                let startCol = 2;
+                setCell(ws.getCell(currentRow, startCol++), slNoCounter++, { align: 'center' });
+                setCell(ws.getCell(currentRow, startCol++), r.reason, { align: 'left' });
+
+                plants.forEach(p => {
+                    setCell(ws.getCell(currentRow, startCol++), r.values[p.id] || 0, { numFmt: fmtDec2, align: 'right' });
+                });
+                currentRow++;
             });
 
-            // Total Stoppage (Yellow)
-            const totalStopRow = [
-                slNo++,
-                "Total stoppage Hour",
-                ...plants.map(p => fmtDec2(calculatedTotalStop[p.id] || 0))
-            ];
-            wsData.push(totalStopRow);
+            // Total Stoppage (Light Yellow equivalent, using distinct styling)
+            let startCol = 2;
+            setCell(ws.getCell(currentRow, startCol++), slNoCounter++, { align: 'center', bold: true, bg: 'FFFFFCCC' });
+            setCell(ws.getCell(currentRow, startCol++), "Total stoppage Hour", { align: 'left', bold: true, bg: 'FFFFFCCC' });
+            plants.forEach(p => {
+                setCell(ws.getCell(currentRow, startCol++), calculatedTotalStop[p.id] || 0, { numFmt: fmtDec2, align: 'right', bold: true, bg: 'FFFFFCCC' });
+            });
+            currentRow++;
 
             // Total Shift Hour
-            const shiftRow = [
-                "",
-                "Total Shift Hour",
-                ...plants.map(p => fmtDec2(getMetric(p.id, "totalShiftHour")))
-            ];
-            wsData.push(shiftRow);
+            addMetricRow("", "totalShiftHour", false, true, "FFF5F5F5");
 
-            // Remarks Row (Per Plant)
-            const remarksRow = [
-                "",
-                "REMARKS:-",
-                ...plants.map(p => getMetric(p.id, "remarks") || "")
-            ];
-            wsData.push(remarksRow);
+            // Remarks
+            startCol = 2;
+            setCell(ws.getCell(currentRow, startCol++), "", { align: 'center' });
+            setCell(ws.getCell(currentRow, startCol++), "REMARKS:-", { align: 'left', bold: true });
+            plants.forEach(p => {
+                setCell(ws.getCell(currentRow, startCol++), getMetric(p.id, "remarks") || "", { align: 'left' });
+            });
+            currentRow++;
 
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            // Space at bottom
+            ws.getRow(currentRow).height = 10;
 
-            // Styling (Basic Widths)
-            ws['!cols'] = [{ wch: 5 }, { wch: 30 }, ...plants.map(() => ({ wch: 12 }))];
+            // 6. Generate file
+            const buf = await wb.xlsx.writeBuffer();
+            saveAs(new Blob([buf]), `ProMS_Crusher_Stoppage_Cum_Dated_${date}.xlsx`);
+            toast.success("Excel Downloaded Successfully");
 
-            // Downloaded On
-            const downloadTime = new Date().toLocaleString('en-IN');
-            XLSX.utils.sheet_add_aoa(ws, [["Downloaded on: " + downloadTime]], { origin: -1 });
-
-            XLSX.utils.book_append_sheet(wb, ws, "Stoppage Cumulative");
-            const fname = `ProMS_Crusher_Stoppage_Cum_Dated_${date}.xlsx`;
-            XLSX.writeFile(wb, fname);
-            toast.success("Excel exported successfully!");
-        } catch (e) {
-            console.error(e);
-            toast.error("Export failed");
+        } catch (error) {
+            console.error("Excel Export Error:", error);
+            toast.error("Failed to export Excel");
         }
     };
 

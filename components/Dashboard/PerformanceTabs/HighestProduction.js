@@ -60,26 +60,26 @@ export default function HighestProduction({ data = [] }) {
     // Columns Definitions (Dynamic based on logic)
     const getColumns = (unit, period) => {
         const base = [
-            { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center' },
+            { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
             { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) },
         ];
 
         if (period === 'Shift') {
             return [
-                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center' },
+                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
                 { header: 'Date', accessor: 'Date', render: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '-' },
                 { header: 'Shift', accessor: 'Shift', align: 'center' },
                 { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) }
             ];
         } else if (period === 'Day') {
             return [
-                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center' },
+                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
                 { header: 'Date', accessor: 'Date', render: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '-' },
                 { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) }
             ];
         } else if (period === 'Month') {
             return [
-                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center' },
+                { header: 'SlNo', accessor: 'SN', width: '50px', align: 'center', render: (_, __, index) => index },
                 { header: 'Month', accessor: 'Month' },
                 { header: unit, accessor: 'Qty', align: 'right', render: (val) => formatNumber(val) }
             ];
