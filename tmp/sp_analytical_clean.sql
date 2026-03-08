@@ -1,4 +1,4 @@
-ALTER PROCEDURE [dbo].[PMS2_New_Dash_SP_GetAnalyticalStats]
+CREATE OR ALTER PROCEDURE [dbo].[PMS2_New_Dash_SP_GetAnalyticalStats]
                                                                                                                                                                                                
     @FromDate DATE,
                                                                                                                                                                                                                                           
@@ -45,30 +45,70 @@ BEGIN
 
                                                                                                                                                                                                                                                              
     -- Insert Coal Prod (MaterialId = 7)
-                                                                                                                                                                                                                     
     INSERT INTO #Stats (SectionId, Category, Date, Qty)
-                                                                                                                                                                                                      
-    SELECT 'coal_prod', ISNULL(S.Name, 'Unknown'), CAST(L.LoadingDate AS DATE), L.TotalQty
-                                                                                                                                                                   
+    SELECT 'coal_prod', ISNULL(S.SectorName, '-'), CAST(L.LoadingDate AS DATE), ISNULL(L.TotalQty, 0)
     FROM Trans.TblLoading L WITH(NOLOCK)
-                                                                                                                                                                                                                     
-    LEFT JOIN Master.TblSource S WITH(NOLOCK) ON L.SourceId = S.SlNo
-                                                                                                                                                                                         
-    WHERE L.IsDelete = 0 AND L.MaterialId = 7 AND CAST(L.LoadingDate AS DATE) <= @ToDate AND YEAR(L.LoadingDate) = YEAR(@ToDate);
-                                                                                                                            
+    JOIN [Master].TblShift T1 WITH(NOLOCK) on T1.SlNo=L.ShiftId
+    JOIN [Master].TblSource T2 WITH(NOLOCK) on T2.SlNo=L.SourceId
+    JOIN [Master].TblDestination T3 WITH(NOLOCK) on T3.SlNo=L.DestinationId
+    JOIN [Master].TblEquipment T4 WITH(NOLOCK) on T4.SlNo=L.HaulerEquipmentId
+    JOIN [Master].TblEquipment T5 WITH(NOLOCK) on T5.SlNo=L.LoadingMachineEquipmentId
+    JOIN [Master].TblMaterial T6 WITH(NOLOCK) on T6.SlNo=L.MaterialId
+    JOIN [Master].TblScale T7 WITH(NOLOCK) on T7.SlNo=T4.ScaleId
+    JOIN [Master].TblRelay T8 WITH(NOLOCK) on T8.SlNo=L.RelayId
+    JOIN [Master].TblEquipmentGroup T9 WITH(NOLOCK) on T9.SlNo=T4.EquipmentGroupId
+    JOIN [Master].TblEquipmentGroup T10 WITH(NOLOCK) on T10.SlNo=T5.EquipmentGroupId
+    LEFT JOIN (
+        SELECT DISTINCT 
+            ER.EquipmentId, 
+            CAST(ER.Date AS DATE) AS Date, 
+            ER.ShiftId, 
+            ER.SectorId
+        FROM Trans.TblEquipmentReading ER WITH(NOLOCK)
+        WHERE CAST(ER.Date AS DATE) <= @ToDate 
+          AND YEAR(ER.Date) = YEAR(@ToDate)
+          AND ER.IsDelete = 0
+    ) ER ON L.LoadingMachineEquipmentId = ER.EquipmentId 
+        AND CAST(L.LoadingDate AS DATE) = ER.Date 
+        AND L.ShiftId = ER.ShiftId 
+    LEFT JOIN Master.TblSector S WITH(NOLOCK) ON ER.SectorId = S.SlNo
+    WHERE L.IsDelete = 0 
+      AND L.MaterialId = 7 
+      AND CAST(L.LoadingDate AS DATE) <= @ToDate 
+      AND YEAR(L.LoadingDate) = YEAR(@ToDate);
 
-                                                                                                                                                                                                                                                             
-    -- Insert OB Removal (MaterialId IN (1, 2)) -> Using SourceId
-                                                                                                                                                                                            
+    -- Insert OB Removal (MaterialId IN (1, 2))
     INSERT INTO #Stats (SectionId, Category, Date, Qty)
-                                                                                                                                                                                                      
-    SELECT 'ob_rem', ISNULL(S.Name, 'Unknown'), CAST(L.LoadingDate AS DATE), L.TotalQty
-                                                                                                                                                                      
+    SELECT 'ob_rem', ISNULL(S.SectorName, '-'), CAST(L.LoadingDate AS DATE), ISNULL(L.TotalQty, 0)
     FROM Trans.TblLoading L WITH(NOLOCK)
-                                                                                                                                                                                                                     
-    LEFT JOIN Master.TblSource S WITH(NOLOCK) ON L.SourceId = S.SlNo
-                                                                                                                                                                                         
-    WHERE L.IsDelete = 0 AND L.MaterialId IN (1, 2) AND CAST(L.LoadingDate AS DATE) <= @ToDate AND YEAR(L.LoadingDate) = YEAR(@ToDate);
+    JOIN [Master].TblShift T1 WITH(NOLOCK) on T1.SlNo=L.ShiftId
+    JOIN [Master].TblSource T2 WITH(NOLOCK) on T2.SlNo=L.SourceId
+    JOIN [Master].TblDestination T3 WITH(NOLOCK) on T3.SlNo=L.DestinationId
+    JOIN [Master].TblEquipment T4 WITH(NOLOCK) on T4.SlNo=L.HaulerEquipmentId
+    JOIN [Master].TblEquipment T5 WITH(NOLOCK) on T5.SlNo=L.LoadingMachineEquipmentId
+    JOIN [Master].TblMaterial T6 WITH(NOLOCK) on T6.SlNo=L.MaterialId
+    JOIN [Master].TblScale T7 WITH(NOLOCK) on T7.SlNo=T4.ScaleId
+    JOIN [Master].TblRelay T8 WITH(NOLOCK) on T8.SlNo=L.RelayId
+    JOIN [Master].TblEquipmentGroup T9 WITH(NOLOCK) on T9.SlNo=T4.EquipmentGroupId
+    JOIN [Master].TblEquipmentGroup T10 WITH(NOLOCK) on T10.SlNo=T5.EquipmentGroupId
+    LEFT JOIN (
+        SELECT DISTINCT 
+            ER.EquipmentId, 
+            CAST(ER.Date AS DATE) AS Date, 
+            ER.ShiftId, 
+            ER.SectorId
+        FROM Trans.TblEquipmentReading ER WITH(NOLOCK)
+        WHERE CAST(ER.Date AS DATE) <= @ToDate 
+          AND YEAR(ER.Date) = YEAR(@ToDate)
+          AND ER.IsDelete = 0
+    ) ER ON L.LoadingMachineEquipmentId = ER.EquipmentId 
+        AND CAST(L.LoadingDate AS DATE) = ER.Date 
+        AND L.ShiftId = ER.ShiftId 
+    LEFT JOIN Master.TblSector S WITH(NOLOCK) ON ER.SectorId = S.SlNo
+    WHERE L.IsDelete = 0 
+      AND L.MaterialId IN (1, 2) 
+      AND CAST(L.LoadingDate AS DATE) <= @ToDate 
+      AND YEAR(L.LoadingDate) = YEAR(@ToDate);
                                                                                                                       
 
                                                                                                                                                                                                                                                              

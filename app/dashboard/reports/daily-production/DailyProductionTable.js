@@ -332,24 +332,27 @@ export default function DailyProductionTable({ data, date }) {
     const sr_YTD = coalTotal_YTD > 0 ? (wasteTotal_YTD / coalTotal_YTD).toFixed(2) : "0.00";
 
     return (
-        <div>
+        <div className="w-full print:overflow-visible print:block">
             {/* Headers are mostly handled by page layout now, but the internal report sheet headers remain */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', width: '100%', position: 'relative', minHeight: '110px' }}>
-                {/* Logo - Positioned left */}
-                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
-                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '96px', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', width: '100%' }}>
+                {/* Logo - Left */}
+                <div style={{ flex: '0 0 100px', display: 'flex', justifyContent: 'flex-start' }}>
+                    <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '70px', objectFit: 'contain' }} />
                 </div>
 
                 {/* Text Block - Centered */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                    <h1 style={{ fontSize: '1.5rem', lineHeight: '2rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.025em' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
-                    <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
-                    <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>DAILY PRODUCTION REPORT</h3>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 0.5rem' }}>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '4px' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
+                    <h2 style={{ fontSize: '1.05rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '6px' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1d4ed8', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '8px', textDecoration: 'underline', textUnderlineOffset: '4px' }}>DAILY PRODUCTION REPORT</h3>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', fontWeight: 'bold' }}>
                         <div>Date: {formatDate(date)}</div>
                     </div>
                 </div>
+
+                {/* Empty Spacer - Right (for symmetry to center the text exactly) */}
+                <div style={{ flex: '0 0 100px' }}></div>
             </div>
 
             {/* SECTION 1 */}
@@ -582,9 +585,9 @@ export default function DailyProductionTable({ data, date }) {
             </div>
 
             {/* F & G */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-2 gap-4 mt-4 print:block print:space-y-4">
                 {/* SECTION 4. BLASTING */}
-                <div>
+                <div className="print:break-inside-avoid print:mb-4">
                     <h3 className={styles.sectionHeader}>4. BLASTING DETAILS</h3>
                     <table className={styles.table}>
                         <thead>
@@ -605,9 +608,9 @@ export default function DailyProductionTable({ data, date }) {
                     </table>
                 </div>
                 {/* G. REHANDLING */}
-                <div>
+                <div className="print:break-inside-avoid print:mb-4">
                     {/* 5. CRUSHER COAL QTY. */}
-                    <div className="mb-8">
+                    <div className="mb-8 print:mb-4">
                         <h3 className={styles.sectionHeader}>5. CRUSHER COAL QTY.</h3>
 
                         <table className={`${styles.table} w-full text-center border-collapse mt-2`}>
@@ -639,12 +642,12 @@ export default function DailyProductionTable({ data, date }) {
 
 
             {/* GRID FOR SECTIONS 7, 8, 9, 10 (2x2 Grid) */}
-            <div className="grid grid-cols-2 gap-8 mt-8">
+            <div className="grid grid-cols-2 gap-8 mt-8 print:block print:space-y-4 print:mt-4">
 
 
 
                 {/* 6. SMASL QUANTITY (FTD) */}
-                <div>
+                <div className="print:break-inside-avoid print:mb-4">
                     <h3 className={styles.sectionHeader}>6. SMASL Quantity (FTD)</h3>
                     <table className={`${styles.table} w-full text-center`}>
                         <thead>
@@ -661,7 +664,7 @@ export default function DailyProductionTable({ data, date }) {
                 </div>
 
                 {/* 7. INPIT DUMPING */}
-                <div>
+                <div className="print:break-inside-avoid print:mb-4">
                     <h3 className={styles.sectionHeader}>7. INPIT DUMPING</h3>
                     <table className={`${styles.table} w-full text-center`}>
                         <thead>
@@ -686,7 +689,7 @@ export default function DailyProductionTable({ data, date }) {
                 </div>
 
                 {/* 8. WP-3 EXCAVATION DETAIL */}
-                <div>
+                <div className="print:break-inside-avoid print:mb-4">
                     <h3 className={styles.sectionHeader}>8. WP-3 EXCAVATION DETAIL</h3>
                     <table className={`${styles.table} w-full text-center`}>
                         <thead>

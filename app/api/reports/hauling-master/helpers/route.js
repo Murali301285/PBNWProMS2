@@ -26,7 +26,7 @@ export async function GET() {
             // But to be consistent, let's just fetch all or filter by what we know.
             // Let's keep the previous logic for Models but using ActivityId=4? TblEquipmentGroup might not have ActivityId.
             // Let's start with the specific request: Hauler -> ActivityId=4
-            haulerModels = await executeQuery('SELECT SlNo as id, Name as name FROM [Master].[TblEquipmentGroup] WHERE IsDelete = 0 ORDER BY Name');
+            haulerModels = await executeQuery("SELECT DISTINCT Model as id, Model as name FROM [Master].[TblEquipment] WHERE IsDelete = 0 AND ActivityId = 4 AND Model IS NOT NULL AND Model <> '' ORDER BY Model ASC");
         } catch (err) {
             console.error("Hauler Models Query Error:", err);
             haulerModels = [];

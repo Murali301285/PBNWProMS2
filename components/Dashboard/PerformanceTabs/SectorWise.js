@@ -7,7 +7,8 @@ import SuperTable from '../../Shared/SuperTable';
 const formatNumber = (num) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 
 const COLS = [
-    { header: 'Plant', accessor: 'Plant', align: 'left' },
+    { header: '#', accessor: 'SlNo', width: '50px', align: 'center', render: (val, row, globalIndex) => globalIndex },
+    { header: 'Sector', accessor: 'Plant', align: 'left' },
     { header: 'OB Qty. (BCM)', accessor: 'OBQty', align: 'right', render: (val) => formatNumber(val || 0) },
     { header: 'Coal Qty. (MT)', accessor: 'CoalQty', align: 'right', render: (val) => formatNumber(val || 0) }
 ];

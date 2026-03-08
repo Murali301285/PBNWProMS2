@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }) {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
+        <div className="print:block" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
             <div className="no-print">
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             </div>
@@ -50,11 +50,11 @@ export default function DashboardLayout({ children }) {
                 display: 'flex',
                 flexDirection: 'column',
                 minWidth: 0,
-            }} className="print:ml-0 print:m-0">
+            }} className="print:ml-0 print:m-0 print:block">
                 <div className="no-print">
                     <Header toggleSidebar={toggleSidebar} isSidebarOpen={!isSidebarCollapsed} />
                 </div>
-                <main style={{ flex: 1, padding: '.5rem', overflowY: 'auto' }}>
+                <main className="print:overflow-visible print:block" style={{ flex: 1, padding: '.5rem', overflowY: 'auto' }}>
                     {children}
                 </main>
                 <footer style={{

@@ -181,9 +181,24 @@
 
 /* Print Overrides */
 @media print {
-    .container {
-        padding: 0;
+    @page {
+        margin: 0;
+        size: auto;
+    }
+
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
         background-color: white;
+    }
+
+    .container {
+        padding: 10mm;
+        background-color: white;
+        min-height: auto !important;
     }
 
     .filterContainer,
@@ -195,6 +210,15 @@
     .reportSheet {
         box-shadow: none;
         padding: 0;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 100% !important;
+    }
+
+    .tableContainer {
+        overflow-x: visible;
+        width: 100%;
+        page-break-inside: avoid;
     }
 
     .table,

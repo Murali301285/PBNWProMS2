@@ -26,7 +26,7 @@ export async function GET() {
             // ActivityId 4 is usually Hauling. So Loading Master includes anything NOT Hauling (Loaders).
             // So for loadingMachines, fetching distinct ActivityId used by these machines would be best, but ActivityId 3 is standard for Loading.
             executeQuery('SELECT SlNo as id, EquipmentName as name FROM [Master].[TblEquipment] WHERE IsActive=1 AND IsDelete=0 AND ActivityId=3 ORDER BY EquipmentName'),
-            executeQuery('SELECT SlNo as id, Name as name FROM [Master].[TblEquipmentGroup] WHERE IsActive=1 AND IsDelete=0 ORDER BY Name'),
+            executeQuery("SELECT DISTINCT Model as id, Model as name FROM [Master].[TblEquipment] WHERE IsActive=1 AND IsDelete=0 AND ActivityId=3 AND Model IS NOT NULL AND Model <> '' ORDER BY Model ASC"),
             executeQuery('SELECT SlNo as id, Name as name FROM [Master].[TblRelay] WHERE IsActive=1 AND IsDelete=0 ORDER BY Name'),
             executeQuery('SELECT SlNo as id, SectorName as name FROM [Master].[TblSector] WHERE IsActive=1 AND IsDelete=0 ORDER BY SectorName'),
             executeQuery('SELECT SlNo as id, Name as name FROM [Master].[TblPatch] WHERE IsActive=1 AND IsDelete=0 ORDER BY Name'),

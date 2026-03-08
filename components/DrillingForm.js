@@ -9,6 +9,7 @@ import TransactionTable from '@/components/TransactionTable';
 import { TRANSACTION_CONFIG } from '@/lib/transactionConfig';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'sonner';
+import Select, { components } from 'react-select';
 import css from './DrillingForm.module.css';
 
 // Styled similar to other Transaction Forms
@@ -16,6 +17,8 @@ import css from './DrillingForm.module.css';
 export default function DrillingForm({ mode = 'create', initialData = null }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    const [drillingPatches, setDrillingPatches] = useState([]);
 
     // Masters Data
     const [masters, setMasters] = useState({
@@ -70,7 +73,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
             setLoading(true);
             try {
                 // Parallel Fetch for Speed
-                const [eqRes, matRes, locRes, secRes, scRes, strRes, dsRes, drRemRes, unitRes, daRes] = await Promise.all([
+                const [eqRes, matRes, locRes, secRes, scRes, strRes, dsRes, drRemRes, unitRes, daRes, dpRes] = await Promise.all([
                     fetch('/api/master/equipment'),
                     fetch('/api/master/material'),
                     fetch('/api/transaction/drilling/locations'),
@@ -80,7 +83,8 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                     fetch('/api/master/depth-slab'),
                     fetch('/api/master/drilling-remarks'),
                     fetch('/api/master/unit'),
-                    fetch('/api/master/drilling-agency')
+                    fetch('/api/master/drilling-agency'),
+                    fetch('/api/transaction/drilling/dropdown-list')
                 ]);
 
                 const eqData = await eqRes.json();
@@ -93,6 +97,7 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 const drRemData = await drRemRes.json();
                 const unitData = await unitRes.json();
                 const daData = await daRes.json();
+                const dpData = await dpRes.json();
 
                 // Helper to safely get array from response (handle direct array or { data: [] })
                 const getArr = (res) => Array.isArray(res) ? res : (res.data || []);
@@ -110,6 +115,8 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                     units: getArr(unitData),
                     drillingAgency: getArr(daData).filter(i => i.IsActive && !i.IsDelete)
                 });
+
+                if (dpData.success) setDrillingPatches(dpData.data);
 
                 // Set Initial Data if Edit Mode
                 if (mode === 'edit' && initialData) {
@@ -757,8 +764,88 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                 {/* Date: C1 */}
                 {renderField('Date', 'Date of Drilling', 'date', true, { max: today, colSpan: 1 })}
 
-                {/* Patch: C2 */}
-                {renderField('DrillingPatchId', 'Drilling Patch ID', 'text', true, { colSpan: 1 })}
+                {/* Patch: C2-C3 (Span 2 to accommodate rich dropdown) */}
+                <div className={css.fieldGroup} style={{ gridColumn: 'span 2' }}>
+                    <label className={css.label}>
+                        Drilling Patch ID<span className={css.required}>*</span>
+                        {errors.DrillingPatchId && <span className={css.errorLabel}>value is missing</span>}
+                    </label>
+                    <div className={errors.DrillingPatchId ? css.errorInput : ''} style={{ borderRadius: 4, border: errors.DrillingPatchId ? '1px solid #ef4444' : 'none' }}>
+                        <Select
+                            instanceId="drilling-patch-select"
+                            options={drillingPatches.map(dp => ({ ...dp, value: dp.DrillingPatchId, label: dp.DrillingPatchId }))}
+                            value={drillingPatches.find(dp => dp.DrillingPatchId === formData.DrillingPatchId) ? { ...drillingPatches.find(dp => dp.DrillingPatchId === formData.DrillingPatchId), value: formData.DrillingPatchId, label: formData.DrillingPatchId } : null}
+                            onChange={(option, actionMeta) => {
+                                if (actionMeta.action === 'select-option' || actionMeta.action === 'clear') {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        DrillingPatchId: option ? option.DrillingPatchId : ''
+                                    }));
+                                    if (errors.DrillingPatchId) {
+                                        setErrors(prev => { const e = { ...prev }; delete e.DrillingPatchId; return e; });
+                                    }
+                                }
+                            }}
+                            openMenuOnFocus={true}
+                            openMenuOnClick={true}
+                            placeholder="Search Patch ID..."
+                            isClearable
+                            styles={{
+                                control: (base) => ({
+                                    ...base,
+                                    height: '30px',
+                                    minHeight: '30px',
+                                    fontSize: '13px',
+                                    border: '1px solid #cbd5e1',
+                                    boxShadow: 'none',
+                                    '&:hover': { border: '1px solid #94a3b8' }
+                                }),
+                                menu: (base) => ({
+                                    ...base,
+                                    width: '600px', // Extra wide to fit the 12 columns
+                                    zIndex: 9999
+                                }),
+                                option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isFocused ? '#f1f5f9' : 'white',
+                                    color: '#0f172a',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    borderBottom: '1px solid #e2e8f0'
+                                })
+                            }}
+                            components={{
+                                Option: (props) => {
+                                    const { data } = props;
+                                    return (
+                                        <components.Option {...props}>
+                                            <div className={css.patchOption}>
+                                                <div className={css.patchOptionHeader}>
+                                                    <strong>{data.DrillingPatchId}</strong>
+                                                </div>
+                                                <div className={css.patchOptionGrid}>
+                                                    <div className={css.poItem}><span>Agency:</span> {data.Agency}</div>
+                                                    <div className={css.poItem}><span>Equip:</span> {data.Equipment}</div>
+                                                    <div className={css.poItem}><span>Mat:</span> {data.Material}</div>
+                                                    <div className={css.poItem}><span>Loc:</span> {data.Location}</div>
+                                                    <div className={css.poItem}><span>Sec:</span> {data.Sector}</div>
+                                                    <div className={css.poItem}><span>Scale:</span> {data.Scale}</div>
+                                                    <div className={css.poItem}><span>Strata:</span> {data.Strata}</div>
+                                                    <div className={css.poItem}><span>Depth:</span> {data.DepthSlab}</div>
+                                                    <div className={css.poItem}><span>Holes:</span> {data.NoofHoles}</div>
+                                                    <div className={css.poItem}><span>Meters:</span> {data.TotalMeters}</div>
+                                                    <div className={css.poItem}><span>Spacing:</span> {data.Spacing}</div>
+                                                    <div className={css.poItem}><span>Burden:</span> {data.Burden}</div>
+                                                    <div className={css.poItem} style={{ gridColumn: 'span 2' }}><span>Created On:</span> {data.CreatedOn}</div>
+                                                </div>
+                                            </div>
+                                        </components.Option>
+                                    );
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
 
                 {/* Breaks not needed if we manage spans correctly, but dividers help visual separation */}
 

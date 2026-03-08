@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, RotateCcw, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import SearchableSelect from '@/components/SearchableSelect';
+import Select, { components } from 'react-select';
 import TransactionTable from '@/components/TransactionTable';
 import { TRANSACTION_CONFIG } from '@/lib/transactionConfig';
 import css from './BlastingForm.module.css';
@@ -248,7 +249,7 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
         if (initialData) {
             setFormData({
                 Date: initialData.Date ? new Date(initialData.Date).toISOString().split('T')[0] : '',
-                BlastingPatchId: initialData.BlastingPatchId || initialData.PatchId || '', // Check prop name
+                BlastingPatchId: initialData.BlastingPatchId || initialData.PatchId || '',
                 NoofHoles: initialData.NoofHoles || initialData.HolesCharged || '',
                 AverageDepth: initialData.AverageDepth || '',
                 SMESupplierId: initialData.SMESupplierId || '',
@@ -265,35 +266,33 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                 setAccessories(initialData.accessories);
             }
         }
-        // Auto focus handled by context now or specific logic
-    }, [initialData]); // Removed formData.Date dependency to avoid loop with smart context
+    }, [initialData]);
 
-    // Lookup Patch ID on Edit Load
-    useEffect(() => {
-        if (mode === 'update' && initialData?.BlastingPatchId) {
-            // Handle lookup if needed, usually data is already there in initialData
-        }
-    }, [mode, initialData]);
-
-    /* Removed old fetchRecentData definition to avoid confusion */
+    const [drillingPatches, setDrillingPatches] = useState([]);
 
     const loadMasters = async () => {
         try {
-            const sRes = await fetch('/api/master/sme-supplier'); // Try specific first
+            const sRes = await fetch('/api/master/sme-supplier');
             if (sRes.ok) {
                 const sData = await sRes.json();
                 if (sData.data) {
                     setSuppliers(sData.data.map(s => ({ id: s.SlNo, name: s.Name })));
-                    return;
+                }
+            } else {
+                const lRes = await fetch('/api/master/list?table=TblSMESupplier');
+                const lData = await lRes.json();
+                if (lData.data) {
+                    setSuppliers(lData.data.map(s => ({ id: s.SlNo, name: s.Name })));
                 }
             }
 
-            // Fallback
-            const lRes = await fetch('/api/master/list?table=TblSMESupplier');
-            const lData = await lRes.json();
-            if (lData.data) {
-                setSuppliers(lData.data.map(s => ({ id: s.SlNo, name: s.Name })));
+            // Load rich Drilling patches
+            const dRes = await fetch('/api/transaction/drilling/dropdown-list');
+            const dData = await dRes.json();
+            if (dData.success) {
+                setDrillingPatches(dData.data);
             }
+
         } catch (err) {
             console.error(err);
         }
@@ -518,20 +517,100 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                 </div>
 
                 {/* Patch ID: C2 */}
-                {/* Patch ID: Col 2 */}
-                <div className={css.fieldGroup} style={{ gridColumn: '2 / span 1' }}>
+                {/* Patch ID: Col 2-3 (Span 2) */}
+                <div className={css.fieldGroup} style={{ gridColumn: '2 / span 2' }}>
                     <label className={css.label}>
-                        Blasting Patch ID
+                        Blasting Patch ID<span className={css.required}>*</span>
                         {errors.BlastingPatchId && <span className={css.errorLabel}>value is missing</span>}
                     </label>
-                    <input
-                        className={`${css.input} ${errors.BlastingPatchId ? css.errorInput : ''}`}
-                        value={formData.BlastingPatchId}
-                        onChange={e => handleChange('BlastingPatchId', e.target.value)}
-                        onBlur={handlePatchIdBlur}
-                        placeholder="Enter Patch ID"
-                        onKeyDown={(e) => handleKeyDown(e, 1)}
-                    />
+                    <div className={errors.BlastingPatchId ? css.errorInput : ''} style={{ borderRadius: 4, border: errors.BlastingPatchId ? '1px solid #ef4444' : 'none' }}>
+                        <Select
+                            instanceId="blasting-patch-select"
+                            options={drillingPatches.map(dp => ({ ...dp, value: dp.DrillingPatchId, label: dp.DrillingPatchId }))}
+                            value={drillingPatches.find(dp => dp.DrillingPatchId === formData.BlastingPatchId) ? { ...drillingPatches.find(dp => dp.DrillingPatchId === formData.BlastingPatchId), value: formData.BlastingPatchId, label: formData.BlastingPatchId } : null}
+                            onChange={(option, actionMeta) => {
+                                if (actionMeta.action === 'select-option' || actionMeta.action === 'clear') {
+                                    if (option) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            BlastingPatchId: option.DrillingPatchId,
+                                            NoofHoles: option.NoofHoles || '',
+                                            AverageDepth: option.AverageDepth ? Number(option.AverageDepth).toFixed(2) : ''
+                                        }));
+                                        if (errors.BlastingPatchId) {
+                                            setErrors(prev => { const e = { ...prev }; delete e.BlastingPatchId; return e; });
+                                        }
+                                        setTimeout(() => {
+                                            if (smeSupplierRef.current) smeSupplierRef.current.focus();
+                                        }, 10);
+                                    } else {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            BlastingPatchId: '',
+                                            NoofHoles: '',
+                                            AverageDepth: ''
+                                        }));
+                                    }
+                                }
+                            }}
+                            openMenuOnFocus={true}
+                            openMenuOnClick={true}
+                            placeholder="Search Patch ID..."
+                            isClearable
+                            styles={{
+                                control: (base) => ({
+                                    ...base,
+                                    height: '38px',
+                                    minHeight: '38px',
+                                    border: '1px solid #cbd5e1',
+                                    boxShadow: 'none',
+                                    '&:hover': { border: '1px solid #94a3b8' }
+                                }),
+                                menu: (base) => ({
+                                    ...base,
+                                    width: '600px', // Extra wide to fit the 12 columns
+                                    zIndex: 9999
+                                }),
+                                option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isFocused ? '#f1f5f9' : 'white',
+                                    color: '#0f172a',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    borderBottom: '1px solid #e2e8f0'
+                                })
+                            }}
+                            components={{
+                                Option: (props) => {
+                                    const { data } = props;
+                                    return (
+                                        <components.Option {...props}>
+                                            <div className={css.patchOption}>
+                                                <div className={css.patchOptionHeader}>
+                                                    <strong>{data.DrillingPatchId}</strong>
+                                                </div>
+                                                <div className={css.patchOptionGrid}>
+                                                    <div className={css.poItem}><span>Agency:</span> {data.Agency}</div>
+                                                    <div className={css.poItem}><span>Equip:</span> {data.Equipment}</div>
+                                                    <div className={css.poItem}><span>Mat:</span> {data.Material}</div>
+                                                    <div className={css.poItem}><span>Loc:</span> {data.Location}</div>
+                                                    <div className={css.poItem}><span>Sec:</span> {data.Sector}</div>
+                                                    <div className={css.poItem}><span>Scale:</span> {data.Scale}</div>
+                                                    <div className={css.poItem}><span>Strata:</span> {data.Strata}</div>
+                                                    <div className={css.poItem}><span>Depth:</span> {data.DepthSlab}</div>
+                                                    <div className={css.poItem}><span>Holes:</span> {data.NoofHoles}</div>
+                                                    <div className={css.poItem}><span>Meters:</span> {data.TotalMeters}</div>
+                                                    <div className={css.poItem}><span>Spacing:</span> {data.Spacing}</div>
+                                                    <div className={css.poItem}><span>Burden:</span> {data.Burden}</div>
+                                                    <div className={css.poItem} style={{ gridColumn: 'span 2' }}><span>Created On:</span> {data.CreatedOn}</div>
+                                                </div>
+                                            </div>
+                                        </components.Option>
+                                    );
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
 
 

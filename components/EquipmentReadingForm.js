@@ -401,7 +401,18 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 
     // --- 3. Meter Reading Fetch ---
     useEffect(() => {
-        if (isEdit || !formData.EquipmentId) return;
+        if (isEdit) return;
+
+        if (!formData.EquipmentId) {
+            setFormData(prev => ({
+                ...prev,
+                OHMR: '',
+                OKMR: '',
+                NetHMR: (prev.CHMR ? '' : prev.NetHMR), // Also clear net hmr/kmr if they depended on it
+                NetKMR: (prev.CKMR ? '' : prev.NetKMR)
+            }));
+            return;
+        }
 
         const loadReadings = async () => {
             try {
@@ -1183,6 +1194,10 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                     config={TRANSACTION_CONFIG['equipment-reading']}
                     date={formData.Date}
                     shiftId={formData.ShiftId}
+                    shiftInchargeId={formData.ShiftInchargeId}
+                    midScaleInchargeId={formData.MidScaleInchargeId}
+                    activityId={formData.ActivityId}
+                    equipmentId={formData.EquipmentId}
                     userRole={userRole}
                     title="Recent Transactions"
                     refreshTrigger={refreshTrigger}
@@ -1193,7 +1208,7 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
 }
 
 // Sub-component for auto-fetching history based on context
-function RecentHistory({ config, date, shiftId, userRole, title, refreshTrigger }) {
+function RecentHistory({ config, date, shiftId, shiftInchargeId, midScaleInchargeId, activityId, equipmentId, userRole, title, refreshTrigger }) {
     const [data, setData] = useState([]);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -1220,6 +1235,11 @@ function RecentHistory({ config, date, shiftId, userRole, title, refreshTrigger 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     Date: date,
+                    shiftId,
+                    shiftInchargeId,
+                    midScaleInchargeId,
+                    activityId,
+                    equipmentId,
                     skip,
                     take
                 })
@@ -1241,11 +1261,11 @@ function RecentHistory({ config, date, shiftId, userRole, title, refreshTrigger 
         } finally {
             setLoading(false);
         }
-    }, [date, page]);
+    }, [date, page, shiftId, shiftInchargeId, midScaleInchargeId, activityId, equipmentId]);
 
     useEffect(() => {
         fetchHistory(false);
-    }, [date, shiftId, refreshTrigger]); // Reset on Date/Shift change OR Trigger
+    }, [date, shiftId, shiftInchargeId, midScaleInchargeId, activityId, equipmentId, refreshTrigger]); // Reset when ANY context changes OR Trigger
 
     return (
         <>

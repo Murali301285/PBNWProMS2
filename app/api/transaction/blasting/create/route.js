@@ -57,6 +57,10 @@ export async function POST(request) {
             `;
             // Using CreatedBy = UserName mapped from body
 
+            console.log('\n--- CREATING NEW BLASTING ENTRY ---');
+            console.log('REQUEST BODY:', JSON.stringify(body, null, 2));
+            console.log('SQL QUERY (Parent):', insertParent);
+
             const parentRes = await transaction.request().query(insertParent);
             const blastingId = parentRes.recordset[0].SlNo;
 
@@ -80,6 +84,7 @@ export async function POST(request) {
                             0
                         )
                     `;
+                    console.log('SQL QUERY (Child Accessory):', insertChild);
                     await transaction.request().query(insertChild);
                 }
             }

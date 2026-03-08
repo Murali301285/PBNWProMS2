@@ -175,7 +175,7 @@ export default function EquipmentPerformanceReport() {
         }
     };
 
-    
+
     const handleExportExcel = async (sortedData, visibleCols) => {
         try {
             const ExcelJS = await import('exceljs');
@@ -193,7 +193,7 @@ export default function EquipmentPerformanceReport() {
                 if (col.accessor === 'Equipment' || col.accessor === 'Operator') {
                     // Start with header length
                     let maxLen = col.header.length;
-                    
+
                     // Scan data rows for max length
                     sortedData.forEach((row, rIdx) => {
                         let val = row[col.accessor];
@@ -206,7 +206,7 @@ export default function EquipmentPerformanceReport() {
                             if (len > maxLen) maxLen = len;
                         }
                     });
-                    
+
                     // Add padding to max length (approx. 1.2 Excel units per character for Calibri 10)
                     // Cap at 60 so it doesn't get ridiculously wide
                     maxColWidths[col.accessor] = Math.min(Math.max((maxLen * 1.2) + 2, 20), 80);
@@ -216,17 +216,17 @@ export default function EquipmentPerformanceReport() {
             // 2. Custom width assignment based on column index and visibleCols
             ws.columns = Array(maxColSpan + 1).fill(0).map((_, i) => {
                 if (i === 0) return { width: 3 }; // Padding
-                
+
                 // Map i-1 to visibleCols array index
-                const colDef = visibleCols[i - 1]; 
+                const colDef = visibleCols[i - 1];
                 let w = 15;
                 if (colDef) {
-                     if (colDef.accessor === 'SlNo') w = 8;
-                     else if (colDef.accessor === 'Activity') w = 20;
-                     else if (colDef.accessor === 'PMS Code') w = 15; 
-                     else if (maxColWidths[colDef.accessor]) {
-                         w = maxColWidths[colDef.accessor];
-                     }
+                    if (colDef.accessor === 'SlNo') w = 8;
+                    else if (colDef.accessor === 'Activity') w = 20;
+                    else if (colDef.accessor === 'PMS Code') w = 15;
+                    else if (maxColWidths[colDef.accessor]) {
+                        w = maxColWidths[colDef.accessor];
+                    }
                 }
                 return { width: w };
             });
@@ -238,7 +238,7 @@ export default function EquipmentPerformanceReport() {
             if (eqIdx !== -1) {
                 freezeCol = eqIdx + 2; // +1 for 1-based, +1 for padding column A
             }
-            
+
             ws.views = [
                 { state: 'frozen', xSplit: freezeCol, ySplit: 8 } // Freeze up to Equ Name, and freeze all headers including Sub Headers (row 8)
             ];
@@ -297,7 +297,7 @@ export default function EquipmentPerformanceReport() {
             setCell(ws.getCell('B4'), "Equipment Performance Report", { bold: true, align: 'center', border: false, underline: true, fontSize: 12 });
 
             ws.mergeCells(`B5:${endColLetter}5`);
-            
+
             let formattedDate = date;
             if (formattedDate && formattedDate.includes('-')) {
                 const [y, m, d] = formattedDate.split('-');
@@ -325,11 +325,11 @@ export default function EquipmentPerformanceReport() {
             // Render Dynamic Column Groups (Top Header Logic identical to UI)
             const rowGroup = ws.getRow(currentRowIdx);
             let colIndex = 2; // Start from B
-            
+
             // Apply grouping headers exactly as defined in local UI columnGroups
             // For export visibility, we trace how many visible cols belong to each group.
             // Simplified: Write raw title across matching visible columns count.
-            
+
             // To ensure matching, let's just lay down the active visible cols sub headers and top headers linearly.
             let currentGroupTitle = '';
             let currentGroupStartCol = colIndex;
@@ -338,14 +338,14 @@ export default function EquipmentPerformanceReport() {
             visibleCols.forEach((col, idx) => {
                 // Find matching group for this column logically based on UI groups
                 let groupForCol = columnGroups.find(g => {
-                   // This is complex to perfectly map without the exact offset logic, 
-                   // Let's use a simpler string matching based on the column headers
-                   if (col.header.includes('FTD')) return g.title === 'FTD';
-                   if (col.header.includes('MTD')) return g.title === 'MTD';
-                   if (col.accessor.startsWith('Shift A')) return g.title === 'SHIFT A';
-                   if (col.accessor.startsWith('Shift B')) return g.title === 'SHIFT B';
-                   if (col.accessor.startsWith('Shift C')) return g.title === 'SHIFT C';
-                   return g.title === '';
+                    // This is complex to perfectly map without the exact offset logic, 
+                    // Let's use a simpler string matching based on the column headers
+                    if (col.accessor.startsWith('FTD')) return g.title === 'FTD';
+                    if (col.accessor.startsWith('MTD')) return g.title === 'MTD';
+                    if (col.accessor.startsWith('Shift A')) return g.title === 'SHIFT A';
+                    if (col.accessor.startsWith('Shift B')) return g.title === 'SHIFT B';
+                    if (col.accessor.startsWith('Shift C')) return g.title === 'SHIFT C';
+                    return g.title === '';
                 }) || { title: '' };
 
                 if (groupForCol.title !== currentGroupTitle) {
@@ -370,11 +370,11 @@ export default function EquipmentPerformanceReport() {
                 const startL = ws.getColumn(currentGroupStartCol).letter;
                 const endL = ws.getColumn(currentGroupStartCol + currentGroupSpan - 1).letter;
                 if (currentGroupSpan > 1 && startL !== endL) {
-                    try { ws.mergeCells(`${startL}${currentRowIdx}:${endL}${currentRowIdx}`); } catch(e){}
+                    try { ws.mergeCells(`${startL}${currentRowIdx}:${endL}${currentRowIdx}`); } catch (e) { }
                 }
                 setCell(ws.getCell(`${startL}${currentRowIdx}`), currentGroupTitle, { bold: true, bg: 'FFE5E7EB' });
             }
-            
+
             rowGroup.height = 20;
             currentRowIdx++;
 
@@ -383,16 +383,16 @@ export default function EquipmentPerformanceReport() {
             visibleCols.forEach((col, i) => {
                 const cell = rowSub.getCell(i + 2);
                 setCell(cell, col.header, { bold: true, bg: 'FFBFDBFE' });
-                
+
                 // If this column belongs to the empty group (no parent header)
                 // We should merge it upwards so it looks like one tall header
                 const parentGroup = columnGroups.find(g => {
-                   if (col.header.includes('FTD')) return g.title === 'FTD';
-                   if (col.header.includes('MTD')) return g.title === 'MTD';
-                   if (col.accessor.startsWith('Shift A')) return g.title === 'SHIFT A';
-                   if (col.accessor.startsWith('Shift B')) return g.title === 'SHIFT B';
-                   if (col.accessor.startsWith('Shift C')) return g.title === 'SHIFT C';
-                   return g.title === '';
+                    if (col.accessor.startsWith('FTD')) return g.title === 'FTD';
+                    if (col.accessor.startsWith('MTD')) return g.title === 'MTD';
+                    if (col.accessor.startsWith('Shift A')) return g.title === 'SHIFT A';
+                    if (col.accessor.startsWith('Shift B')) return g.title === 'SHIFT B';
+                    if (col.accessor.startsWith('Shift C')) return g.title === 'SHIFT C';
+                    return g.title === '';
                 }) || { title: '' };
 
                 if (parentGroup.title === '') {
@@ -403,7 +403,7 @@ export default function EquipmentPerformanceReport() {
                         ws.mergeCells(`${colLetter}${currentRowIdx - 1}:${colLetter}${currentRowIdx}`);
                         // Set the value in the merged cell
                         setCell(ws.getCell(`${colLetter}${currentRowIdx - 1}`), col.header, { bold: true, bg: 'FFE5E7EB' }); // Use the parent header color for continuity
-                    } catch(e) {}
+                    } catch (e) { }
                 }
             });
             rowSub.height = 22;
@@ -428,16 +428,16 @@ export default function EquipmentPerformanceReport() {
                         nFmt = '#,##0.00';
                         if (val % 1 === 0) nFmt = '#,##0';
                         if (val === 0) nFmt = '0';
-                        
+
                         // Remove comma formatting for Cost Center and Prodsys Code
                         if (col.accessor === 'CostCenter' || col.accessor === 'PMS Code') {
-                            nFmt = '0'; 
+                            nFmt = '0';
                         }
                     }
 
-                    setCell(dataRow.getCell(cIdx + 2), val === null || val === undefined ? '-' : val, { 
-                        numFmt: nFmt, 
-                        align: (cIdx === 1 || cIdx === 2 || cIdx === 3) ? 'left' : 'center' 
+                    setCell(dataRow.getCell(cIdx + 2), val === null || val === undefined ? '-' : val, {
+                        numFmt: nFmt,
+                        align: (cIdx === 1 || cIdx === 2 || cIdx === 3) ? 'left' : 'center'
                     });
                 });
                 dataRow.height = 18;

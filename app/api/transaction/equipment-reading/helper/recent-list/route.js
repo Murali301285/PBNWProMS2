@@ -6,7 +6,15 @@ import { authenticateUser } from '@/lib/auth';
 export async function POST(req) {
     try {
         const user = await authenticateUser(req);
-        const { Date: LoadDate, skip = 0, take = 50 } = await req.json(); // Only Date filter usually for "Recent"
+        const {
+            Date: LoadDate,
+            shiftId,
+            shiftInchargeId,
+            midScaleInchargeId,
+            activityId,
+            equipmentId,
+            skip = 0, take = 50
+        } = await req.json();
 
         const pool = await getDbConnection();
         const request = pool.request();
@@ -20,14 +28,14 @@ export async function POST(req) {
                 incL.OperatorName as ShiftInchargeName,
                 incM.OperatorName as MidScaleInchargeName,
                 
-                -- Operator/Driver (Multiple) with Fallback
-                COALESCE((SELECT STUFF((SELECT ', ' + O.OperatorName + ' (' + CAST(O.OperatorId AS VARCHAR) + ')' 
-                 FROM [Trans].[TblEquipmentReadingOperator] ERO 
-                 JOIN [Master].[TblOperator] O ON ERO.OperatorId = O.SlNo 
-                 WHERE ERO.EquipmentReadingId = T.SlNo 
-                 FOR XML PATH('')), 1, 2, '')), OMain.OperatorName + ' (' + CAST(OMain.OperatorId AS VARCHAR) + ')') AS OperatorName,
-                
-                -- Master Names (Fixing Aliases)
+               -- Operator/Driver (Multiple) with Fallback
+               COALESCE((SELECT STUFF((SELECT ', ' + O.OperatorName + ' (' + CAST(O.OperatorId AS VARCHAR) + ')' 
+                FROM [Trans].[TblEquipmentReadingOperator] ERO 
+                JOIN [Master].[TblOperator] O ON ERO.OperatorId = O.SlNo 
+                WHERE ERO.EquipmentReadingId = T.SlNo 
+                FOR XML PATH('')), 1, 2, '')), OMain.OperatorName + ' (' + CAST(OMain.OperatorId AS VARCHAR) + ')') AS OperatorName,
+               
+                -- Master Names
                 r.Name as RelayName,
                 e.EquipmentName,
                 a.Name as ActivityName,
@@ -62,8 +70,6 @@ export async function POST(req) {
             LEFT JOIN [Master].[TblOperator] incL ON T.ShiftInchargeId = incL.SlNo
             LEFT JOIN [Master].[TblOperator] incM ON T.MidScaleInchargeId = incM.SlNo
             LEFT JOIN [Master].[TblOperator] OMain ON T.OperatorId = OMain.SlNo
-
-            -- LEFT JOIN [Master].[TblOperator] op ON T.OperatorId = op.SlNo (Removed for Multi-Select)
             
             LEFT JOIN [Master].[TblRelay] r ON T.RelayId = r.SlNo
             LEFT JOIN [Master].[TblEquipment] e ON T.EquipmentId = e.SlNo
@@ -80,18 +86,32 @@ export async function POST(req) {
             WHERE T.IsDelete = 0
         `;
 
-        // ... filters ...
+        // --- Dynamic Filters ---
 
         if (LoadDate) {
             query += ` AND T.Date = @LoadDate`;
             request.input('LoadDate', LoadDate);
         }
-
-        // User scoping removed
-        // if (user) {
-        //     query += ` AND (T.CreatedBy = @UserId OR T.UpdatedBy = @UserId)`;
-        //     request.input('UserId', user.id);
-        // }
+        if (shiftId) {
+            query += ` AND T.ShiftId = @shiftId`;
+            request.input('shiftId', shiftId);
+        }
+        if (shiftInchargeId) {
+            query += ` AND T.ShiftInchargeId = @shiftInchargeId`;
+            request.input('shiftInchargeId', shiftInchargeId);
+        }
+        if (midScaleInchargeId) {
+            query += ` AND T.MidScaleInchargeId = @midScaleInchargeId`;
+            request.input('midScaleInchargeId', midScaleInchargeId);
+        }
+        if (activityId) {
+            query += ` AND T.ActivityId = @activityId`;
+            request.input('activityId', activityId);
+        }
+        if (equipmentId) {
+            query += ` AND T.EquipmentId = @equipmentId`;
+            request.input('equipmentId', equipmentId);
+        }
 
         query += ` ORDER BY T.CreatedDate DESC OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY`;
         request.input('skip', skip);

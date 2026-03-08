@@ -24,6 +24,28 @@ export default function PerformanceSection({
     // Local Filters
     const [filters, setFilters] = useState({ model: '', capacity: '', shiftId: '' });
 
+    // Local Filter Options
+    const [localFilterOptions, setLocalFilterOptions] = useState({ models: [], capacities: [] });
+
+    // Fetch localized Models and Capacities
+    useEffect(() => {
+        const fetchLocalFilters = async () => {
+            try {
+                const res = await fetch(`/api/dashboard/performance/filters?type=${type}`);
+                const json = await res.json();
+                if (json.success) {
+                    setLocalFilterOptions({
+                        models: json.models,
+                        capacities: json.capacities
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching localized filters:", err);
+            }
+        };
+        fetchLocalFilters();
+    }, [type]);
+
     // Fetch Data
     const fetchData = async () => {
         setLoading(true);
@@ -118,7 +140,7 @@ export default function PerformanceSection({
 
                     <div style={{ width: '150px' }}>
                         <SearchableSelect
-                            options={filterOptions.models || []}
+                            options={localFilterOptions.models || []}
                             value={filters.model}
                             onChange={(val) => setFilters(prev => ({ ...prev, model: val }))}
                             placeholder="All Models"
@@ -132,7 +154,7 @@ export default function PerformanceSection({
                             style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', cursor: 'pointer' }}
                         >
                             <option value="">All Cap.</option>
-                            {filterOptions.capacities?.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                            {localFilterOptions.capacities?.map((c, i) => <option key={i} value={c}>{c}</option>)}
                         </select>
                     </div>
 

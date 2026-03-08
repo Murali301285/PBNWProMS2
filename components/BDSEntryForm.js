@@ -6,12 +6,14 @@ import { toast } from 'sonner';
 import { Save, RotateCcw, ArrowLeft, Loader2 } from 'lucide-react';
 import SearchableSelect from '@/components/SearchableSelect';
 import TransactionTable from '@/components/TransactionTable';
+import CreatableSelect from 'react-select/creatable';
 import css from './BlastingForm.module.css';
 
 export default function BDSEntryForm({ mode = 'create', initialData = null }) {
     const router = useRouter();
     const today = new Date().toISOString().split('T')[0];
 
+    // ... config
     const config = {
         table: '[Trans].[TblBDSEntry]',
         idField: 'SlNo',
@@ -48,8 +50,11 @@ export default function BDSEntryForm({ mode = 'create', initialData = null }) {
 
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const [user, setUser] = useState(null); // Added user state
-    const [userRole, setUserRole] = useState('User'); // Added userRole state fallback
+    const [user, setUser] = useState(null);
+    const [userRole, setUserRole] = useState('User');
+
+    const [vehicleOptions, setVehicleOptions] = useState([]);
+    const [loadingVehicles, setLoadingVehicles] = useState(false);
 
     useEffect(() => {
         // Fetch User
@@ -75,8 +80,8 @@ export default function BDSEntryForm({ mode = 'create', initialData = null }) {
             if (res.data) setSmeCategories(res.data); // data has {id, name}
         });
 
-
         fetchLastEntry();
+        fetchVehicles();
 
         if (mode === 'edit' && initialData) {
             setFormData({
@@ -138,6 +143,16 @@ export default function BDSEntryForm({ mode = 'create', initialData = null }) {
             const json = await res.json();
             if (json.success) setLastEntry(json.data);
         } catch (e) { }
+    };
+
+    const fetchVehicles = async () => {
+        setLoadingVehicles(true);
+        try {
+            const res = await fetch('/api/transaction/bds-entry/vehicle-list', { cache: 'no-store' });
+            const json = await res.json();
+            if (json.success) setVehicleOptions(json.data);
+        } catch (e) { console.error('Failed to fetch vehicles', e); }
+        finally { setLoadingVehicles(false); }
     };
 
     const fetchRecentData = async () => {
@@ -211,6 +226,7 @@ export default function BDSEntryForm({ mode = 'create', initialData = null }) {
 
             if (result.success) {
                 toast.success(result.message);
+                fetchVehicles(); // Dynamically update the vehicle list with any new entries
                 if (isUpdate) {
                     router.push('/dashboard/transaction/bds-entry');
                     router.refresh();
@@ -343,15 +359,34 @@ export default function BDSEntryForm({ mode = 'create', initialData = null }) {
                     {/* Vehicle No: R1 C4 */}
                     <div className={css.group} style={{ gridColumn: '4 / span 1' }}>
                         <label className={css.label}>Vehicle No <span style={{ color: 'red' }}>*</span></label>
-                        <input
-                            type="text"
-                            name="VehicleNo"
-                            value={formData.VehicleNo}
-                            onChange={handleChange}
-                            onKeyDown={(e) => handleKeyDown(e, 'VehicleNo')}
-                            className={css.input}
-                            style={errors.VehicleNo ? { borderColor: 'red' } : {}}
-                            placeholder="Enter Vehicle No"
+                        <CreatableSelect
+                            instanceId="bds-vehicle-select"
+                            options={vehicleOptions}
+                            value={formData.VehicleNo ? { label: formData.VehicleNo, value: formData.VehicleNo } : null}
+                            onChange={(option) => {
+                                setFormData(prev => ({ ...prev, VehicleNo: option ? option.value : '' }));
+                                if (errors.VehicleNo) setErrors(prev => { const e = { ...prev }; delete e.VehicleNo; return e; });
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setTimeout(() => handleKeyDown({ key: 'Enter', preventDefault: () => { } }, 'VehicleNo'), 50);
+                                }
+                            }}
+                            placeholder="Select or Type..."
+                            isClearable
+                            formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+                            isLoading={loadingVehicles}
+                            styles={{
+                                control: (base) => ({
+                                    ...base,
+                                    height: '30px',
+                                    minHeight: '30px',
+                                    fontSize: '13px',
+                                    border: errors.VehicleNo ? '1px solid red' : '1px solid #cbd5e1',
+                                    boxShadow: 'none',
+                                    '&:hover': { border: '1px solid #94a3b8' }
+                                })
+                            }}
                         />
                     </div>
 

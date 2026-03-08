@@ -87,7 +87,7 @@ export default function Performance() {
             case 'highest': return <HighestProduction data={dashboardData.highestProduction} />;
             case 'sector': return <SectorWise data={dashboardData.sectorWise} />;
             case 'operator': return <OperatorPerformance dateRange={dateRange} />;
-            case 'loading': return <LoadingPerformance data={dashboardData.loadingPerformance} />;
+            case 'loading': return <LoadingPerformance dateRange={dateRange} />;
             case 'coalOB': return <CoalOBProductionDetails data={dashboardData.coalOBProduction} />;
             case 'crusherProd': return <CrusherProductionDetails data={dashboardData.crusherProduction} />;
             default: return <HighestProduction data={dashboardData.highestProduction} />;

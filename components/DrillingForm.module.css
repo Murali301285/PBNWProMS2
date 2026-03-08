@@ -209,3 +209,36 @@
     color: #1e293b;
     margin-bottom: 10px;
 }
+
+/* --- Dropdown Grid Styles --- */
+.patchOption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.patchOptionHeader {
+    font-size: 13px;
+    color: #1e293b;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.patchOptionGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    font-size: 11px;
+    color: #475569;
+}
+
+.poItem {
+    display: flex;
+    gap: 4px;
+}
+
+.poItem span {
+    font-weight: 600;
+    color: #334155;
+}

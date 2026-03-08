@@ -274,3 +274,35 @@
     align-items: center;
     justify-content: center;
 }
+
+.patchOption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.patchOptionHeader {
+    font-size: 14px;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.patchOptionGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    font-size: 11px;
+    color: #475569;
+}
+
+.poItem {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.poItem span {
+    font-weight: 600;
+    color: #334155;
+    margin-right: 4px;
+}
