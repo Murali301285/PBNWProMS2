@@ -23,6 +23,9 @@ export async function GET(req, { params }) {
         `;
 
         const result = await pool.request().query(query);
+        if (slug === 'equipment' && result.recordset.length > 0) {
+            console.log('[DEBUG-SERVER] Equipment API PMSCode data type validation for first row:', result.recordset[0].PMSCode);
+        }
         return NextResponse.json(result.recordset);
 
     } catch (error) {

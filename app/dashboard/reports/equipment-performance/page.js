@@ -75,6 +75,7 @@ export default function EquipmentPerformanceReport() {
         { header: 'Prodsys Code', accessor: 'PMS Code', width: '100px' },
         { header: 'Cost Center', accessor: 'CostCenter', width: '100px' },
         { header: 'Equ. Name', accessor: 'Equipment', width: '180px' },
+        { header: 'Equ Model', accessor: 'EquModel', width: '150px' },
         { header: 'Activity', accessor: 'Activity', width: '150px' },
         { header: 'Operator', accessor: 'Operator', width: '150px' },
 
@@ -127,7 +128,7 @@ export default function EquipmentPerformanceReport() {
     ], []);
 
     const columnGroups = useMemo(() => [
-        { title: '', colSpan: 4 }, // SlNo to Equ. Name
+        { title: '', colSpan: 5 }, // SlNo to Equ Model
         { title: '', colSpan: 2 }, // Activity, Operator (Unfrozen)
         { title: 'SHIFT A', colSpan: 6 },
         { title: 'SHIFT B', colSpan: 6 },
@@ -231,16 +232,15 @@ export default function EquipmentPerformanceReport() {
                 return { width: w };
             });
 
-            // Freeze columns up to Equ. Name (which is typically column 4 in visibleCols -> E in Excel)
-            // Let's find the logical index of 'Equipment'
-            let freezeCol = 4; // Default to D if not found
-            const eqIdx = visibleCols.findIndex(c => c.accessor === 'Equipment');
+            // Let's find the logical index of 'Equ Model'
+            let freezeCol = 5; // Default to E if not found
+            const eqIdx = visibleCols.findIndex(c => c.accessor === 'EquModel');
             if (eqIdx !== -1) {
                 freezeCol = eqIdx + 2; // +1 for 1-based, +1 for padding column A
             }
 
             ws.views = [
-                { state: 'frozen', xSplit: freezeCol, ySplit: 8 } // Freeze up to Equ Name, and freeze all headers including Sub Headers (row 8)
+                { state: 'frozen', xSplit: freezeCol, ySplit: 8 } // Freeze up to Equ Model, and freeze all headers including Sub Headers (row 8)
             ];
 
             let logoId;
@@ -535,7 +535,7 @@ export default function EquipmentPerformanceReport() {
                 fromDate={date}
                 toDate={date}
                 generated={generated}
-                stickyLeft={4} // SlNo, Prodsys Code, Cost Center, Equ Name
+                stickyLeft={5} // SlNo, Prodsys Code, Cost Center, Equ Name, Equ Model
                 stickyBgColor="#e0f2fe"
                 columnGroups={columnGroups}
                 onExportExcel={handleExportExcel}

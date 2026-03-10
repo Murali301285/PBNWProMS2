@@ -34,34 +34,7 @@ export async function POST(req) {
         const tableName = `[Master].[${table}]`;
 
         if (action === 'read') {
-            // Check for PMSCode Format
-            let pmsFormat = null;
-            try {
-                const formatRes = await executeQuery(`
-                    SELECT * FROM [Master].[PMSCodeFormat] 
-                    WHERE TableName = @table AND FieldName = 'PMSCode'
-                `, [{ name: 'table', type: 'VarChar', value: tableName }]);
-                if (formatRes.length > 0) {
-                    pmsFormat = formatRes[0];
-                }
-            } catch (ignore) { }
-
-            let query = `SELECT *`;
-
-            // Add Computed Column for PMSCode if rule exists
-            if (pmsFormat) {
-                const { Prefix, NoOfDigit } = pmsFormat;
-                // Formula: Prefix + RIGHT('0000000' + CAST(SlNo AS VARCHAR), NoOfDigit - LEN(Prefix))
-                // Note: REPLICATE('0', 20) ensures enough zeros.
-                const padLen = NoOfDigit - Prefix.length;
-                if (padLen > 0) {
-                    query += `, CONCAT('${Prefix}', RIGHT(REPLICATE('0', ${padLen}) + CAST(SlNo AS VARCHAR(20)), ${padLen})) AS PMSCode`;
-                } else {
-                    query += `, CONCAT('${Prefix}', SlNo) AS PMSCode`;
-                }
-            }
-
-            query += ` FROM ${tableName}`;
+            let query = `SELECT * FROM ${tableName}`;
             const queryParams = [];
 
             if (table === 'TblAuditLog') {

@@ -183,7 +183,7 @@ export default function LoginPage() {
                     <div style={{ textAlign: 'center' }}>
                         <p style={{ fontWeight: '500' }}>ProMS 2.0 © 2026</p>
                         <p style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--primary)', marginTop: '0.25rem' }}>
-                            Version : 2.9 , Last Updated on : 27-Feb-2026
+                            Version : 2.10 , Last Updated on : 11-Mar-2026
                         </p>
                     </div>
                 </div>

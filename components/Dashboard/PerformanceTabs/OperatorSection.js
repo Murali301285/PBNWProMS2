@@ -13,6 +13,7 @@ const COLS = [
     { header: 'Equipment', accessor: 'Equipment', width: '150px' },
     { header: 'Model', accessor: 'Model', width: '120px' },
     { header: 'Capacity', accessor: 'Capacity', width: '100px' },
+    { header: 'Total Trips', accessor: 'Trip', width: '100px', align: 'center' },
     { header: 'Total Qty (BCM)', accessor: 'Qty', align: 'center', render: (val) => formatNumber(val || 0, 0), width: '120px' },
     { header: 'Total Hrs', accessor: 'Hrs', align: 'center', render: (val) => formatNumber(val || 0, 2), width: '80px' },
     { header: 'Trips/Hr', accessor: 'TripsPerHr', align: 'center', render: (val) => Math.round(val || 0).toString(), width: '100px' },

@@ -423,6 +423,9 @@ export default function MasterTable({ config, title }) {
                             </label>
                         );
                     }
+                    if (accessor === 'PMSCode') {
+                        console.log(`[DEBUG] MasterTable rendering PMSCode. val=`, val, `| type=`, typeof val, `| length=`, String(val).length);
+                    }
                     return val;
                 }
             };
@@ -441,6 +444,8 @@ export default function MasterTable({ config, title }) {
             )
         }
     ];
+
+    console.log('[DEBUG] Final columns passed to DataTable:', columns.map(c => c.accessor));
 
     return (
         <div className={styles.container}>
