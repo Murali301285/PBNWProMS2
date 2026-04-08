@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import styles from './ProductionTsmpl.module.css';
 import ProductionTsmplTable from './ProductionTsmplTable';
 import { toast } from 'sonner';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, FileText } from 'lucide-react';
 
 
 export default function ProductionTsmplPage() {
@@ -127,7 +127,14 @@ export default function ProductionTsmplPage() {
         }).format(val);
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `ProductionTSMPL_${filter.date}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
+    };
 
     const handleExportExcel = async () => {
         if (!data) return;
@@ -207,7 +214,7 @@ export default function ProductionTsmplPage() {
             let formattedDate = filter.date;
             if (formattedDate) {
                 const [y, m, d] = formattedDate.split('-');
-                formattedDate = `${d}/${m}/${y}`;
+                formattedDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
             } else {
                 formattedDate = headerInfo?.Date || '-';
             }
@@ -298,7 +305,7 @@ export default function ProductionTsmplPage() {
             setCell(ws.getCell(`B${currentRowIdx - 1}`), "OB", { bold: true, align: 'left' });
 
             currentRowIdx++;
-            
+
             // 4. Coal Rehandling
             ws.mergeCells(`B${currentRowIdx}:D${currentRowIdx}`);
             setCell(ws.getCell(`B${currentRowIdx}`), "Coal Rehandling", { bold: true, align: 'left', bg: 'FFE5E7EB' });
@@ -385,6 +392,7 @@ export default function ProductionTsmplPage() {
 
                 {data && (
                     <>
+                        {/* Reverting to Print specifically per the global standard */}
                         <button onClick={handlePrint} className={styles.actionBtn}>
                             <Printer size={16} /> Print
                         </button>

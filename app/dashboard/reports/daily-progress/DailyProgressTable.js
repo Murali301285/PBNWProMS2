@@ -5,7 +5,7 @@ const DailyProgressTable = ({ data, date }) => {
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
         const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB'); // DD/MM/YYYY
+        return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-'); // DD/MM/YYYY
     };
 
     const displayDate = data?.headerInfo?.Date ? formatDate(data.headerInfo.Date) : formatDate(date);
@@ -47,9 +47,9 @@ const DailyProgressTable = ({ data, date }) => {
     const crusherTotals = calculateTotal(crusher, ['Hrs_FTD', 'Hrs_MTD', 'Hrs_YTD', 'Qty_FTD', 'Qty_MTD', 'Qty_YTD', 'KWH_FTD', 'KWH_MTD', 'KWH_YTD']);
 
     return (
-        <div className="w-full print:overflow-visible print:block">
+        <div id="print-area-inner" style={{ maxWidth: '1150px', margin: '0 auto', width: '100%', backgroundColor: '#ffffff', padding: '20px' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', width: '100%' }}>
+            <div id="report-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', width: '100%' }}>
                 {/* Logo - Left */}
                 <div style={{ flex: '0 0 100px', display: 'flex', justifyContent: 'flex-start' }}>
                     <img src="/Asset/Logo.png" alt="Thriveni Logo" style={{ height: '70px', objectFit: 'contain' }} />
@@ -59,9 +59,9 @@ const DailyProgressTable = ({ data, date }) => {
                 <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 0.5rem' }}>
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '4px' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h1>
                     <h2 style={{ fontSize: '1.05rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '6px' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1d4ed8', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '8px', textDecoration: 'underline', textUnderlineOffset: '4px' }}>DAILY PROGRESS REPORT</h3>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '8px' }}>DAILY PROGRESS REPORT</h3>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', fontWeight: 'bold' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#0f172a', fontWeight: 'bold' }}>
                         <div>Date: {displayDate}</div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@ const DailyProgressTable = ({ data, date }) => {
             <div className="space-y-6 mt-4">
 
                 {/* 1. Production Table */}
-                <div className={styles.tableContainer}>
+                <div id="table-production" className={styles.tableContainer}>
                     <div className={styles.sectionHeader}>Production Details</div>
                     <table className={styles.table}>
                         <thead>
@@ -119,7 +119,7 @@ const DailyProgressTable = ({ data, date }) => {
                 </div>
 
                 {/* 2. Drilling Table */}
-                <div className={styles.tableContainer}>
+                <div id="table-drilling" className={styles.tableContainer}>
                     <div className={styles.sectionHeader}>Drilling Details</div>
                     <table className={styles.table}>
                         <thead>
@@ -188,7 +188,7 @@ const DailyProgressTable = ({ data, date }) => {
                 </div>
 
                 {/* 3. Blasting Table */}
-                <div className={styles.tableContainer}>
+                <div id="table-blasting" className={styles.tableContainer}>
                     <div className={styles.sectionHeader}>Blasting Details</div>
                     <table className={styles.table}>
                         <thead>
@@ -257,7 +257,7 @@ const DailyProgressTable = ({ data, date }) => {
                 </div>
 
                 {/* 4. Crusher Table */}
-                <div className={styles.tableContainer}>
+                <div id="table-crusher" className={styles.tableContainer}>
                     <div className={styles.sectionHeader}>Crusher Production</div>
                     <table className={styles.table}>
                         <thead>
@@ -313,9 +313,9 @@ const DailyProgressTable = ({ data, date }) => {
                                     <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.KWH_FTD)}</td>
                                     <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.KWH_MTD)}</td>
                                     <td style={{ textAlign: 'center' }}>{formatNum(crusherTotals.KWH_YTD)}</td>
-                                    <td style={{ textAlign: 'center' }}></td>
-                                    <td style={{ textAlign: 'center' }}></td>
-                                    <td style={{ textAlign: 'center' }}></td>
+                                    <td style={{ textAlign: 'center' }}>{crusherTotals.Hrs_FTD > 0 ? formatNum(crusherTotals.KWH_FTD / crusherTotals.Hrs_FTD) : 0}</td>
+                                    <td style={{ textAlign: 'center' }}>{crusherTotals.Hrs_MTD > 0 ? formatNum(crusherTotals.KWH_MTD / crusherTotals.Hrs_MTD) : 0}</td>
+                                    <td style={{ textAlign: 'center' }}>{crusherTotals.Hrs_YTD > 0 ? formatNum(crusherTotals.KWH_YTD / crusherTotals.Hrs_YTD) : 0}</td>
                                 </tr>
                             )}
                         </tbody>

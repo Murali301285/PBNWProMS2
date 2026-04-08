@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import styles from './ProductionNtpc.module.css';
 import ProductionNtpcTable from './ProductionNtpcTable';
 import { toast } from 'sonner';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, FileText } from 'lucide-react';
 
 
 export default function ProductionNtpcPage() {
@@ -63,7 +63,14 @@ export default function ProductionNtpcPage() {
         }
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `ProductionNTPC_${filter.date}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
+    };
 
     const handleExportExcel = async () => {
         if (!data) return;
@@ -142,7 +149,7 @@ export default function ProductionNtpcPage() {
             let formattedDate = filter.date;
             if (formattedDate) {
                 const [y, m, d] = formattedDate.split('-');
-                formattedDate = `${d}/${m}/${y}`;
+                formattedDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
             } else {
                 formattedDate = headerInfo?.Date || '-';
             }
@@ -285,6 +292,7 @@ export default function ProductionNtpcPage() {
 
                 {data && (
                     <>
+                        {/* Reverting to Print specifically per the global standard */}
                         <button onClick={handlePrint} className={styles.actionBtn}>
                             <Printer size={16} /> Print
                         </button>

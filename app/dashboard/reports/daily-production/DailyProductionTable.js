@@ -315,7 +315,7 @@ export default function DailyProductionTable({ data, date }) {
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
         const [year, month, day] = dateStr.split('-');
-        return `${day}/${month}/${year}`;
+        return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month, 10) - 1]}-${year}`;
     };
 
     // Calculate STRIPIING RATIO dynamically

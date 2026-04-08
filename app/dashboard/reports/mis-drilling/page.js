@@ -38,7 +38,14 @@ export default function MISDrillingPage() {
         setDate(today);
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `MIS_Drilling_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
+    };
 
     const handleExportExcel = async () => {
         if (!data) return;
@@ -138,7 +145,7 @@ export default function MISDrillingPage() {
             }
 
             ws.mergeCells('B5:D5');
-            const fmtDate = date.split('-').reverse().join('-');
+            const fmtDate = date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
             setCell(ws.getCell('B5'), `Drilling Date: ${fmtDate}`, { bold: true, align: 'left', border: false });
 
             // Space
@@ -203,7 +210,7 @@ export default function MISDrillingPage() {
             addDataRow({ NoofHoles: grandTotals.NoofHoles, TotalMeters: grandTotals.TotalMeters }, "Grand Total", true, "FFEAEAEA");
 
             const buf = await wb.xlsx.writeBuffer();
-            saveAs(new Blob([buf]), `ProMS_MIS_Drilling_${date}.xlsx`);
+            saveAs(new Blob([buf]), `MIS_Drilling_Report_${date}.xlsx`);
             toast.success("Excel Downloaded Successfully");
 
         } catch (error) {
@@ -215,6 +222,11 @@ export default function MISDrillingPage() {
     return (
         <div className={styles.container}>
             {loading && <LoadingOverlay message="Generating Report..." />}
+
+            <div className={`print:hidden ${styles.headingWrapper}`}>
+                <h1 className={styles.title}>MIS Drilling Report</h1>
+                <p className={styles.subtitle}>Daily drilling and performance summary</p>
+            </div>
 
             <div className={styles.filterContainer}>
                 <div className={styles.inputGroup}>
@@ -250,7 +262,7 @@ export default function MISDrillingPage() {
                             <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>MIS Drilling Report</h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
-                                <div>Date: {new Date(date).toLocaleDateString('en-GB')}</div>
+                                <div>Date: {new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-')}</div>
                             </div>
                         </div>
                     </div>

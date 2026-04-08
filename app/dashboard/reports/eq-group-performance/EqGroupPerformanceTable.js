@@ -75,7 +75,7 @@ export default function EqGroupPerformanceTable({ data, date }) {
                     <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>EQUIPMENT MODEL-WISE PERFORMANCE AND EFFICIENCY REPORT</h3>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
-                        <div>Date: {date}</div>
+                        <div>Date: {date && date.includes('-') && date.split('-')[0].length === 4 ? date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-' : date}</div>
                     </div>
                 </div>
             </div>
@@ -85,7 +85,7 @@ export default function EqGroupPerformanceTable({ data, date }) {
                     <thead>
                         <tr className="bg-orange-100 text-slate-800">
                             <th rowSpan="2" className="w-40 bg-white border-none"></th>
-                            <th colSpan="10" className="bg-rose-100 text-center border font-bold">F. T. D ({date})</th>
+                            <th colSpan="10" className="bg-rose-100 text-center border font-bold">F. T. D ({date && date.includes('-') && date.split('-')[0].length === 4 ? date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-' : date})</th>
                             <th colSpan="3" className="bg-amber-100 text-center border font-bold">F. T. M : {monthName}</th>
                         </tr>
 

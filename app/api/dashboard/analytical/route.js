@@ -8,6 +8,8 @@ export async function GET(req) {
         const { searchParams } = new URL(req.url);
         const fromDate = searchParams.get('fromDate');
         const toDate = searchParams.get('toDate');
+        const loadingModel = searchParams.get('loadingModel');
+        const haulingModel = searchParams.get('haulingModel');
 
         if (!fromDate || !toDate) {
             return NextResponse.json({ success: false, message: 'Date range required' }, { status: 400 });
@@ -17,7 +19,9 @@ export async function GET(req) {
 
         const params = [
             { name: 'FromDate', type: sql.Date, value: fromDate },
-            { name: 'ToDate', type: sql.Date, value: toDate }
+            { name: 'ToDate', type: sql.Date, value: toDate },
+            { name: 'LoadingModel', value: loadingModel && loadingModel !== 'All Models' ? loadingModel : null },
+            { name: 'HaulingModel', value: haulingModel && haulingModel !== 'All Models' ? haulingModel : null }
         ];
 
         // Expecting multiple result sets:

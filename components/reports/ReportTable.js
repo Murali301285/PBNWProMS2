@@ -27,7 +27,7 @@ export default function ReportTable({
                         columns={columns}
                         data={data}
                         loading={loading}
-                        fileName={`ProMS_${reportName.replace(/\s+/g, '_')}_Report`}
+                        fileName={`${reportName.replace(/\s+/g, '_')}`}
                         showSerialNo={true}
                         enableColumnVisibility={true}
                         reportHeader={{

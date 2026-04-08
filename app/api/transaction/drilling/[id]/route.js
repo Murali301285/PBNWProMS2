@@ -69,28 +69,30 @@ export async function PUT(request, { params }) {
             WHERE SlNo = @Id
         `;
 
+        const toNull = val => (val === '' || val === undefined) ? null : val;
+
         requestSql.input('Id', sql.BigInt, id);
         requestSql.input('Date', sql.Date, body.Date);
         requestSql.input('DrillingPatchId', sql.NVarChar, body.DrillingPatchId);
-        requestSql.input('DrillingAgencyId', sql.Int, body.DrillingAgencyId);
-        requestSql.input('EquipmentId', sql.BigInt, body.EquipmentId);
-        requestSql.input('MaterialId', sql.BigInt, body.MaterialId);
-        requestSql.input('LocationId', sql.BigInt, body.LocationId);
-        requestSql.input('SectorId', sql.BigInt, body.SectorId);
-        requestSql.input('ScaleId', sql.BigInt, body.ScaleId);
-        requestSql.input('StrataId', sql.BigInt, body.StrataId);
-        requestSql.input('DepthSlabId', sql.BigInt, body.DepthSlabId);
-        requestSql.input('NoofHoles', sql.Int, body.NoofHoles);
-        requestSql.input('TotalMeters', sql.Decimal(18, 3), body.TotalMeters);
-        requestSql.input('Spacing', sql.Decimal(18, 3), body.Spacing);
-        requestSql.input('Burden', sql.Decimal(18, 3), body.Burden);
-        requestSql.input('TopRLBottomRL', sql.NVarChar, body.TopRLBottomRL);
-        requestSql.input('AverageDepth', sql.Decimal(18, 3), body.AverageDepth);
-        requestSql.input('Output', sql.Decimal(18, 2), body.Output);
-        requestSql.input('UnitId', sql.BigInt, body.UnitId);
-        requestSql.input('TotalQty', sql.Decimal(18, 3), body.TotalQty);
-        requestSql.input('RemarkId', sql.BigInt, body.RemarkId);
-        requestSql.input('Remarks', sql.NVarChar, body.Remarks);
+        requestSql.input('DrillingAgencyId', sql.Int, toNull(body.DrillingAgencyId));
+        requestSql.input('EquipmentId', sql.BigInt, toNull(body.EquipmentId));
+        requestSql.input('MaterialId', sql.BigInt, toNull(body.MaterialId));
+        requestSql.input('LocationId', sql.BigInt, toNull(body.LocationId));
+        requestSql.input('SectorId', sql.BigInt, toNull(body.SectorId));
+        requestSql.input('ScaleId', sql.BigInt, toNull(body.ScaleId));
+        requestSql.input('StrataId', sql.BigInt, toNull(body.StrataId));
+        requestSql.input('DepthSlabId', sql.BigInt, toNull(body.DepthSlabId));
+        requestSql.input('NoofHoles', sql.Int, toNull(body.NoofHoles));
+        requestSql.input('TotalMeters', sql.Decimal(18, 3), toNull(body.TotalMeters));
+        requestSql.input('Spacing', sql.Decimal(18, 3), toNull(body.Spacing));
+        requestSql.input('Burden', sql.Decimal(18, 3), toNull(body.Burden));
+        requestSql.input('TopRLBottomRL', sql.NVarChar, toNull(body.TopRLBottomRL));
+        requestSql.input('AverageDepth', sql.Decimal(18, 3), toNull(body.AverageDepth));
+        requestSql.input('Output', sql.Decimal(18, 2), toNull(body.Output));
+        requestSql.input('UnitId', sql.BigInt, toNull(body.UnitId));
+        requestSql.input('TotalQty', sql.Decimal(18, 3), toNull(body.TotalQty));
+        requestSql.input('RemarkId', sql.BigInt, toNull(body.RemarkId));
+        requestSql.input('Remarks', sql.NVarChar, toNull(body.Remarks));
         requestSql.input('UpdatedBy', sql.BigInt, userId);
 
         await requestSql.query(query);

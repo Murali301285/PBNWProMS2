@@ -66,7 +66,12 @@ export default function ChpPssProductionPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Chp_Pss_Production_${month}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -293,7 +298,7 @@ export default function ChpPssProductionPage() {
 
             // 4. Data Rows
             let currentRow = 7;
-            const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '-';
+            const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
 
             mergedData.forEach((row) => {
                 let startCol = 2; // Col B

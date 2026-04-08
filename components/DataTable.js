@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { Search, ArrowLeft, ArrowRight, ChevronsLeft, ChevronsRight, Filter, X, Download } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight, ChevronsLeft, ChevronsRight, Filter, X, Download, Printer } from 'lucide-react';
 import styles from './DataTable.module.css';
 import * as XLSX from 'xlsx-js-style';
 
@@ -152,6 +152,23 @@ export default function DataTable({
         }));
     };
 
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        let dateStr = new Date().toISOString().split('T')[0];
+        if (reportHeader && reportHeader.toDate) {
+            dateStr = reportHeader.toDate;
+        } else if (reportHeader && reportHeader.fromDate) {
+            dateStr = reportHeader.fromDate;
+        }
+
+        const cleanFileName = fileName.endsWith('_Report') ? fileName : `${fileName}_Report`;
+        document.title = `${cleanFileName}_${dateStr}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
+    };
+
     const handleExport = async () => {
         if (onExportExcel) {
             const visibleCols = columns.filter(c => c.accessor !== 'actions' && (c.accessor !== 'SlNo' || showSerialNo) && columnVisibility[c.accessor] !== false);
@@ -236,7 +253,15 @@ export default function DataTable({
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, `${fileName}_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`);
+
+        let dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        if (reportHeader && reportHeader.toDate) {
+            dateStr = reportHeader.toDate;
+        } else if (reportHeader && reportHeader.fromDate) {
+            dateStr = reportHeader.fromDate;
+        }
+        const cleanFileName = fileName.endsWith('_Report') ? fileName : `${fileName}_Report`;
+        XLSX.writeFile(wb, `${cleanFileName}_${dateStr}.xlsx`);
     };
 
     const getLeftOffset = (index) => {
@@ -297,8 +322,24 @@ export default function DataTable({
                     <button onClick={handleExport} className={styles.exportBtn}>
                         <Download size={14} /> Export
                     </button>
+                    <button onClick={handlePrint} className={styles.exportBtn} style={{ marginLeft: '4px' }}>
+                        <Printer size={14} /> Print
+                    </button>
                 </div>
             </div>
+
+            {/* Print Only Header */}
+            {reportHeader && (
+                <div className="hidden print:flex flex-col items-center justify-center mb-4 w-full text-center" style={{ minWidth: 'max-content' }}>
+                    <h2 className="text-xl font-bold text-black" style={{ textAlign: 'center', width: '100%' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h2>
+                    <h3 className="text-lg font-bold text-black" style={{ textAlign: 'center', width: '100%' }}>PAKRI BARWADIH COAL MINING PROJECT</h3>
+                    <h4 className="text-md font-bold underline mt-2 text-black" style={{ textAlign: 'center', width: '100%' }}>{reportHeader.title}</h4>
+                    <div className="flex justify-center gap-4 mt-2 text-sm font-bold w-full text-black" style={{ textAlign: 'center', width: '100%' }}>
+                        <span>{reportHeader.fromDate && `From: ${reportHeader.fromDate.includes('-') && reportHeader.fromDate.split('-')[0].length === 4 ? reportHeader.fromDate.split('-').reverse().join('-') : reportHeader.fromDate}`}</span>
+                        <span>{reportHeader.toDate && `To: ${reportHeader.toDate.includes('-') && reportHeader.toDate.split('-')[0].length === 4 ? reportHeader.toDate.split('-').reverse().join('-') : reportHeader.toDate}`}</span>
+                    </div>
+                </div>
+            )}
 
             {/* TableContainer */}
             <div className={styles.tableContainer} ref={tableContainerRef} style={customHeight ? { height: customHeight } : {}}>

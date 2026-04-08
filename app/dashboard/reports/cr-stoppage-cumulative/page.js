@@ -42,7 +42,12 @@ export default function CrStoppageCumulativePage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Crusher_Stoppage_Cumulative_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -148,7 +153,7 @@ export default function CrStoppageCumulativePage() {
             }
 
             ws.mergeCells('B5:D5');
-            const fmtDate = date.split('-').reverse().join('-');
+            const fmtDate = date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
             setCell(ws.getCell('B5'), `Date: ${fmtDate}`, { bold: true, align: 'left', border: false });
 
             // Space
@@ -234,7 +239,7 @@ export default function CrStoppageCumulativePage() {
 
             // 6. Generate file
             const buf = await wb.xlsx.writeBuffer();
-            saveAs(new Blob([buf]), `ProMS_Crusher_Stoppage_Cum_Dated_${date}.xlsx`);
+            saveAs(new Blob([buf]), `Crusher_Stoppage_Cumulative_Report_${date}.xlsx`);
             toast.success("Excel Downloaded Successfully");
 
         } catch (error) {

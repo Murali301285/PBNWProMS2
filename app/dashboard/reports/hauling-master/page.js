@@ -12,8 +12,13 @@ export default function HaulingMasterReportPage() {
     const [conversionFactor, setConversionFactor] = useState(1.55); // Default
 
     // State for Filter
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
+    const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const sysToday = new Date();
+    const firstDayStr = getLocalISO(new Date(sysToday.getFullYear(), sysToday.getMonth(), 1));
+    const todayStr = getLocalISO(sysToday);
+
+    const [fromDate, setFromDate] = useState(firstDayStr);
+    const [toDate, setToDate] = useState(todayStr);
     const [isModalOpen, setModalOpen] = useState(false);
     const [filters, setFilters] = useState({});
     const [filterSummary, setFilterSummary] = useState('');
@@ -211,10 +216,10 @@ export default function HaulingMasterReportPage() {
 
             ws.mergeCells(`B5:${endColLetter}5`);
             let fDate = fromDate, tDate = toDate;
-            if (fDate && fDate.includes('-')) fDate = fDate.split('-').reverse().join('/');
-            if (tDate && tDate.includes('-')) tDate = tDate.split('-').reverse().join('/');
+            if (fDate && fDate.includes('-')) fDate = fDate ? new Date(fDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+            if (tDate && tDate.includes('-')) tDate = tDate ? new Date(tDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
             
-            const dateStr = `From Date: ${fDate || '-'}        To Date: ${tDate || '-'}`;
+            const dateStr = `From: ${fDate || '-'}        To: ${tDate || '-'}`;
             setCell(ws.getCell('B5'), dateStr, { bold: true, align: 'center', border: false, fontSize: 11 });
 
             ws.getRow(2).height = 30;
@@ -332,8 +337,8 @@ export default function HaulingMasterReportPage() {
                     data={reportData}
                     generated={true}
                     reportName="Hauling Master Report"
-                    fromDate={fromDate}
-                    toDate={toDate}
+                    fromDate={fromDate ? new Date(fromDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
+                    toDate={toDate ? new Date(toDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                     onExportExcel={handleExportExcel}
                 />
             </div>

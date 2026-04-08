@@ -41,7 +41,12 @@ export default function CrDailyShiftReport() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Crusher_Daily_Shift_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -143,7 +148,7 @@ export default function CrDailyShiftReport() {
             }
 
             ws.mergeCells('B5:D5');
-            const fmtDate = date.split('-').reverse().join('-');
+            const fmtDate = date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
             setCell(ws.getCell('B5'), `Date: ${fmtDate}`, { bold: true, align: 'left', border: false });
 
             let currentRow = 7;
@@ -261,7 +266,7 @@ export default function CrDailyShiftReport() {
             });
 
             const buf = await wb.xlsx.writeBuffer();
-            saveAs(new Blob([buf]), `ProMS_Cr_Daily_Shift_${date}.xlsx`);
+            saveAs(new Blob([buf]), `Crusher_Daily_Shift_Report_${date}.xlsx`);
             toast.success("Excel Downloaded Successfully");
 
         } catch (error) {

@@ -15,12 +15,25 @@ export async function GET(req, { params }) {
 
         const pool = await getDbConnection();
         // Dynamic Query - Safe because slug is validated against trusted config keys
-        const query = `
+        let query = `
             SELECT ${config.idField} as id, * 
             FROM ${config.table} 
             WHERE IsDelete = 0 
             ORDER BY ${config.idField} DESC
         `;
+
+        if (slug === 'equipment') {
+             query = `
+                 SELECT E.${config.idField} as id, 
+                 E.*, 
+                 E.VendorCode as VendorCodeId,
+                 V.VendorName as VendorCode -- Override the ID with the display name for the table 
+                 FROM ${config.table} E
+                 LEFT JOIN [Master].[Vendor] V ON E.VendorCode = V.SlNo
+                 WHERE E.IsDelete = 0 
+                 ORDER BY E.${config.idField} DESC
+             `;
+        }
 
         const result = await pool.request().query(query);
         if (slug === 'equipment' && result.recordset.length > 0) {
@@ -77,11 +90,22 @@ export async function POST(req, { params }) {
 
         const query = `
             INSERT INTO ${config.table} (${fields.join(', ')})
+            OUTPUT INSERTED.SlNo
             VALUES (${values.join(', ')})
         `;
 
-        await request.query(query);
-        return NextResponse.json({ message: 'Created successfully' });
+        const result = await request.query(query);
+        const newId = result.recordset[0]?.SlNo;
+
+        if (slug === 'equipment' && newId) {
+            const pmsCode = (2000000 + newId).toString();
+            await pool.request()
+                .input('pmsCode', sql.NVarChar, pmsCode)
+                .input('id', sql.Int, newId)
+                .query(`UPDATE ${config.table} SET PMSCode = @pmsCode WHERE ${config.idField} = @id`);
+        }
+
+        return NextResponse.json({ message: 'Created successfully', id: newId });
 
     } catch (error) {
         console.error(`Error creating ${params.slug}:`, error);

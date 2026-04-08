@@ -12,7 +12,7 @@ export default function ChpPssProductionTable({ production, stoppages, allReason
     const fmtDec2 = (val) => val != null ? Number(val).toFixed(2) : '0.00';
     const fmtDec3 = (val) => val != null ? Number(val).toFixed(3) : '0.000';
     const fmtDec0 = (val) => val != null ? Number(val).toFixed(0) : '0';
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '-';
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
 
     // 1. Pivot Logic: Use Master List if available
     const distinctReasons = useMemo(() => {

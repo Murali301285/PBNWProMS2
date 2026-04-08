@@ -17,6 +17,12 @@
     color: #1e293b;
 }
 
+.subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
 /* Filter Bar */
 .filterContainer {
     background-color: white;
@@ -223,9 +229,34 @@
 
 /* Print Overrides */
 @media print {
-    .container {
-        padding: 0;
+    @page {
+        margin: 0;
+        size: A4 landscape;
+    }
+
+    html,
+    body {
+        width: 100%;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
         background-color: white;
+    }
+
+    .container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        padding: 5mm 5mm !important;
+        box-sizing: border-box !important;
+        background-color: white;
+        min-height: auto !important;
+        height: auto !important;
+        display: block !important;
+        overflow: visible !important;
+        margin: 0 !important;
     }
 
     .filterContainer,
@@ -237,6 +268,17 @@
     .reportSheet {
         box-shadow: none;
         padding: 0;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 100% !important;
+        overflow: visible !important;
+        height: auto !important;
+        display: block !important;
+    }
+
+    .tableContainer {
+        overflow-x: visible;
+        width: 100%;
     }
 
     .table,

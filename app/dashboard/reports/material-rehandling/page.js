@@ -12,10 +12,15 @@ import styles from '@/components/reports/ReportFilter.module.css';
  * Material Rehandling Detailed Report
  */
 export default function MaterialRehandlingReport() {
+    const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const sysToday = new Date();
+    const firstDayStr = getLocalISO(new Date(sysToday.getFullYear(), sysToday.getMonth(), 1));
+    const todayStr = getLocalISO(sysToday);
+
     const [filter, setFilter] = useState({
         reportType: 'MaterialRehandling',
-        fromDate: '',
-        toDate: ''
+        fromDate: firstDayStr,
+        toDate: todayStr
     });
 
     // Advanced Filters State
@@ -205,9 +210,9 @@ export default function MaterialRehandlingReport() {
             ws.mergeCells(`B5:${endColLetter}5`);
             let fDate = filter.fromDate, tDate = filter.toDate;
             if (fDate && fDate.includes('-')) fDate = fDate.split('-').reverse().join('/');
-            if (tDate && tDate.includes('-')) tDate = tDate.split('-').reverse().join('/');
+            if (tDate && tDate.includes('-')) tDate = tDate ? new Date(tDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
             
-            const dateStr = `From Date: ${fDate || '-'}        To Date: ${tDate || '-'}`;
+            const dateStr = `From: ${fDate || '-'}        To: ${tDate || '-'}`;
             setCell(ws.getCell('B5'), dateStr, { bold: true, align: 'center', border: false, fontSize: 11 });
 
             ws.getRow(2).height = 30;
@@ -345,8 +350,8 @@ export default function MaterialRehandlingReport() {
                 data={data}
                 loading={loading}
                 reportName="Material Rehandling"
-                fromDate={filter.fromDate}
-                toDate={filter.toDate}
+                fromDate={filter.fromDate ? new Date(filter.fromDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
+                toDate={filter.toDate ? new Date(filter.toDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                 generated={generated}
                 onExportExcel={handleExportExcel}
             />

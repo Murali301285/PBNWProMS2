@@ -41,7 +41,14 @@ export default function ElectricalMonitoringPage() {
         }
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `Electrical_Equipments_Monitoring_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
+    };
 
     // Placeholder for Excel Export - Logic to be moved to Table or kept here if data is handy.
     // For now, I'll keep the button but trigger the alert or move logic later if needed.
@@ -62,7 +69,7 @@ export default function ElectricalMonitoringPage() {
 
             const dateObj = new Date(date);
             const dayOfMonth = dateObj.getDate();
-            const displayDate = dateObj.toLocaleDateString('en-GB');
+            const displayDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-');
 
             // Pre-process data
             const processedData = reportData.map(row => {
@@ -319,7 +326,7 @@ export default function ElectricalMonitoringPage() {
             setCell(ws.getCell(currentRow, tCol++), grandMtdAvg, { numFmt: fmtDec2, align: 'right', bg: 'FFFDE047', bold: true });
 
             const buf = await wb.xlsx.writeBuffer();
-            saveAs(new Blob([buf]), `ProMS_Electrical_Equipments_Monitoring_${date}.xlsx`);
+            saveAs(new Blob([buf]), `Electrical_Equipments_Monitoring_Report_${date}.xlsx`);
             toast.success("Excel Downloaded Successfully");
 
         } catch (error) {
@@ -331,7 +338,8 @@ export default function ElectricalMonitoringPage() {
     return (
         <div className={styles.container}>
             <div className={`print:hidden ${styles.headingWrapper}`}>
-                <h1 className={styles.title}>Electrical Equipments Monitoring</h1>
+                <h1 className={styles.title}>Electrical Equipments Monitoring Report</h1>
+                <p className={styles.subtitle}>Daily production and performance summary</p>
             </div>
 
             <div className={styles.filterContainer}>

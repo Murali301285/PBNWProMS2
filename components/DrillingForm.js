@@ -10,6 +10,7 @@ import { TRANSACTION_CONFIG } from '@/lib/transactionConfig';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'sonner';
 import Select, { components } from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import css from './DrillingForm.module.css';
 
 // Styled similar to other Transaction Forms
@@ -771,24 +772,53 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                         {errors.DrillingPatchId && <span className={css.errorLabel}>value is missing</span>}
                     </label>
                     <div className={errors.DrillingPatchId ? css.errorInput : ''} style={{ borderRadius: 4, border: errors.DrillingPatchId ? '1px solid #ef4444' : 'none' }}>
-                        <Select
+                        <CreatableSelect
                             instanceId="drilling-patch-select"
                             options={drillingPatches.map(dp => ({ ...dp, value: dp.DrillingPatchId, label: dp.DrillingPatchId }))}
-                            value={drillingPatches.find(dp => dp.DrillingPatchId === formData.DrillingPatchId) ? { ...drillingPatches.find(dp => dp.DrillingPatchId === formData.DrillingPatchId), value: formData.DrillingPatchId, label: formData.DrillingPatchId } : null}
+                            value={
+                                formData.DrillingPatchId
+                                    ? {
+                                          ...(drillingPatches.find(dp => dp.DrillingPatchId === formData.DrillingPatchId) || {}),
+                                          value: formData.DrillingPatchId,
+                                          label: formData.DrillingPatchId
+                                      }
+                                    : null
+                            }
                             onChange={(option, actionMeta) => {
-                                if (actionMeta.action === 'select-option' || actionMeta.action === 'clear') {
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        DrillingPatchId: option ? option.DrillingPatchId : ''
-                                    }));
+                                if (
+                                    actionMeta.action === 'select-option' || 
+                                    actionMeta.action === 'create-option' || 
+                                    actionMeta.action === 'clear'
+                                ) {
+                                    const newPatchId = option ? (option.value || option.DrillingPatchId) : '';
+                                    const isNew = option && option.__isNew__;
+
+                                    if (isNew) {
+                                        // Reset all fields except Date and new PatchId
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            DrillingPatchId: newPatchId,
+                                            EquipmentId: '', MaterialId: '', LocationId: '',
+                                            SectorId: '', ScaleId: '', StrataId: '', DepthSlabId: '', DrillingAgencyId: '',
+                                            NoofHoles: '', TotalMeters: '', Spacing: '', Burden: '', TopRLBottomRL: '',
+                                            RemarkId: '', Output: '', UnitId: '', TotalQty: '', Remarks: ''
+                                        }));
+                                    } else {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            DrillingPatchId: newPatchId
+                                        }));
+                                    }
+
                                     if (errors.DrillingPatchId) {
                                         setErrors(prev => { const e = { ...prev }; delete e.DrillingPatchId; return e; });
                                     }
                                 }
                             }}
+                            formatCreateLabel={(inputValue) => `Add new Patch ID: "${inputValue}"`}
                             openMenuOnFocus={true}
                             openMenuOnClick={true}
-                            placeholder="Search Patch ID..."
+                            placeholder="Search or enter new Patch ID..."
                             isClearable
                             styles={{
                                 control: (base) => ({
@@ -817,6 +847,11 @@ export default function DrillingForm({ mode = 'create', initialData = null }) {
                             components={{
                                 Option: (props) => {
                                     const { data } = props;
+                                    // If it's a new option, just show the label simply
+                                    if (data.__isNew__) {
+                                        return <components.Option {...props} />;
+                                    }
+
                                     return (
                                         <components.Option {...props}>
                                             <div className={css.patchOption}>

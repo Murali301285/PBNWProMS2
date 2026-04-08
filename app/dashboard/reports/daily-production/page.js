@@ -44,7 +44,12 @@ export default function DailyProductionPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Daily_Production_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -133,7 +138,7 @@ export default function DailyProductionPage() {
             let formattedDate = date;
             if (date) {
                 const [y, m, d] = date.split('-');
-                formattedDate = `${d}/${m}/${y}`;
+                formattedDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
             }
             setCell(ws.getCell('B5'), `Date: ${formattedDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
 

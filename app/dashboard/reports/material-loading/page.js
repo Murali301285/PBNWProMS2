@@ -12,10 +12,15 @@ import styles from '@/components/reports/ReportFilter.module.css';
  * Material Loading Detailed Report
  */
 export default function MaterialLoadingReport() {
+    const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const sysToday = new Date();
+    const firstDayStr = getLocalISO(new Date(sysToday.getFullYear(), sysToday.getMonth(), 1));
+    const todayStr = getLocalISO(sysToday);
+
     const [filter, setFilter] = useState({
         reportType: 'MaterialLoading',
-        fromDate: '',
-        toDate: ''
+        fromDate: firstDayStr,
+        toDate: todayStr
     });
     const [advancedFilters, setAdvancedFilters] = useState({});
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -200,10 +205,10 @@ export default function MaterialLoadingReport() {
 
             ws.mergeCells(`B5:${endColLetter}5`);
             let fDate = filter.fromDate, tDate = filter.toDate;
-            if (fDate && fDate.includes('-')) fDate = fDate.split('-').reverse().join('/');
-            if (tDate && tDate.includes('-')) tDate = tDate.split('-').reverse().join('/');
-
-            const dateStr = `From Date: ${fDate || '-'}        To Date: ${tDate || '-'}`;
+            if (fDate && fDate.includes('-') && fDate.split('-')[0].length === 4) fDate = fDate ? new Date(fDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+            if (tDate && tDate.includes('-') && tDate.split('-')[0].length === 4) tDate = tDate ? new Date(tDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+            
+            const dateStr = `From: ${fDate || '-'}        To: ${tDate || '-'}`;
             setCell(ws.getCell('B5'), dateStr, { bold: true, align: 'center', border: false, fontSize: 11 });
 
             ws.getRow(2).height = 30;
@@ -240,14 +245,7 @@ export default function MaterialLoadingReport() {
                         if (res !== null && typeof res !== 'object') val = res;
                     }
 
-                    // Format Date if applicable (assuming Date column strings look like SQL timestamp or ISO)
-                    if (col.accessor === 'Date' && val) {
-                        const d = new Date(val);
-                        if (!isNaN(d.getTime())) {
-                            val = d.toLocaleDateString('en-GB');
-                        }
-                    }
-
+                    // Do not parse Date, keep raw DB format (dd/MMM/yyyy)
                     let nFmt = undefined;
                     const num = Number(val);
                     if (!isNaN(num) && val !== '' && val !== null && col.accessor !== 'Date' && col.accessor !== 'Year' && col.accessor !== 'Month') {
@@ -343,8 +341,8 @@ export default function MaterialLoadingReport() {
                 data={data}
                 loading={loading}
                 reportName="Material Loading"
-                fromDate={filter.fromDate}
-                toDate={filter.toDate}
+                fromDate={filter.fromDate ? new Date(filter.fromDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
+                toDate={filter.toDate ? new Date(filter.toDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                 generated={generated}
                 onExportExcel={handleExportExcel}
             />

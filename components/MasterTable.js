@@ -19,6 +19,7 @@ export default function MasterTable({ config, title }) {
     const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
     const [editId, setEditId] = useState(null);
     const [deleteId, setDeleteId] = useState(null); // For delete modal
+    const [duplicateCostCenterWarning, setDuplicateCostCenterWarning] = useState(null); // For custom duplicate warning
     const [formData, setFormData] = useState({});
     const [errors, setErrors] = useState({});
     const [lookups, setLookups] = useState({});
@@ -144,6 +145,11 @@ export default function MasterTable({ config, title }) {
         config.columns.forEach(col => {
             const field = typeof col === 'string' ? col : col.accessor;
             let val = row[field];
+            
+            // Special handling for VendorCode which is structurally overridden with VendorName for display
+            if (field === 'VendorCode' && row['VendorCodeId'] !== undefined) {
+                val = row['VendorCodeId'];
+            }
 
             // Convert Date string to HH:mm for time inputs (Manual extraction to avoid timezone shift)
             if (typeof col === 'object' && col.type === 'time' && val) {
@@ -284,8 +290,28 @@ export default function MasterTable({ config, title }) {
             id: editId
         };
 
+        // NEW LOGIC FOR EQUIPMENT COST CENTER WARNING
+        if (config.table === '[Master].[TblEquipment]' && cleanData.CostCenter) {
+            const isDuplicate = data.some(item => 
+                item.CostCenter?.toLowerCase() === cleanData.CostCenter.toLowerCase() && 
+                item[config.idField] !== editId
+            );
+
+            if (isDuplicate) {
+                setDuplicateCostCenterWarning({
+                    message: `You are try to entering the duplicate entry to cost center / already equipment details found in this cost center (Cost Center: ${cleanData.CostCenter}).`,
+                    pendingBody: body
+                });
+                return;
+            }
+        }
+
         console.log("🚀 FRONTEND: Sending to API:", JSON.stringify(body, null, 2));
 
+        await executeSave(body);
+    };
+
+    const executeSave = async (body) => {
         try {
             let res;
             if (config.apiRoute) {
@@ -314,6 +340,8 @@ export default function MasterTable({ config, title }) {
         } catch (err) {
             console.error(err);
             toast.error('Request Error: ' + err.message);
+        } finally {
+            setDuplicateCostCenterWarning(null);
         }
     };
 
@@ -536,6 +564,27 @@ export default function MasterTable({ config, title }) {
                         <button onClick={() => setDeleteId(null)} className={styles.btnSecondary}>Cancel</button>
                         <button onClick={confirmDelete} className={`${styles.btnPrimary}`} style={{ background: '#ef4444', color: 'white' }}>
                             <Trash2 size={16} /> Delete
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Duplicate Cost Center Confirmation Modal */}
+            <Modal
+                isOpen={!!duplicateCostCenterWarning}
+                onClose={() => setDuplicateCostCenterWarning(null)}
+                title="Duplicate Cost Center Detected"
+            >
+                <div>
+                    <p style={{ marginBottom: '20px', color: '#374151', fontSize: '15px', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
+                        {duplicateCostCenterWarning?.message}
+                    </p>
+                    <div className={styles.buttonGroup} style={{ justifyContent: 'flex-end', gap: '10px' }}>
+                        <button onClick={() => setDuplicateCostCenterWarning(null)} className={styles.btnSecondary}>
+                            Cancel
+                        </button>
+                        <button onClick={() => executeSave(duplicateCostCenterWarning.pendingBody)} className={`${styles.btnPrimary}`} style={{ background: '#eab308', color: 'white', border: 'none' }}>
+                            Proceed & Save
                         </button>
                     </div>
                 </div>

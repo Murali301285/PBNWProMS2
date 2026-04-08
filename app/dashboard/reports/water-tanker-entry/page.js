@@ -2,17 +2,20 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
-// import SearchableSelect from '@/components/SearchableSelect'; // Not using for single select shift for now, keeping simple select
-import ReportTable from '@/components/reports/ReportTable';
+import WaterTankerTable from './WaterTankerTable';
 import styles from './WaterTankerReport.module.css';
 
 export default function WaterTankerReport() {
-    const today = new Date().toISOString().split('T')[0];
+    const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const sysToday = new Date();
+    const firstDayStr = getLocalISO(new Date(sysToday.getFullYear(), sysToday.getMonth(), 1));
+    const todayStr = getLocalISO(sysToday);
+
     const [filter, setFilter] = useState({
-        fromDate: today,
-        toDate: today,
+        fromDate: firstDayStr,
+        toDate: todayStr,
         shiftId: ''
     });
 
@@ -93,8 +96,16 @@ export default function WaterTankerReport() {
         { header: 'Remarks', accessor: 'Remarks', width: '200px' },
     ], []);
 
-    
-    const handleExportExcel = async (sortedData, visibleCols) => {
+
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        const fDate = (filter.fromDate || '').replace(/\//g, '-');
+        document.title = `Water_Tanker_Performance_Report_${fDate}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
+    }; const handleExportExcel = async (sortedData, visibleCols) => {
         try {
             const ExcelJS = await import('exceljs');
             const { saveAs } = await import('file-saver');
@@ -128,14 +139,14 @@ export default function WaterTankerReport() {
             // 2. Custom width assignment
             ws.columns = Array(maxColSpan + 1).fill(0).map((_, i) => {
                 if (i === 0) return { width: 3 }; // Padding
-                
-                const colDef = visibleCols[i - 1]; 
+
+                const colDef = visibleCols[i - 1];
                 let w = 15;
                 if (colDef) {
-                     if (colDef.accessor === 'SlNo') w = 8;
-                     else if (maxColWidths[colDef.accessor]) {
-                         w = maxColWidths[colDef.accessor];
-                     }
+                    if (colDef.accessor === 'SlNo') w = 8;
+                    else if (maxColWidths[colDef.accessor]) {
+                        w = maxColWidths[colDef.accessor];
+                    }
                 }
                 return { width: w };
             });
@@ -201,9 +212,9 @@ export default function WaterTankerReport() {
 
             ws.mergeCells(`B5:${endColLetter}5`);
             let fDate = filter.fromDate, tDate = filter.toDate;
-            if (fDate && fDate.includes('-')) fDate = fDate.split('-').reverse().join('/');
-            if (tDate && tDate.includes('-')) tDate = tDate.split('-').reverse().join('/');
-            
+            if (fDate && fDate.includes('-')) fDate = fDate ? new Date(fDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+            if (tDate && tDate.includes('-')) tDate = tDate ? new Date(tDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+
             const dateStr = `From Date: ${fDate || '-'}        To Date: ${tDate || '-'}`;
             setCell(ws.getCell('B5'), dateStr, { bold: true, align: 'center', border: false, fontSize: 11 });
 
@@ -243,10 +254,10 @@ export default function WaterTankerReport() {
 
                     // Format Date if applicable
                     if (col.accessor === 'Date' && val) {
-                         const d = new Date(val);
-                         if (!isNaN(d.getTime())) {
-                             val = d.toLocaleDateString('en-GB');
-                         }
+                        const d = new Date(val);
+                        if (!isNaN(d.getTime())) {
+                            val = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-');
+                        }
                     }
 
                     let nFmt = undefined;
@@ -256,17 +267,17 @@ export default function WaterTankerReport() {
                         nFmt = '#,##0.00';
                         if (val % 1 === 0) nFmt = '#,##0';
                         if (val === 0) nFmt = '0';
-                        
+
                         if (['Qty'].includes(col.accessor)) {
-                             nFmt = '0.000';
+                            nFmt = '0.000';
                         }
                     }
 
                     const isLeftAlign = ['Water Tanker Equipment', 'Filling Point', 'Filling Pump', 'Destination', 'Remarks'].includes(col.accessor);
 
-                    setCell(dataRow.getCell(cIdx + 2), val === null || val === undefined ? '-' : val, { 
-                        numFmt: nFmt, 
-                        align: isLeftAlign ? 'left' : 'center' 
+                    setCell(dataRow.getCell(cIdx + 2), val === null || val === undefined ? '-' : val, {
+                        numFmt: nFmt,
+                        align: isLeftAlign ? 'left' : 'center'
                     });
                 });
                 dataRow.height = 18;
@@ -274,7 +285,7 @@ export default function WaterTankerReport() {
             });
 
             const buffer = await wb.xlsx.writeBuffer();
-            saveAs(new Blob([buffer]), `Water_Tanker_Performance_${(fDate || '').replace(/\//g, '-')}.xlsx`);
+            saveAs(new Blob([buffer]), `Water_Tanker_Performance_Report_${(fDate || '').replace(/\//g, '-')}.xlsx`);
             toast.success("Excel exported successfully!");
 
         } catch (error) {
@@ -289,7 +300,7 @@ export default function WaterTankerReport() {
 
     return (
         <div className={styles.container}>
-            <div className={styles.headingWrapper}>
+            <div className={`print:hidden ${styles.headingWrapper}`}>
                 <h1 className={styles.title}>Water Tanker Performance Report</h1>
                 <p className={styles.subtitle}>Daily water tanker operations and entries</p>
             </div>
@@ -352,19 +363,27 @@ export default function WaterTankerReport() {
                         </>
                     )}
                 </button>
+                <div style={{ flex: 1 }}></div>
+
+                {/* Print and Export Tools */}
+                {data && data.length > 0 && generated && (
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                        <button onClick={handlePrint} className={styles.actionBtn} style={{ height: '38px' }}>
+                            <Printer size={16} /> Print
+                        </button>
+                        <button onClick={() => handleExportExcel(data, columns)} className={`${styles.actionBtn} ${styles.excel}`} style={{ height: '38px', backgroundColor: '#16a34a', color: 'white' }}>
+                            <Download size={16} /> Excel
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Data Table */}
-            <ReportTable
-                columns={columns}
-                data={data}
-                loading={loading}
-                generated={generated}
-                reportName="Water Tanker Performance"
-                fromDate={filter.fromDate}
-                toDate={filter.toDate}
-                onExportExcel={handleExportExcel}
-            />
+            {data && generated && (
+                <div className={styles.reportSheet} id="print-area">
+                    <WaterTankerTable data={data} fromDate={filter.fromDate} toDate={filter.toDate} />
+                </div>
+            )}
         </div>
     );
 }

@@ -5,7 +5,6 @@ export default function DayWiseProductionTable({ data, date }) {
     if (!data) return null;
 
     const fmt = (val) => val != null ? Number(val).toLocaleString('en-IN') : '0';
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '-';
 
     // Calculate Grand Total
     const grand = data.reduce((acc, r) => ({
@@ -30,8 +29,10 @@ export default function DayWiseProductionTable({ data, date }) {
                     <h2 style={{ fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#0f172a', textTransform: 'uppercase', marginTop: '0.25rem' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
                     <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>DAY WISE PRODUCTION REPORT</h3>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#0f172a', fontWeight: 'bold' }}>
                         <div>Month: {new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+                        <span style={{ color: '#1e293b' }}>|</span>
+                        <div>Date: {`${String(new Date(date).getDate()).padStart(2, '0')}-${new Date(date).toLocaleString('en-GB', { month: 'short' })}-${new Date(date).getFullYear()}`}</div>
                     </div>
                 </div>
             </div>
@@ -57,7 +58,7 @@ export default function DayWiseProductionTable({ data, date }) {
                     <tbody>
                         {data.map((r, idx) => (
                             <tr key={idx}>
-                                <td>{fmtDate(r.Date)}</td>
+                                <td>{r.Date}</td>
                                 <td>{fmt(r.Coal_MT)}</td>
                                 <td>{fmt(r.OB_BCM)}</td>
                                 <td className="font-bold bg-yellow-50">{fmt(r.TotalProduction_BCM)}</td>

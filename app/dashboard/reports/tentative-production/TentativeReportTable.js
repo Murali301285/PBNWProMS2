@@ -62,7 +62,7 @@ export default function TentativeReportTable({ data, loading }) {
         const day = String(dateObj.getDate()).padStart(2, '0');
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const year = dateObj.getFullYear();
-        return `${day}/${month}/${year}`;
+        return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month, 10) - 1]}-${year}`;
     };
 
     const fmt = (val) => (val !== undefined && val !== null) ? Number(val).toLocaleString('en-IN') : '0';

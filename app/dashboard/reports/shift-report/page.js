@@ -66,7 +66,13 @@ export default function ShiftReportPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const shiftName = shifts.find(s => s.SlNo == shiftId)?.ShiftName || '';
+        const originalTitle = document.title;
+        document.title = `Shift_Report_${date}_${shiftName}`.replace(/\s+/g, '_');
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -157,7 +163,7 @@ export default function ShiftReportPage() {
             let formattedDate = date;
             if (date) {
                 const [y, m, d] = date.split('-');
-                formattedDate = `${d}/${m}/${y}`;
+                formattedDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
             }
             setCell(ws.getCell('B6'), `Date: ${formattedDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
 

@@ -42,7 +42,12 @@ export default function CrusherSummaryPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Crusher_Summary_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -155,14 +160,14 @@ export default function CrusherSummaryPage() {
             }
 
             ws.mergeCells('B5:D5');
-            const fmtDate = date.split('-').reverse().join('-');
+            const fmtDate = date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
             setCell(ws.getCell('B5'), `Date: ${fmtDate}`, { bold: true, align: 'left', border: false });
 
             // Space
             ws.getRow(6).height = 10;
 
             // Formatters
-            const fmtQty = '#,##0.000';
+            const fmtQty = '#,##0.00';
             const fmtHr = '#,##0.00';
             const fmtInt = '#,##0';
 

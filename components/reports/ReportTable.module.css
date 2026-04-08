@@ -66,3 +66,23 @@
     font-size: 0.875rem;
     color: #64748b;
 }
+
+/* Print Overrides */
+@media print {
+    .container {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        background-color: transparent !important;
+        display: block !important;
+        animation: none !important;
+        height: auto !important;
+    }
+
+    .tableWrapper {
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+}

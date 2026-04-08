@@ -24,7 +24,7 @@ export default function SectorWiseProductionTable({ data, date, shiftName }) {
     const formatDate = (d) => {
         if (!d) return '';
         const [y, m, day] = d.split('-');
-        return `${day}/${m}/${y}`;
+        return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
     };
 
     const fmt = (val) => val != null ? Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '0';

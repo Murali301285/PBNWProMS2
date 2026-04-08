@@ -38,6 +38,15 @@ export async function POST(req) {
                     stoppageValues: {}, // Map<Reason, Map<PlantId, Hrs>>
                     remarks: {} // Map<PlantId, FormattedString>
                 };
+            } else {
+                // If the first row was a CROSS JOIN with no production, the incharge might be null.
+                // We should dynamically populate it if a subsequent plant row has the operator.
+                if (!shiftsMap[shiftName].largeIncharge && row.LargeScaleIncharge) {
+                    shiftsMap[shiftName].largeIncharge = row.LargeScaleIncharge;
+                }
+                if (!shiftsMap[shiftName].midIncharge && row.MidScaleIncharge) {
+                    shiftsMap[shiftName].midIncharge = row.MidScaleIncharge;
+                }
             }
             // Add Plant to Shift list if not exists
             if (!shiftsMap[shiftName].plants.find(p => p.id === row.PlantId)) {

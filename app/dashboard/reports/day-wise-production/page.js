@@ -45,7 +45,12 @@ export default function DayWiseProductionPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Day_Wise_Production_${date}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
     };
 
     const handleExportExcel = async () => {
@@ -137,12 +142,13 @@ export default function DayWiseProductionPage() {
 
             const activeDateObj = new Date(date);
             const reportMonth = activeDateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
+            const dayStr = String(activeDateObj.getDate()).padStart(2, '0');
+            const monthShort = activeDateObj.toLocaleString('en-GB', { month: 'short' });
+            const yearStr = activeDateObj.getFullYear();
+            const displayDate = `${dayStr}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(monthShort, 10) - 1]}-${yearStr}`;
 
-            ws.mergeCells('B5:D5');
-            setCell(ws.getCell('B5'), `Month: ${reportMonth}`, { bold: true, align: 'left', border: false });
-
-            ws.mergeCells('H5:L5');
-            setCell(ws.getCell('H5'), `Date: ${date}`, { bold: true, align: 'right', border: false });
+            ws.mergeCells('B5:L5');
+            setCell(ws.getCell('B5'), `Month: ${reportMonth}   |   Date: ${displayDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
 
             // 3. Table Headers
             const headerRow = ws.getRow(6);
@@ -170,7 +176,6 @@ export default function DayWiseProductionPage() {
             let grandDispatch = 0;
 
             let currentRow = 7;
-            const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : '-';
 
             reportData.forEach((row) => {
                 const coal = row.Coal_MT || 0;
@@ -184,7 +189,7 @@ export default function DayWiseProductionPage() {
                 grandDispatch += dispatch;
 
                 // Set Data Cells
-                setCell(ws.getCell(currentRow, 2), fmtDate(row.Date));
+                setCell(ws.getCell(currentRow, 2), row.Date);
                 setCell(ws.getCell(currentRow, 3), coal, { numFmt: '#,##0.00', align: 'right' });
                 setCell(ws.getCell(currentRow, 4), ob, { numFmt: '#,##0.00', align: 'right' });
                 setCell(ws.getCell(currentRow, 5), total, { numFmt: '#,##0.00', align: 'right' });

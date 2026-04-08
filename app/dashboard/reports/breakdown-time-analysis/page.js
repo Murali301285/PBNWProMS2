@@ -7,10 +7,14 @@ import { Download, Printer } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 
 export default function BreakdownTimeAnalysisPage() {
-    const today = new Date().toISOString().split('T')[0];
+    const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const sysToday = new Date();
+    const firstDayStr = getLocalISO(new Date(sysToday.getFullYear(), sysToday.getMonth(), 1));
+    const todayStr = getLocalISO(sysToday);
+
     const [filter, setFilter] = useState({
-        fromDate: today,
-        toDate: today
+        fromDate: firstDayStr,
+        toDate: todayStr
     });
 
     const [data, setData] = useState(null);
@@ -44,10 +48,17 @@ export default function BreakdownTimeAnalysisPage() {
         }
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `Breakdown_Time_Analysis_${filter.fromDate}_to_${filter.toDate}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
+    };
 
     // Excel export logic similar to other reports
-    
+
     const handleExportExcel = async () => {
         if (!data || data.length === 0) {
             toast.error("No data to export");
@@ -95,14 +106,14 @@ export default function BreakdownTimeAnalysisPage() {
             // 2. Custom width assignment
             ws.columns = Array(maxColSpan + 1).fill(0).map((_, i) => {
                 if (i === 0) return { width: 3 }; // Padding
-                
-                const colDef = columns[i - 1]; 
+
+                const colDef = columns[i - 1];
                 let w = 15;
                 if (colDef) {
-                     if (colDef.accessor === 'SlNo') w = 8;
-                     else if (maxColWidths[colDef.accessor]) {
-                         w = maxColWidths[colDef.accessor];
-                     }
+                    if (colDef.accessor === 'SlNo') w = 8;
+                    else if (maxColWidths[colDef.accessor]) {
+                        w = maxColWidths[colDef.accessor];
+                    }
                 }
                 return { width: w };
             });
@@ -168,9 +179,9 @@ export default function BreakdownTimeAnalysisPage() {
 
             ws.mergeCells(`B5:${endColLetter}5`);
             let fDate = filter.fromDate, tDate = filter.toDate;
-            if (fDate && fDate.includes('-')) fDate = fDate.split('-').reverse().join('/');
-            if (tDate && tDate.includes('-')) tDate = tDate.split('-').reverse().join('/');
-            
+            if (fDate && fDate.includes('-')) fDate = fDate ? new Date(fDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+            if (tDate && tDate.includes('-')) tDate = tDate ? new Date(tDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+
             const dateStr = `From Date: ${fDate || '-'}        To Date: ${tDate || '-'}`;
             setCell(ws.getCell('B5'), dateStr, { bold: true, align: 'center', border: false, fontSize: 11 });
 
@@ -226,19 +237,19 @@ export default function BreakdownTimeAnalysisPage() {
                         nFmt = '#,##0.00';
                         if (val % 1 === 0) nFmt = '#,##0';
                         if (val === 0) nFmt = '0';
-                        
+
                         // Treat WorkingHours with 2 decimals precisely
                         if (['TotalWorkingHours'].includes(col.accessor)) {
-                             nFmt = '0.00';
-                             if (val % 1 === 0) nFmt = '0.00';
+                            nFmt = '0.00';
+                            if (val % 1 === 0) nFmt = '0.00';
                         }
                     }
 
                     const isLeftAlign = ['ShiftName'].includes(col.accessor);
 
-                    setCell(dataRow.getCell(cIdx + 2), val === null || val === undefined ? '-' : val, { 
-                        numFmt: nFmt, 
-                        align: isLeftAlign ? 'left' : 'center' 
+                    setCell(dataRow.getCell(cIdx + 2), val === null || val === undefined ? '-' : val, {
+                        numFmt: nFmt,
+                        align: isLeftAlign ? 'left' : 'center'
                     });
                 });
                 dataRow.height = 18;

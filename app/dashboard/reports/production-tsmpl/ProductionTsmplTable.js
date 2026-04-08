@@ -32,7 +32,7 @@ export default function ProductionTsmplTable({ data, loading, date }) {
     const totalCrusherQty = crusher.reduce((sum, row) => sum + (row.TotalQty || 0), 0);
 
     return (
-        <div className="w-full">
+        <div id="print-area-inner" style={{ maxWidth: '800px', margin: '0 auto', width: '100%', backgroundColor: '#ffffff', padding: '20px' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', width: '100%' }}>
                 {/* Logo - Left */}
@@ -46,8 +46,8 @@ export default function ProductionTsmplTable({ data, loading, date }) {
                     <h2 style={{ fontSize: '1.05rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '6px' }}>PAKRI BARWADIH COAL MINING PROJECT</h2>
                     <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#0f172a', whiteSpace: 'nowrap', textTransform: 'uppercase', marginBottom: '8px', textDecoration: 'underline' }}>PRODUCTION TSMPL REPORT</h3>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#dc2626', fontWeight: 'bold' }}>
-                        <div>Date: {date?.split('-').reverse().join('/')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#0f172a', fontWeight: 'bold' }}>
+                        <div>Date: {date?.split('-').reverse().join('-')}</div>
                         <span style={{ color: '#1e293b' }}>|</span>
                         <div>Shift: {headerInfo?.ShiftName?.replace('SHIFT', 'Shift')}</div>
                     </div>
@@ -57,7 +57,7 @@ export default function ProductionTsmplTable({ data, loading, date }) {
                 <div style={{ flex: '0 0 100px' }}></div>
             </div>
 
-            <div className="space-y-4 max-w-4xl print:max-w-full mx-auto w-full">
+            <div className="space-y-4" style={{ width: '100%' }}>
 
                 {/* 1. Time Breakdown Table Removed as per request */}
 

@@ -238,6 +238,14 @@ export async function POST(req) {
             const result = await executeQuery(query, inputs);
             const newId = result[0]?.SlNo;
 
+            if (table === 'TblEquipment' && newId) {
+                const pmsCode = (2000000 + newId).toString();
+                await executeQuery(`UPDATE ${tableName} SET PMSCode = @pmsCode WHERE SlNo = @id`, [
+                    { name: 'pmsCode', type: 'NVarChar', value: pmsCode },
+                    { name: 'id', type: 'Int', value: newId }
+                ]);
+            }
+
             // Audit Log
             await executeQuery(`
                 INSERT INTO [Master].[TblAuditLog] (Action, TableName, NewValue, ActionBy)

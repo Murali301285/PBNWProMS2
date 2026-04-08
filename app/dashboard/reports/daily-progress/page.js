@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import DailyProgressTable from './DailyProgressTable';
 import { toast } from 'sonner';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 import styles from './DailyProgressPage.module.css';
 
@@ -36,7 +36,14 @@ export default function DailyProgressPage() {
         }
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `Daily_Progress_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
+    };
 
     // Export Logic
     const handleExportExcel = async () => {
@@ -45,7 +52,7 @@ export default function DailyProgressPage() {
         let displayDate = date;
         if (displayDate && displayDate.includes('-')) {
             const [y, m, d] = displayDate.split('-');
-            displayDate = `${d}/${m}/${y}`;
+            displayDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
         } else {
             displayDate = headerInfo?.Date || '-';
         }

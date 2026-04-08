@@ -29,7 +29,7 @@ export default function BreakdownTimeAnalysisTable({ data, loading, filter }) {
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const [year, month, day] = dateString.split('-');
-        return `${day}/${month}/${year}`;
+        return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month, 10) - 1]}-${year}`;
     };
 
     // Helper to calculate Working Hours in H.MM format

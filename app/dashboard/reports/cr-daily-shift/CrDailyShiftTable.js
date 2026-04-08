@@ -30,7 +30,7 @@ export default function CrDailyShiftTable({ shifts, date }) {
                         <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>Crusher Daily Shift Report</h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
-                            <div>Date: {new Date(date).toLocaleDateString('en-GB')}</div>
+                            <div>Date: {new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-')}</div>
                         </div>
                     </div>
                 </div>

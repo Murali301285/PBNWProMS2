@@ -34,7 +34,7 @@ export default function CrStoppageCumulativeTable({ data, date }) {
                         <h3 style={{ fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: 'bold', color: '#1d4ed8', textTransform: 'uppercase', marginTop: '0.25rem', marginBottom: '0.5rem', textDecoration: 'underline' }}>Stoppage cumulative report</h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.875rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
-                            <div>Date: {new Date(date).toLocaleDateString('en-GB')}</div>
+                            <div>Date: {new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-')}</div>
                         </div>
                     </div>
                 </div>
@@ -43,7 +43,7 @@ export default function CrStoppageCumulativeTable({ data, date }) {
                     <table className={styles.table}>
                         <thead>
                             <tr className={styles.blueHeader}>
-                                <th className="bg-white w-[100px]">SHIFT COAL<br />CRUSHING REPORT</th>
+                                <th className="bg-white w-[100px]">Sl.No.</th>
                                 <th className="bg-white min-w-[200px] text-center">Description</th>
                                 {plants.map(p => (
                                     <th key={p.id} className="bg-white">{p.name}</th>

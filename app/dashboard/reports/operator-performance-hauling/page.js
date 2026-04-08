@@ -9,9 +9,13 @@ import ReportTable from '@/components/reports/ReportTable';
 import styles from './OperatorHauling.module.css';
 
 export default function OperatorPerformanceHaulingReport() {
-    const today = new Date().toISOString().split('T')[0];
-    const [fromDate, setFromDate] = useState(today);
-    const [toDate, setToDate] = useState(today);
+    const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const sysToday = new Date();
+    const firstDayStr = getLocalISO(new Date(sysToday.getFullYear(), sysToday.getMonth(), 1));
+    const todayStr = getLocalISO(sysToday);
+    
+    const [fromDate, setFromDate] = useState(firstDayStr);
+    const [toDate, setToDate] = useState(todayStr);
 
     // Filters
     const [allOperators, setAllOperators] = useState([]);
@@ -102,7 +106,7 @@ export default function OperatorPerformanceHaulingReport() {
     // Define table columns
     const columns = useMemo(() => [
         { header: 'Sl No', accessor: 'SlNo', width: '60px' },
-        { header: 'Date', accessor: 'Date', width: '100px', render: r => new Date(r.Date).toLocaleDateString('en-GB') },
+        { header: 'Date', accessor: 'Date', width: '100px' },
         { header: "Operator's Name", accessor: "OPERATOR'S NAME", width: '200px' },
         { header: 'Shift', accessor: 'SHIFT', width: '80px' },
 
@@ -250,10 +254,10 @@ export default function OperatorPerformanceHaulingReport() {
 
             ws.mergeCells(`B5:${endColLetter}5`);
             let fDate = fromDate, tDate = toDate;
-            if (fDate && fDate.includes('-')) fDate = fDate.split('-').reverse().join('/');
-            if (tDate && tDate.includes('-')) tDate = tDate.split('-').reverse().join('/');
+            if (fDate && fDate.includes('-') && fDate.split('-')[0].length === 4) fDate = fDate ? new Date(fDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
+            if (tDate && tDate.includes('-') && tDate.split('-')[0].length === 4) tDate = tDate ? new Date(tDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-';
 
-            const dateStr = `From Date: ${fDate}        To Date: ${tDate}`;
+            const dateStr = `From: ${fDate}        To: ${tDate}`;
             setCell(ws.getCell('B5'), dateStr, { bold: true, align: 'center', border: false, fontSize: 11 });
 
             ws.getRow(2).height = 30;
@@ -445,8 +449,8 @@ export default function OperatorPerformanceHaulingReport() {
                 loading={isLoading}
                 generated={isGenerated}
                 reportName="Operator Performance - Hauling"
-                fromDate={fromDate}
-                toDate={toDate}
+                fromDate={fromDate ? new Date(fromDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
+                toDate={toDate ? new Date(toDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                 stickyLeft={4}
                 stickyBgColor="#e0f2fe"
                 onExportExcel={handleExportExcel}

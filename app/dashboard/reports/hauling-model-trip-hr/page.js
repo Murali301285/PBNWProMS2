@@ -41,7 +41,14 @@ export default function HaulingTripPage() {
         }
     };
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `Hauling_Model_Wise_Trip_Hr_Report_${date}`;
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+        }, 500);
+    };
 
     const handleExportExcel = async () => {
         if (!reportData || reportData.length === 0) {
@@ -54,7 +61,7 @@ export default function HaulingTripPage() {
             const { saveAs } = await import('file-saver');
 
             const dateObj = new Date(date);
-            const displayDate = dateObj.toLocaleDateString('en-GB');
+            const displayDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-');
             const monthName = dateObj.toLocaleString('default', { month: 'short' }) + "'" + dateObj.getFullYear().toString().slice(-2);
 
             const daysUpToSelected = dateObj.getDate();
@@ -255,7 +262,7 @@ export default function HaulingTripPage() {
             ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 8 }];
 
             const buf = await wb.xlsx.writeBuffer();
-            saveAs(new Blob([buf]), `ProMS_Hauling_Trip_Hr_${date}.xlsx`);
+            saveAs(new Blob([buf]), `Hauling_Model_Wise_Trip_Hr_Report_${date}.xlsx`);
             toast.success("Excel Downloaded Successfully");
 
         } catch (error) {
@@ -267,7 +274,8 @@ export default function HaulingTripPage() {
     return (
         <div className={styles.container}>
             <div className={`print:hidden ${styles.headingWrapper}`}>
-                <h1 className={styles.title}>Hauling Model Wise Trip/Hr</h1>
+                <h1 className={styles.title}>Hauling Model Wise Trip/Hr Report</h1>
+                <p className={styles.subtitle}>Daily production and performance summary</p>
             </div>
 
             <div className={styles.filterContainer} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>

@@ -36,7 +36,7 @@ export default function ShiftReportTable({ data, date, shiftName }) {
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem', fontSize: '0.85rem', lineHeight: '1.25rem', color: '#334155', fontWeight: '500' }}>
                         <div>
-                            <span style={{ fontWeight: 700 }}>SHIFT:</span> {shiftName} <span style={{ color: '#1e293b', margin: '0 0.5rem' }}>|</span> <span style={{ fontWeight: 700 }}>Date:</span> {date ? date.split('-').reverse().join('/') : '-'}
+                            <span style={{ fontWeight: 700 }}>SHIFT:</span> {shiftName} <span style={{ color: '#1e293b', margin: '0 0.5rem' }}>|</span> <span style={{ fontWeight: 700 }}>Date:</span> {date ? date.split('-').reverse().join('-') : '-'}
                         </div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginTop: '0.25rem' }}>
                             Incharge : {data.inchargeDetails?.LargeScale || '-'}(Large Scale), {data.inchargeDetails?.SmallScale || '-'}(Mid Scale)

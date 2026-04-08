@@ -9,7 +9,7 @@ export default function ElectricalMonitoringTable({ data, date }) {
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
         const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB'); // DD/MM/YYYY
+        return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-'); // DD/MM/YYYY
     };
 
     const displayDate = formatDate(date);

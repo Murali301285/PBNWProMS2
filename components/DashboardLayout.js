@@ -39,10 +39,32 @@ export default function DashboardLayout({ children }) {
 
     return (
         <div className="print:block" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
+            <style>{`
+                @media print {
+                    #dashboard-main-content {
+                        margin-left: 0 !important;
+                        display: block !important;
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
+                    main {
+                        overflow: visible !important;
+                        overflow-y: visible !important;
+                        height: auto !important;
+                        display: block !important;
+                    }
+                    body, html, .print\\:block {
+                        display: block !important;
+                        height: auto !important;
+                        min-height: auto !important;
+                        overflow: visible !important;
+                    }
+                }
+            `}</style>
             <div className="no-print">
                 <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
             </div>
-            <div style={{
+            <div id="dashboard-main-content" style={{
                 flex: 1,
                 // Adjust margin based on collapsed state logic
                 marginLeft: isSidebarCollapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)',
@@ -57,7 +79,7 @@ export default function DashboardLayout({ children }) {
                 <main className="print:overflow-visible print:block" style={{ flex: 1, padding: '.5rem', overflowY: 'auto' }}>
                     {children}
                 </main>
-                <footer style={{
+                <footer className="no-print" style={{
                     textAlign: 'center',
                     padding: '0 1rem 1rem 1rem',
                     fontSize: '0.8rem',

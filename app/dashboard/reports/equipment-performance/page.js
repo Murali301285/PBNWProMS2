@@ -300,11 +300,10 @@ export default function EquipmentPerformanceReport() {
 
             let formattedDate = date;
             if (formattedDate && formattedDate.includes('-')) {
-                const [y, m, d] = formattedDate.split('-');
-                formattedDate = `${d}/${m}/${y}`;
+                formattedDate = new Date(formattedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
             }
 
-            setCell(ws.getCell('B5'), `Date: ${formattedDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
+            setCell(ws.getCell('B5'), `From: ${formattedDate}        To: ${formattedDate}`, { bold: true, align: 'center', border: false, fontSize: 11 });
 
             ws.getRow(2).height = 30;
             ws.getRow(3).height = 22;
@@ -532,8 +531,8 @@ export default function EquipmentPerformanceReport() {
                 data={data}
                 loading={loading}
                 reportName="Equipment Performance"
-                fromDate={date}
-                toDate={date}
+                fromDate={date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
+                toDate={date ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                 generated={generated}
                 stickyLeft={5} // SlNo, Prodsys Code, Cost Center, Equ Name, Equ Model
                 stickyBgColor="#e0f2fe"

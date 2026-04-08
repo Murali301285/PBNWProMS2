@@ -38,9 +38,15 @@ import styles from '../../app/dashboard/page.module.css';
 export default function Crushing() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [dateRange, setDateRange] = useState({
-        from: new Date().toISOString().split('T')[0],
-        to: new Date().toISOString().split('T')[0]
+    const [dateRange, setDateRange] = useState(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        return {
+            from: `${y}-${m}-01`,
+            to: `${y}-${m}-${d}`
+        };
     });
     const [viewMode, setViewMode] = useState('cumulative'); // cumulative | comprehensive
     const [chartType, setChartType] = useState('bar'); // bar | line

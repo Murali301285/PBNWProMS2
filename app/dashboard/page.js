@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Select from 'react-select';
 import {
     ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-    Layers, Truck, Anchor, Send, Recycle, Box
+    Layers, Truck, Anchor, Send, Recycle, Box, Loader2
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -81,13 +82,40 @@ export default function Dashboard() {
     // Date Filter State (Default to Current Date)
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
+    // Equipment Model Filter State
+    const [haulingModels, setHaulingModels] = useState([]);
+    const [loadingModels, setLoadingModels] = useState([]);
+    const [selectedHaulingModel, setSelectedHaulingModel] = useState('All Models');
+    const [selectedLoadingModel, setSelectedLoadingModel] = useState('All Models');
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch Unique Models for Filters
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const res = await fetch('/api/dashboard/analytical/models');
+                const json = await res.json();
+                if (json.success) {
+                    setLoadingModels(json.loadingModels || []);
+                    setHaulingModels(json.haulingModels || []);
+                }
+            } catch (err) {
+                console.error("Failed to fetch models", err);
+            }
+        };
+        fetchModels();
+    }, []);
+
     useEffect(() => {
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
+
+        const firstDay = `${yyyy}-${mm}-01`;
         const formattedDate = `${yyyy}-${mm}-${dd}`;
-        setDateRange({ from: formattedDate, to: formattedDate });
+
+        setDateRange({ from: firstDay, to: formattedDate });
     }, []);
 
     const [dashboardData, setDashboardData] = useState({
@@ -98,8 +126,15 @@ export default function Dashboard() {
     });
 
     const fetchDashboardData = async () => {
+        setIsLoading(true);
         try {
-            const res = await fetch(`/api/dashboard/analytical?fromDate=${dateRange.from}&toDate=${dateRange.to}`);
+            const queryParams = new URLSearchParams({
+                fromDate: dateRange.from,
+                toDate: dateRange.to,
+                loadingModel: selectedLoadingModel,
+                haulingModel: selectedHaulingModel
+            });
+            const res = await fetch(`/api/dashboard/analytical?${queryParams.toString()}`);
             const json = await res.json();
             if (json.success) {
                 // Process Details into Dictionary Map
@@ -118,6 +153,8 @@ export default function Dashboard() {
             }
         } catch (error) {
             console.error("Failed to load dashboard data", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -125,7 +162,7 @@ export default function Dashboard() {
         if (dateRange.from && dateRange.to) {
             fetchDashboardData();
         }
-    }, [dateRange]);
+    }, [dateRange, selectedLoadingModel, selectedHaulingModel]);
 
     // Merge API Data with Static Config
     const displaySections = sections.map(sec => {
@@ -229,10 +266,12 @@ export default function Dashboard() {
 
         return displayData.map(d => ({
             name: d.EquipmentName,
-            val: Math.round(d.Productivity || 0),
-            hrs: Math.round(d.WorkingHours || 0),
-            displayVal: Math.round(metric === 'time' ? d.WorkingHours : d.Productivity || 0),
-            heightItems: Math.min(((metric === 'time' ? d.WorkingHours : d.Productivity) / normalizer) * 100, 100),
+            val: Number(d.Productivity || 0).toFixed(1),
+            hrs: Number(d.WorkingHours || 0).toFixed(1),
+            displayVal: metric === 'time'
+                ? Number(d.WorkingHours || 0).toFixed(1)
+                : Number(d.Productivity || 0).toFixed(1),
+            heightItems: Math.min(((metric === 'time' ? d.WorkingHours : (d.Productivity || 0)) / normalizer) * 100, 100),
             colorClass: metric === 'time'
                 ? (type === 'hauling' ? styles.barHaulingTime : styles.barLoadingTime)
                 : (view === 'best'
@@ -243,6 +282,26 @@ export default function Dashboard() {
 
     return (
         <div className={styles.container}>
+            <style>{`
+                @keyframes dash-spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
+
+            {/* Global Loader Overlay */}
+            {isLoading && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.6)', backdropFilter: 'blur(2px)',
+                    zIndex: 99999, display: 'flex', flexDirection: 'column',
+                    justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <Loader2 size={48} style={{ animation: 'dash-spin 1s linear infinite', color: 'var(--primary, #0070f3)' }} />
+                    <span style={{ marginTop: '1rem', fontWeight: 600, color: 'var(--foreground)' }}>Processing Analytics...</span>
+                </div>
+            )}
+
             {/* ... Header ... */}
             <div className={styles.pageHeader}>
                 <h1>Analytical Dashboard</h1>
@@ -365,15 +424,27 @@ export default function Dashboard() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {dashboardData.details[activeDetail].map((row, idx) => (
-                                        <tr key={idx} style={row.IsTotal ? { fontWeight: 'bold', background: 'var(--card-color-light)', color: 'var(--card-color)' } : {}}>
-                                            <td>{row.Category}</td>
-                                            <td>{formatNumber(row.FTD)}</td>
-                                            <td>{formatNumber(row.MTD)}</td>
-                                            <td>{formatNumber(row.Avg)}</td>
-                                            <td>{formatNumber(row.YTD)}</td>
-                                        </tr>
-                                    ))}
+                                    {dashboardData.details[activeDetail].map((row, idx) => {
+                                        const plantNameMap = {
+                                            'Plant 1': 'PSS-1',
+                                            'Plant 2': 'PSS-2',
+                                            'Plant 3': 'PSS-3',
+                                            'Plant 4': 'ICP',
+                                            'Plant 5': 'WP-3',
+                                            '-': 'Others'
+                                        };
+                                        const displayCategory = plantNameMap[row.Category] || row.Category;
+
+                                        return (
+                                            <tr key={idx} style={row.IsTotal ? { fontWeight: 'bold', background: 'var(--card-color-light)', color: 'var(--card-color)' } : {}}>
+                                                <td>{displayCategory}</td>
+                                                <td>{formatNumber(row.FTD)}</td>
+                                                <td>{formatNumber(row.MTD)}</td>
+                                                <td>{formatNumber(row.Avg)}</td>
+                                                <td>{formatNumber(row.YTD)}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -396,36 +467,53 @@ export default function Dashboard() {
                                 {haulingMetric === 'prod' ? 'Based on Productivity (Trips/Hr)' : 'Based on Working Duration (Hrs)'}
                             </div>
                         </div>
-                        <div className={styles.chartActions}>
-                            {/* Metric Toggle */}
-                            <div className={styles.togglePill}>
-                                <button
-                                    className={`${styles.pillBtn} ${haulingMetric === 'prod' ? styles.pillActive : ''}`}
-                                    onClick={() => setHaulingMetric('prod')}
-                                >
-                                    Trip/Hr
-                                </button>
-                                <button
-                                    className={`${styles.pillBtn} ${haulingMetric === 'time' ? styles.pillActive : ''}`}
-                                    onClick={() => setHaulingMetric('time')}
-                                >
-                                    Work Hrs
-                                </button>
-                            </div>
+                        <div className={styles.chartActions} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '15px' }}>
+                            {/* Model Filter */}
+                            <Select
+                                instanceId="hauling-model-select"
+                                options={[{ value: 'All Models', label: 'All Models' }, ...haulingModels.map(m => ({ value: m, label: m }))]}
+                                value={{ value: selectedHaulingModel, label: selectedHaulingModel }}
+                                onChange={(opt) => setSelectedHaulingModel(opt.value)}
+                                isSearchable
+                                placeholder="Search Models..."
+                                styles={{
+                                    container: (base) => ({ ...base, width: '220px' }),
+                                    control: (base) => ({ ...base, minHeight: '32px', borderRadius: '20px', fontSize: '12px', border: '1px solid var(--border-color)' }),
+                                    menu: (base) => ({ ...base, fontSize: '12px', zIndex: 9999 })
+                                }}
+                            />
 
-                            <div className={styles.chartControls}>
-                                <button
-                                    className={`${styles.controlBtn} ${haulingView === 'best' ? styles.controlBtnActive : ''}`}
-                                    onClick={() => setHaulingView('best')}
-                                >
-                                    Best
-                                </button>
-                                <button
-                                    className={`${styles.controlBtn} ${haulingView === 'worst' ? styles.controlBtnActive : ''}`}
-                                    onClick={() => setHaulingView('worst')}
-                                >
-                                    Below
-                                </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {/* Metric Toggle */}
+                                <div className={styles.togglePill}>
+                                    <button
+                                        className={`${styles.pillBtn} ${haulingMetric === 'prod' ? styles.pillActive : ''}`}
+                                        onClick={() => setHaulingMetric('prod')}
+                                    >
+                                        Trip/Hr
+                                    </button>
+                                    <button
+                                        className={`${styles.pillBtn} ${haulingMetric === 'time' ? styles.pillActive : ''}`}
+                                        onClick={() => setHaulingMetric('time')}
+                                    >
+                                        Work Hrs
+                                    </button>
+                                </div>
+
+                                <div className={styles.chartControls} style={{ alignSelf: 'flex-end' }}>
+                                    <button
+                                        className={`${styles.controlBtn} ${haulingView === 'best' ? styles.controlBtnActive : ''}`}
+                                        onClick={() => setHaulingView('best')}
+                                    >
+                                        Best
+                                    </button>
+                                    <button
+                                        className={`${styles.controlBtn} ${haulingView === 'worst' ? styles.controlBtnActive : ''}`}
+                                        onClick={() => setHaulingView('worst')}
+                                    >
+                                        Below
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -451,7 +539,9 @@ export default function Dashboard() {
                                     </div>
                                     <span className={styles.barLabel}>{d.name}</span>
                                     <div className={styles.tooltip}>
-                                        {d.val} Trips/Hr<br />{d.hrs} Hrs
+                                        {haulingMetric === 'time'
+                                            ? <>{d.hrs} Hrs<br />{d.val} Trips/Hr</>
+                                            : <>{d.val} Trips/Hr<br />{d.hrs} Hrs</>}
                                     </div>
                                 </div>
                             </div>
@@ -468,36 +558,53 @@ export default function Dashboard() {
                                 {loadingMetric === 'prod' ? 'Based on Productivity (BCM/Hr)' : 'Based on Working Duration (Hrs)'}
                             </div>
                         </div>
-                        <div className={styles.chartActions}>
-                            {/* Metric Toggle */}
-                            <div className={styles.togglePill}>
-                                <button
-                                    className={`${styles.pillBtn} ${loadingMetric === 'prod' ? styles.pillActive : ''}`}
-                                    onClick={() => setLoadingMetric('prod')}
-                                >
-                                    BCM/Hr
-                                </button>
-                                <button
-                                    className={`${styles.pillBtn} ${loadingMetric === 'time' ? styles.pillActive : ''}`}
-                                    onClick={() => setLoadingMetric('time')}
-                                >
-                                    Work Hrs
-                                </button>
-                            </div>
+                        <div className={styles.chartActions} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '15px' }}>
+                            {/* Model Filter */}
+                            <Select
+                                instanceId="loading-model-select"
+                                options={[{ value: 'All Models', label: 'All Models' }, ...loadingModels.map(m => ({ value: m, label: m }))]}
+                                value={{ value: selectedLoadingModel, label: selectedLoadingModel }}
+                                onChange={(opt) => setSelectedLoadingModel(opt.value)}
+                                isSearchable
+                                placeholder="Search Models..."
+                                styles={{
+                                    container: (base) => ({ ...base, width: '220px' }),
+                                    control: (base) => ({ ...base, minHeight: '32px', borderRadius: '20px', fontSize: '12px', border: '1px solid var(--border-color)' }),
+                                    menu: (base) => ({ ...base, fontSize: '12px', zIndex: 9999 })
+                                }}
+                            />
 
-                            <div className={styles.chartControls}>
-                                <button
-                                    className={`${styles.controlBtn} ${loadingView === 'best' ? styles.controlBtnActive : ''}`}
-                                    onClick={() => setLoadingView('best')}
-                                >
-                                    Best
-                                </button>
-                                <button
-                                    className={`${styles.controlBtn} ${loadingView === 'worst' ? styles.controlBtnActive : ''}`}
-                                    onClick={() => setLoadingView('worst')}
-                                >
-                                    Below
-                                </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {/* Metric Toggle */}
+                                <div className={styles.togglePill}>
+                                    <button
+                                        className={`${styles.pillBtn} ${loadingMetric === 'prod' ? styles.pillActive : ''}`}
+                                        onClick={() => setLoadingMetric('prod')}
+                                    >
+                                        BCM/Hr
+                                    </button>
+                                    <button
+                                        className={`${styles.pillBtn} ${loadingMetric === 'time' ? styles.pillActive : ''}`}
+                                        onClick={() => setLoadingMetric('time')}
+                                    >
+                                        Work Hrs
+                                    </button>
+                                </div>
+
+                                <div className={styles.chartControls} style={{ alignSelf: 'flex-end' }}>
+                                    <button
+                                        className={`${styles.controlBtn} ${loadingView === 'best' ? styles.controlBtnActive : ''}`}
+                                        onClick={() => setLoadingView('best')}
+                                    >
+                                        Best
+                                    </button>
+                                    <button
+                                        className={`${styles.controlBtn} ${loadingView === 'worst' ? styles.controlBtnActive : ''}`}
+                                        onClick={() => setLoadingView('worst')}
+                                    >
+                                        Below
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -522,7 +629,9 @@ export default function Dashboard() {
                                     </div>
                                     <span className={styles.barLabel}>{d.name}</span>
                                     <div className={styles.tooltip}>
-                                        {d.val} BCM/Hr<br />{d.hrs} Hrs
+                                        {loadingMetric === 'time'
+                                            ? <>{d.hrs} Hrs<br />{d.val} BCM/Hr</>
+                                            : <>{d.val} BCM/Hr<br />{d.hrs} Hrs</>}
                                     </div>
                                 </div>
                             </div>

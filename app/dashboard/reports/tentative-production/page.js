@@ -68,7 +68,12 @@ export default function TentativeProductionPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const originalTitle = document.title;
+        document.title = `Tentative_Production_${date}`;
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = originalTitle; }, 500);
+        }, 500);
     };
 
     // --- Totals Calculation Helpers (Moved from Table) ---
@@ -98,7 +103,7 @@ export default function TentativeProductionPage() {
         const day = String(dateObj.getDate()).padStart(2, '0');
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const year = dateObj.getFullYear();
-        return `${day}/${month}/${year}`;
+        return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month, 10) - 1]}-${year}`;
     };
 
     const handleExportExcel = async () => {
