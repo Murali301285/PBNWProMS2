@@ -134,7 +134,7 @@ export default function CrusherPage() {
                             fontWeight: 500,
                             alignSelf: 'center'
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Crusher :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Date of Crusher :{new Date(lastEntry.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
                     <button className={styles.addNew} onClick={() => router.push('/dashboard/transaction/crusher/add')}>

@@ -86,16 +86,34 @@ export default function DataTable({
     // 3. Sort
     const sortedData = useMemo(() => {
         if (!sortConfig.key) return filteredData;
+
+        const sortCol = columns.find(c => c.accessor === sortConfig.key);
+        const isDateType = sortCol?.type === 'date';
+
         const sorted = [...filteredData].sort((a, b) => {
-            const valA = a[sortConfig.key];
-            const valB = b[sortConfig.key];
+            let valA = a[sortConfig.key];
+            let valB = b[sortConfig.key];
+
+            if (isDateType) {
+                const dateA = new Date(valA).getTime();
+                const dateB = new Date(valB).getTime();
+                valA = isNaN(dateA) ? valA : dateA;
+                valB = isNaN(dateB) ? valB : dateB;
+            } else {
+                const numA = Number(valA);
+                const numB = Number(valB);
+                if (!isNaN(numA) && !isNaN(numB) && valA !== null && valB !== null && valA !== '' && valB !== '') {
+                    valA = numA;
+                    valB = numB;
+                }
+            }
 
             if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
             if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         });
         return sorted;
-    }, [filteredData, sortConfig]);
+    }, [filteredData, sortConfig, columns]);
 
     // 4. Pagination
     const totalItems = sortedData.length;

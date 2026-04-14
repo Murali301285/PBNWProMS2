@@ -156,7 +156,7 @@ export default function EquipmentReadingPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Equipment Reading :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Date of Equipment Reading :{new Date(lastEntry.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
 

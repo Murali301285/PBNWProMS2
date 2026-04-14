@@ -138,7 +138,7 @@ export default function TransactionTable({
         const headers = config.columns.map(c => c.label);
         const rows = sortedData.map(row => config.columns.map(c => {
             let val = row[c.accessor];
-            if (c.type === 'date' && val) val = new Date(val).toLocaleDateString('en-GB');
+            if (c.type === 'date' && val) val = new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
             else if (c.type === 'datetime' && val) val = new Date(val).toLocaleString('en-GB');
             return val || '';
         }));
@@ -335,7 +335,7 @@ export default function TransactionTable({
                                             const left = getLeftOffset(cIndex);
                                             let val = row[col.accessor];
                                             if (col.accessor === 'SlNo') val = listIndex;
-                                            if (col.type === 'date' && val) val = new Date(val).toLocaleDateString('en-GB');
+                                            if (col.type === 'date' && val) val = new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
                                             if (col.type === 'datetime' && val) val = String(val).replace('T', ' ').split('.')[0];
                                             return (
                                                 <td
@@ -453,7 +453,7 @@ export default function TransactionTable({
                     <p style={{ marginBottom: '20px', color: '#374151' }}>
                         Are you sure you want to delete this record? <br />
                         <b>ID: {deleteRow ? deleteRow[config.idField] : ''}</b> <br />
-                        Date: <b>{deleteRow ? new Date(deleteRow[config.columns.find(c => c.type === 'date')?.accessor || 'LoadingDate']).toLocaleDateString('en-GB') : ''}</b>
+                        Date: <b>{deleteRow ? new Date(deleteRow[config.columns.find(c => c.type === 'date')?.accessor || 'LoadingDate']).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : ''}</b>
                     </p>
                     <div className={styles.buttonGroup} style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                         <button

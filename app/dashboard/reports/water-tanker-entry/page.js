@@ -85,7 +85,7 @@ export default function WaterTankerReport() {
     // Columns Configuration for ReportTable
     const columns = useMemo(() => [
         { header: 'S.N.', accessor: 'SlNo', width: '60px' },
-        { header: 'Date', accessor: 'Date', width: '100px' }, // Added Date Column
+        { header: 'Date', accessor: 'Date', width: '100px', type: 'date' }, // Added Date Column
         { header: 'Water Tanker Equipment', accessor: 'Water Tanker Equipment', width: '200px' },
         { header: 'Trip', accessor: 'Trip', width: '80px', render: r => fmt0(r.Trip) },
         { header: 'Tanker Capacity (Cub mtr)', accessor: 'Tanker Capacity', width: '150px', render: r => fmt0(r['Tanker Capacity']) }, // Updated accessor

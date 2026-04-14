@@ -74,7 +74,7 @@ export default function BreakdownTimeAnalysisPage() {
 
             const columns = [
                 { header: 'SlNo', accessor: 'SlNo' },
-                { header: 'Date', accessor: 'Date' },
+        { header: 'Date', accessor: 'Date', type: 'date' },
                 { header: 'Shift', accessor: 'ShiftName' },
                 { header: 'Shift Change (Min)', accessor: 'ShiftChange' },
                 { header: 'Break/Tea (Min)', accessor: 'BreakTeaTime' },

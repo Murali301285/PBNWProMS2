@@ -168,7 +168,7 @@ export default function WaterTankerEntryList() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {lastEntry.EntryDate ? new Date(lastEntry.EntryDate).toLocaleDateString('en-GB') : 'NA'} | Entered by : {lastEntry.CreatedByName || lastEntry.CreatedBy || 'Unknown'}
+                            Last data entered on -&gt; Date: {lastEntry.EntryDate ? new Date(lastEntry.EntryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : 'NA'} | Entered by : {lastEntry.CreatedByName || lastEntry.CreatedBy || 'Unknown'}
                         </span>
                     )}
                     <button className={styles.addNew} onClick={() => router.push('/dashboard/transaction/water-tanker-entry/add')}>

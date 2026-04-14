@@ -145,7 +145,7 @@ export default function MaterialRehandlingPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | RehandlingDate :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || lastEntry.CreatedBy || 'Admin'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | RehandlingDate :{new Date(lastEntry.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Entered by : {lastEntry.CreatedByName || lastEntry.CreatedBy || 'Admin'}
                         </span>
                     )}
                     <button

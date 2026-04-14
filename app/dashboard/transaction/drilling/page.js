@@ -169,7 +169,7 @@ export default function DrillingPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} | Date of Drilling :{new Date(lastEntry.Date).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; Date: {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Date of Drilling :{new Date(lastEntry.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
 

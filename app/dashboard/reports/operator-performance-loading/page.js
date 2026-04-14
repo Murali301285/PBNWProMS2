@@ -93,7 +93,7 @@ export default function OperatorPerformanceReport() {
     // Define table columns
     const columns = useMemo(() => [
         { header: 'SlNo', accessor: 'SlNo', width: '60px' },
-        { header: 'Date', accessor: 'Date', width: '100px' },
+        { header: 'Date', accessor: 'Date', width: '100px', type: 'date' },
         { header: "Operator's Name", accessor: "OPERATOR'S NAME", width: '200px' },
         { header: 'Shift', accessor: 'SHIFT', width: '80px' },
         { header: 'Vehicle No', accessor: 'LOADING EQUIPMENT', width: '150px' },

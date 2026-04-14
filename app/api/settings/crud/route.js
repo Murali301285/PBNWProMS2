@@ -3,6 +3,7 @@ import { executeQuery } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
 import { MASTER_CONFIG } from '@/lib/masterConfig';
+import { encryptPassword } from '@/lib/auth';
 
 export async function POST(req) {
     let body = null;
@@ -13,6 +14,20 @@ export async function POST(req) {
         // console.log("ACTION:", action, "TABLE:", table);
 
         if (!table) return NextResponse.json({ message: 'Table required' }, { status: 400 });
+
+        // 🚨 ENCRYPTION INTERCEPT FOR USER TABLE
+        if (table === 'TblUser_New') {
+            if (action === 'create' && data && data.Password) {
+                data.Password = encryptPassword(data.Password);
+            }
+            if (action === 'update' && data) {
+                 if (data.Password && data.Password.trim() !== '') {
+                     data.Password = encryptPassword(data.Password);
+                 } else if (data.Password !== undefined) {
+                     delete data.Password; // Safely ignore blank updates from the frontend
+                 }
+            }
+        }
 
         // Whitelist tables
         const validTables = [

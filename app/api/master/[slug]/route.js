@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDbConnection, sql } from '@/lib/db';
 import { MASTER_CONFIG } from '@/lib/masterConfig';
+import { encryptPassword } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,11 @@ export async function POST(req, { params }) {
         const body = await req.json();
         const pool = await getDbConnection();
         const request = pool.request();
+
+        // 🚨 Native Cipher Mapping hook for user creation
+        if (slug === 'user' && body['Password']) {
+            body['Password'] = encryptPassword(body['Password']);
+        }
 
         // Dynamically build INSERT fields and values
         const fields = [];
@@ -122,6 +128,15 @@ export async function PUT(req, { params }) {
         const body = await req.json();
         const pool = await getDbConnection();
         const request = pool.request();
+
+        // 🚨 Native Cipher Mapping hook for user updating
+        if (slug === 'user') {
+            if (body['Password']) {
+                body['Password'] = encryptPassword(body['Password']);
+            } else {
+                delete body['Password']; // Ignore blank password changes logically natively
+            }
+        }
 
         const id = body.id;
         request.input('Id', id);

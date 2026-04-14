@@ -41,7 +41,7 @@ export default function MaterialRehandlingReport() {
         { header: 'PMS Code Hauling', accessor: 'ProdsysCodeHauling' },
         { header: 'Year', accessor: 'Year' },
         { header: 'Month', accessor: 'Month' },
-        { header: 'Date', accessor: 'Date' },
+        { header: 'Date', accessor: 'Date', type: 'date' },
         { header: 'Shift', accessor: 'ShiftName' },
         { header: 'Source', accessor: 'SourceName' },
         { header: 'Destination', accessor: 'Destination' },
@@ -253,7 +253,11 @@ export default function MaterialRehandlingReport() {
                     if (col.accessor === 'Date' && val) {
                          const d = new Date(val);
                          if (!isNaN(d.getTime())) {
-                             val = d.toLocaleDateString('en-GB');
+                             const day = d.getDate().toString().padStart(2, '0');
+                             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                             const month = monthNames[d.getMonth()];
+                             const year = d.getFullYear();
+                             val = `${day}-${month}-${year}`;
                          }
                     }
 

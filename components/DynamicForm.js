@@ -184,6 +184,7 @@ export default function DynamicForm({ columns, formData, setFormData, errors, se
                             onChange={handleChange}
                             onKeyDown={handleEnterNav}
                             placeholder={`Enter ${label}`}
+                            autoComplete="new-password"
                             autoFocus={col.autoFocus || (!isRowLayout && isFirstField)}
                             style={errors && errors[accessor] ? { borderColor: 'red', paddingRight: '40px' } : { paddingRight: '40px' }}
                         />
@@ -216,6 +217,7 @@ export default function DynamicForm({ columns, formData, setFormData, errors, se
                             if (validationType) handleStrictInput(e, validationType, decimals);
                         }}
                         placeholder={`Enter ${label}`}
+                        autoComplete={accessor === 'UserName' ? 'new-password' : 'off'}
                         autoFocus={col.autoFocus || (!isRowLayout && isFirstField)}
                         style={errors && errors[accessor] ? { borderColor: 'red' } : {}}
                     />

@@ -34,7 +34,7 @@ export default function HaulingMasterReportPage() {
         { header: 'PMS Code', accessor: 'PMS Code' },
         { header: 'Year', accessor: 'Year' },
         { header: 'Month', accessor: 'Month' },
-        { header: 'Date', accessor: 'Date' },
+        { header: 'Date', accessor: 'Date', type: 'date' },
         { header: "Operator's Name", accessor: "Operator's Name" },
         { header: 'Shift', accessor: 'Shift' },
         { header: 'Hauler', accessor: 'Hauler' },
@@ -260,7 +260,11 @@ export default function HaulingMasterReportPage() {
                     if (col.accessor === 'Date' && val) {
                          const d = new Date(val);
                          if (!isNaN(d.getTime())) {
-                             val = d.toLocaleDateString('en-GB');
+                             const day = d.getDate().toString().padStart(2, '0');
+                             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                             const month = monthNames[d.getMonth()];
+                             const year = d.getFullYear();
+                             val = `${day}-${month}-${year}`;
                          }
                     }
 
@@ -336,7 +340,7 @@ export default function HaulingMasterReportPage() {
                     columns={columns}
                     data={reportData}
                     generated={true}
-                    reportName="Hauling Master Report"
+                    reportName="Hauling Master"
                     fromDate={fromDate ? new Date(fromDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                     toDate={toDate ? new Date(toDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '-'}
                     onExportExcel={handleExportExcel}

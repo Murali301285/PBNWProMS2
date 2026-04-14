@@ -106,7 +106,7 @@ export default function OperatorPerformanceHaulingReport() {
     // Define table columns
     const columns = useMemo(() => [
         { header: 'Sl No', accessor: 'SlNo', width: '60px' },
-        { header: 'Date', accessor: 'Date', width: '100px' },
+        { header: 'Date', accessor: 'Date', width: '100px', type: 'date' },
         { header: "Operator's Name", accessor: "OPERATOR'S NAME", width: '200px' },
         { header: 'Shift', accessor: 'SHIFT', width: '80px' },
 

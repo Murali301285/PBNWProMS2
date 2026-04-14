@@ -169,7 +169,7 @@ export default function LoadingFromMinesPage() {
                             marginRight: '16px',
                             fontWeight: 500
                         }}>
-                            Last data entered on -&gt; {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB')} {new Date(lastEntry.CreatedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} | Loading Date: {new Date(lastEntry.LoadingDate).toLocaleDateString('en-GB')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
+                            Last data entered on -&gt; {new Date(lastEntry.CreatedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} {new Date(lastEntry.CreatedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} | Loading Date: {new Date(lastEntry.LoadingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} | Entered by : {lastEntry.CreatedByName || 'Unknown'}
                         </span>
                     )}
 

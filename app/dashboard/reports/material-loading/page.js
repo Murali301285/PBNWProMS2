@@ -38,7 +38,7 @@ export default function MaterialLoadingReport() {
         { header: 'Cost Center Hauling', accessor: 'CostCenterHauler' },
         { header: 'Year', accessor: 'Year' },
         { header: 'Month', accessor: 'Month' },
-        { header: 'Date', accessor: 'Date' },
+        { header: 'Date', accessor: 'Date', type: 'date' },
         { header: 'Shift', accessor: 'ShiftName' },
         { header: 'Source', accessor: 'SourceName' },
         { header: 'Destination', accessor: 'Destination' },
