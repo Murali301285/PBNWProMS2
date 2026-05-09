@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDbConnection, sql } from '@/lib/db';
 import { MASTER_CONFIG } from '@/lib/masterConfig';
-import { encryptPassword } from '@/lib/auth';
+import { encryptPassword, decryptPassword } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,10 +37,20 @@ export async function GET(req, { params }) {
         }
 
         const result = await pool.request().query(query);
-        if (slug === 'equipment' && result.recordset.length > 0) {
-            console.log('[DEBUG-SERVER] Equipment API PMSCode data type validation for first row:', result.recordset[0].PMSCode);
+        let records = result.recordset;
+
+        // Decrypt password for User
+        if (slug === 'user') {
+            records = records.map(record => ({
+                ...record,
+                Password: record.Password ? decryptPassword(record.Password) : ''
+            }));
         }
-        return NextResponse.json(result.recordset);
+
+        if (slug === 'equipment' && records.length > 0) {
+            console.log('[DEBUG-SERVER] Equipment API PMSCode data type validation for first row:', records[0].PMSCode);
+        }
+        return NextResponse.json(records);
 
     } catch (error) {
         console.error(`Error fetching ${params.slug}:`, error);

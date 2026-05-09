@@ -1,0 +1,11 @@
+// T-SQL to check constraints
+SELECT 
+    tc.CONSTRAINT_NAME, 
+    tc.CONSTRAINT_TYPE 
+FROM 
+    INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc 
+    JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu 
+    ON tc.CONSTRAINT_NAME = ccu.Constraint_Name 
+WHERE 
+    tc.TABLE_NAME = 'TblEquipment' 
+    AND ccu.COLUMN_NAME = 'CostCenter';

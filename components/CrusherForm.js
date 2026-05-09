@@ -562,7 +562,6 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
         if (!formData.ShiftId) newErrors.ShiftId = 'Required';
         if (!formData.PlantId) newErrors.PlantId = 'Required';
         if (!formData.ShiftInChargeId) newErrors.ShiftInChargeId = 'Required';
-        if (!formData.EquipmentId) newErrors.EquipmentId = 'Required';
 
         // Stoppages validation
         const shift = shiftMap.current[formData.ShiftId];
@@ -614,7 +613,6 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
         if (!formData.ShiftId) newErrors.ShiftId = true;
         if (!formData.ShiftInChargeId) newErrors.ShiftInChargeId = true;
         if (!formData.PlantId) newErrors.PlantId = true;
-        if (!formData.EquipmentId) newErrors.EquipmentId = true;
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -831,7 +829,7 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
                 {/* --- Row 3 --- */}
                 {/* Hauler: C1-C2 (Span 2) */}
                 <div className={css.fieldGroup} style={{ gridColumn: '1 / span 2' }}>
-                    <label className={css.label}>Hauler<span className={css.required}>*</span></label>
+                    <label className={css.label}>Hauler</label>
                     <SearchableSelect
                         ref={haulerRef}
                         options={haulers}

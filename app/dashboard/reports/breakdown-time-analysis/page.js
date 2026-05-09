@@ -169,10 +169,10 @@ export default function BreakdownTimeAnalysisPage() {
             const endColLetter = ws.getColumn(maxColSpan + 1).letter;
 
             ws.mergeCells(`B2:${endColLetter}2`);
-            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+            setCell(ws.getCell('B2'), (process.env.NEXT_PUBLIC_REPORT_HEADING_1 || "THRIVENI SAINIK MINING PRIVATE LIMITED"), { bold: true, align: 'center', border: false, fontSize: 16 });
 
             ws.mergeCells(`B3:${endColLetter}3`);
-            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+            setCell(ws.getCell('B3'), (process.env.NEXT_PUBLIC_REPORT_HEADING_2 || "PAKRI BARWADIH COAL MINING PROJECT"), { bold: true, align: 'center', border: false, fontSize: 13 });
 
             ws.mergeCells(`B4:${endColLetter}4`);
             setCell(ws.getCell('B4'), "Breakdown Time Analysis Report", { bold: true, align: 'center', border: false, underline: true, fontSize: 12 });

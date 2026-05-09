@@ -41,8 +41,8 @@ export async function POST(request) {
                 ) OUTPUT INSERTED.SlNo VALUES (
                     '${body.Date}', 
                     '${body.BlastingPatchId}', 
-                    ${body.SMESupplierId}, 
-                    ${valOrNull(body.SMEQty)}, 
+                    NULL, 
+                    NULL, 
                     ${valOrNull(body.MaxCharge)}, 
                     ${valOrNull(body.PPV)}, 
                     ${valOrNull(body.DeckHoles)}, 
@@ -86,6 +86,58 @@ export async function POST(request) {
                     `;
                     console.log('SQL QUERY (Child Accessory):', insertChild);
                     await transaction.request().query(insertChild);
+                }
+            }
+
+            // 3. Insert SME Suppliers (TblBlastingSME)
+            if (body.entries && body.entries.length > 0) {
+                for (const entry of body.entries) {
+                    if (!entry.smeSuppliers || entry.smeSuppliers.length === 0) {
+                        // Insert entry without SME supplier
+                        const insertSME = `
+                            INSERT INTO [Trans].[TblBlastingSME] (
+                                BlastingId, SMESupplierId, SMEQty, 
+                                RefName, EntryNoOfHoles, EntryRemarks, SMERemarks,
+                                CreatedDate, CreatedBy, IsDelete
+                            ) VALUES (
+                                ${blastingId}, 
+                                NULL, 
+                                0, 
+                                '${entry.refName || ''}',
+                                ${entry.noOfHoles || 0},
+                                '${entry.remarks || ''}',
+                                '',
+                                GETDATE(), 
+                                ${createdBy}, 
+                                0
+                            )
+                        `;
+                        await transaction.request().query(insertSME);
+                    } else {
+                        for (const sme of entry.smeSuppliers) {
+                            if (!sme.SMESupplierId && !entry.refName) continue; // Skip totally empty
+                            
+                            const insertSME = `
+                                INSERT INTO [Trans].[TblBlastingSME] (
+                                    BlastingId, SMESupplierId, SMEQty, 
+                                    RefName, EntryNoOfHoles, EntryRemarks, SMERemarks,
+                                    CreatedDate, CreatedBy, IsDelete
+                                ) VALUES (
+                                    ${blastingId}, 
+                                    ${sme.SMESupplierId ? sme.SMESupplierId : 'NULL'}, 
+                                    ${sme.SMEQty || 0}, 
+                                    '${entry.refName || ''}',
+                                    ${entry.noOfHoles || 0},
+                                    '${entry.remarks || ''}',
+                                    '${sme.remarks || ''}',
+                                    GETDATE(), 
+                                    ${createdBy}, 
+                                    0
+                                )
+                            `;
+                            await transaction.request().query(insertSME);
+                        }
+                    }
                 }
             }
 

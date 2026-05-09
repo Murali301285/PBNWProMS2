@@ -349,8 +349,8 @@ export default function DataTable({
             {/* Print Only Header */}
             {reportHeader && (
                 <div className="hidden print:flex flex-col items-center justify-center mb-4 w-full text-center" style={{ minWidth: 'max-content' }}>
-                    <h2 className="text-xl font-bold text-black" style={{ textAlign: 'center', width: '100%' }}>THRIVENI SAINIK MINING PRIVATE LIMITED</h2>
-                    <h3 className="text-lg font-bold text-black" style={{ textAlign: 'center', width: '100%' }}>PAKRI BARWADIH COAL MINING PROJECT</h3>
+                    <h2 className="text-xl font-bold text-black" style={{ textAlign: 'center', width: '100%' }}>{process.env.NEXT_PUBLIC_REPORT_HEADING_1 || "THRIVENI SAINIK MINING PRIVATE LIMITED"}</h2>
+                    <h3 className="text-lg font-bold text-black" style={{ textAlign: 'center', width: '100%' }}>{process.env.NEXT_PUBLIC_REPORT_HEADING_2 || "PAKRI BARWADIH COAL MINING PROJECT"}</h3>
                     <h4 className="text-md font-bold underline mt-2 text-black" style={{ textAlign: 'center', width: '100%' }}>{reportHeader.title}</h4>
                     <div className="flex justify-center gap-4 mt-2 text-sm font-bold w-full text-black" style={{ textAlign: 'center', width: '100%' }}>
                         <span>{reportHeader.fromDate && `From: ${reportHeader.fromDate.includes('-') && reportHeader.fromDate.split('-')[0].length === 4 ? reportHeader.fromDate.split('-').reverse().join('-') : reportHeader.fromDate}`}</span>

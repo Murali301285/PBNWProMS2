@@ -1,394 +1,258 @@
-CREATE OR ALTER PROCEDURE [dbo].[ProMS2_SPReportShiftProduction]
 
+CREATE PROCEDURE [dbo].[PMS2_New_sp_ShiftReport]
     @Date DATE,
-
     @ShiftId INT
-
 AS
-
 BEGIN
-
     SET NOCOUNT ON;
 
+    -------------------------------------------------------------------
     -- SECTION 0: Incharge Details
-
-    -- Concatenate Unique Incharge Names per Scale for the selected Shift
-
-    -- Fix: Use CTE to get DISTINCT names first to avoid massive repetition, and cast to NVARCHAR(MAX) to prevent overflow
-
+    -------------------------------------------------------------------
     ;WITH UniqueIncharges AS (
-
         SELECT DISTINCT 
-
-            sl.Name as scalename,
-
-            op.OperatorName
-
-        FROM [Trans].[TblEquipmentReading] as er
-
-        LEFT JOIN [Master].[TblEquipment] as Eq on er.EquipmentId = eq.SlNo
-
-        LEFT JOIN [Master].TblScale as sl on eq.ScaleId = sl.SlNo
-
-        LEFT JOIN [Trans].[TblEquipmentReadingShiftIncharge] as si on si.[EquipmentReadingId] = er.SlNo
-
-        LEFT JOIN [Master].TblOperator as op on si.OperatorId = op.SlNo 
-
-        WHERE eq.IsDelete=0 
-
-          AND Cast(er.[Date] as Date) = @Date
-
-          AND er.ShiftId = @ShiftId
-
-          AND op.OperatorName IS NOT NULL
-
+            Sl.Name AS ScaleName,
+            Op.OperatorName
+        FROM [Trans].[TblEquipmentReading] ER WITH(NOLOCK)
+        LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON ER.EquipmentId = Eq.SlNo
+        LEFT JOIN [Master].[TblScale] Sl WITH(NOLOCK) ON Eq.ScaleId = Sl.SlNo
+        LEFT JOIN [Trans].[TblEquipmentReadingShiftIncharge] SI WITH(NOLOCK) ON SI.EquipmentReadingId = ER.SlNo
+        LEFT JOIN [Master].[TblOperator] Op WITH(NOLOCK) ON SI.OperatorId = Op.SlNo 
+        WHERE Eq.IsDelete = 0 
+          AND CAST(ER.Date AS DATE) = @Date
+          AND ER.ShiftId = @ShiftId
+          AND Op.OperatorName IS NOT NULL
     )
-
     SELECT 
-
-        scalename,
-
-        STRING_AGG(CAST(OperatorName AS NVARCHAR(MAX)), ', ') as ShiftInchare
-
+        ScaleName,
+        STRING_AGG(CAST(OperatorName AS NVARCHAR(MAX)), ', ') AS ShiftInchare
     FROM UniqueIncharges
+    GROUP BY ScaleName;
 
-    GROUP BY scalename;
-
-    -- SECTION A: TRIP-QUANTITY DETAILS (COAL)
-
-    -- Shift Production vs FTD (For The Day)
-
+    -------------------------------------------------------------------
+    -- SECTION A.1: TRIP-QUANTITY DETAILS (COAL)
+    -------------------------------------------------------------------
     SELECT
-
-        MAX(s.ShiftName) as ShiftName,
-
-        sl.Name as Scale,
-
-        'ROM COAL' as MaterialName,
-
+        MAX(S.ShiftName) AS ShiftName,
+        Sl.Name AS Scale,
+        'ROM COAL' AS MaterialName,
         
-
         -- Shift Production (@ShiftId)
-
         SUM(CASE WHEN L.ShiftId = @ShiftId THEN 1 ELSE 0 END) AS Shift_Trips,
-
         SUM(CASE WHEN L.ShiftId = @ShiftId THEN L.TotalQty ELSE 0 END) AS Shift_Qty,
-
         
-
         -- FTD Production (All Shifts for @Date)
-
         COUNT(L.SlNo) AS FTD_Trips,
-
         SUM(L.TotalQty) AS FTD_Qty
 
-    FROM [Trans].[TblLoading] L
-
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.HaulerEquipmentId = Eq.SlNo
-
-    LEFT JOIN [Master].TblShift as s on s.SlNo = @ShiftId -- Use param shift name for display
-
-    LEFT JOIN [Master].TblScale as sl on eq.ScaleId = sl.SlNo
-
-    LEFT JOIN [Master].TblMaterial as mt on l.MaterialId = mt.SlNo
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.HaulerEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblShift] S WITH(NOLOCK) ON S.SlNo = @ShiftId 
+    LEFT JOIN [Master].[TblScale] Sl WITH(NOLOCK) ON Eq.ScaleId = Sl.SlNo
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.MaterialId = 7 -- ROM COAL
+    GROUP BY Sl.Name;
 
-    GROUP BY sl.Name;
-
-    -- SECTION A: TRIP-QUANTITY DETAILS (WASTE)
-
+    -------------------------------------------------------------------
+    -- SECTION A.2: TRIP-QUANTITY DETAILS (OB)
+    -------------------------------------------------------------------
     SELECT
-
-        MAX(s.ShiftName) as ShiftName,
-
-        sl.Name as Scale,
-
-        'WASTE' as MaterialName,
-
+        MAX(S.ShiftName) AS ShiftName,
+        Sl.Name AS Scale,
+        'OB' AS MaterialName,
         
-
         -- Shift Production
-
         SUM(CASE WHEN L.ShiftId = @ShiftId THEN 1 ELSE 0 END) AS Shift_Trips,
-
         SUM(CASE WHEN L.ShiftId = @ShiftId THEN L.TotalQty ELSE 0 END) AS Shift_Qty,
-
         
-
         -- FTD Production
-
         COUNT(L.SlNo) AS FTD_Trips,
-
         SUM(L.TotalQty) AS FTD_Qty
 
-    FROM [Trans].[TblLoading] L
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.HaulerEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblShift] S WITH(NOLOCK) ON S.SlNo = @ShiftId
+    LEFT JOIN [Master].[TblScale] Sl WITH(NOLOCK) ON Eq.ScaleId = Sl.SlNo
+    LEFT JOIN [Master].[TblMaterial] Mt WITH(NOLOCK) ON L.MaterialId = Mt.SlNo
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
+      AND Mt.MaterialName IN ('OB', 'OVER BURDEN')
+    GROUP BY Sl.Name;
 
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.HaulerEquipmentId = Eq.SlNo
-
-    LEFT JOIN [Master].TblShift as s on s.SlNo = @ShiftId
-
-    LEFT JOIN [Master].TblScale as sl on eq.ScaleId = sl.SlNo
-
-    LEFT JOIN [Master].TblMaterial as mt on l.MaterialId = mt.SlNo
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
-      AND mt.MaterialName NOT IN ('ROM COAL', 'CRUSHED COAL')
-
-    GROUP BY sl.Name;
-
-    -- SECTION B: LOADING EQUIPMENT'S TRIP DETAILS (Only for Selected Shift)
-
-    -- Materials: OB/IB, Top Soil, Coal.
-
-    -- We need columns: Equipment, OB/IB Trip, Top Soil Trip, Coal Trip, Total Trip, BCM, MT, W.Hr, Location
-
-    -- BCM = Waste Qty, MT = Coal Qty
-
+    -------------------------------------------------------------------
+    -- SECTION B: LOADING EQUIPMENT'S TRIP DETAILS (Selected Shift)
+    -------------------------------------------------------------------
     SELECT
-
-        Eq.EquipmentName as LoadingEquipment,
-
+        Eq.EquipmentName AS LoadingEquipment,
         
-
-        -- A: OB/IB Trips
-
-        SUM(CASE WHEN mt.MaterialName IN ('OVER BURDEN', 'INTER BURDEN') THEN 1 ELSE 0 END) as OBIB_Trip,
-
+        -- Trip Counts by Material
+        SUM(CASE WHEN Mt.MaterialName IN ('OVER BURDEN', 'INTER BURDEN') THEN 1 ELSE 0 END) AS OBIB_Trip,
+        SUM(CASE WHEN Mt.MaterialName = 'TOP SOIL' THEN 1 ELSE 0 END) AS TopSoil_Trip,
+        SUM(CASE WHEN Mt.MaterialName = 'ROM COAL' THEN 1 ELSE 0 END) AS Coal_Trip,
+        COUNT(L.SlNo) AS Total_Trip,
         
-
-        -- B: Top Soil Trips
-
-        SUM(CASE WHEN mt.MaterialName = 'TOP SOIL' THEN 1 ELSE 0 END) as TopSoil_Trip,
-
+        -- Quantities
+        SUM(CASE WHEN Mt.MaterialName IN ('OVER BURDEN', 'INTER BURDEN', 'TOP SOIL') THEN L.TotalQty ELSE 0 END) AS BCM,
+        SUM(CASE WHEN Mt.MaterialName = 'ROM COAL' THEN L.TotalQty ELSE 0 END) AS MT,
         
+        -- Working Hours & Location
+        ISNULL(CAST(MAX(ER.TotalWorkingHr) AS VARCHAR(50)), '-') AS WHr, 
+        MAX(So.Name) AS Location
 
-        -- C: Coal Trips
-
-        SUM(CASE WHEN mt.MaterialName = 'ROM COAL' THEN 1 ELSE 0 END) as Coal_Trip,
-
-        
-
-        -- D: Total Trips
-
-        COUNT(L.SlNo) as Total_Trip,
-
-        
-
-        -- E: BCM (Waste Qty)
-
-        SUM(CASE WHEN mt.MaterialName IN ('OVER BURDEN', 'INTER BURDEN', 'TOP SOIL') THEN L.TotalQty ELSE 0 END) as BCM,
-
-        
-
-        -- F: MT (Coal Qty)
-
-        SUM(CASE WHEN mt.MaterialName = 'ROM COAL' THEN L.TotalQty ELSE 0 END) as MT,
-
-        
-
-        -- G: Working Hours (From Equipment Reading? Or Loading Table? User query used EquipmentReading via join)
-
-        -- User Query Logic: sum(TotalWorkingHr) from TblEquipmentReading.
-
-        -- Need to join TblEquipmentReading carefully on EquipmentId and Date and Shift.
-
-        -- Note: L.LoadingMachineEquipmentId joins to Eq.SlNo. Then Read.EquipmentId = Eq.SlNo.
-
-        MAX(er.TotalWorkingHr) as WHr, -- Taking Max because Group By Eq.Name, assuming 1 reading per shift per eq
-
-        
-
-        -- L: Location (Source)
-
-        MAX(so.Name) as Location
-
-    FROM [Trans].[TblLoading] L
-
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.LoadingMachineEquipmentId = Eq.SlNo
-
-    LEFT JOIN [Master].TblMaterial as mt on L.MaterialId = mt.SlNo
-
-    LEFT JOIN [Master].TblSource as so on L.SourceId = so.SlNo
-
-    -- Join Reading for Hours
-
-    LEFT JOIN [Trans].[TblEquipmentReading] er 
-
-        ON er.EquipmentId = Eq.SlNo 
-
-        AND Cast(er.[Date] as Date) = @Date 
-
-        AND er.ShiftId = @ShiftId
-
-        AND er.IsDelete = 0
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.LoadingMachineEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblMaterial] Mt WITH(NOLOCK) ON L.MaterialId = Mt.SlNo
+    LEFT JOIN [Master].[TblSource] So WITH(NOLOCK) ON L.SourceId = So.SlNo
+    LEFT JOIN [Trans].[TblEquipmentReading] ER WITH(NOLOCK) 
+        ON ER.EquipmentId = Eq.SlNo 
+        AND CAST(ER.Date AS DATE) = @Date 
+        AND ER.ShiftId = @ShiftId
+        AND ER.IsDelete = 0
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
-
+      AND Eq.ActivityId = 3 -- for loading
     GROUP BY Eq.EquipmentName
-
     ORDER BY Eq.EquipmentName;
 
+    -------------------------------------------------------------------
     -- SECTION C.1: Loading Equipment (in Coal) Summary
-
+    -------------------------------------------------------------------
     SELECT
-
-        Eg.Name as EquipmentModel,
-
-        COUNT(L.SlNo) as Trips,
-
-        SUM(L.TotalQty) as MT,
-
-        
-
-        -- For "No's" (Count of Equipment active)
-
-        COUNT(DISTINCT L.LoadingMachineEquipmentId) as EqCount,
-
-        -- Working hours
-
-        SUM(DISTINCT er.TotalWorkingHr) as TotalHrs -- Approximate if multiple eq
-
-        
-
-    FROM [Trans].[TblLoading] L
-
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.LoadingMachineEquipmentId = Eq.SlNo
-
-    LEFT JOIN [Master].TblEquipmentGroup as Eg on Eq.EquipmentGroupId = Eg.SlNo
-
-    LEFT JOIN [Trans].[TblEquipmentReading] er ON er.EquipmentId = Eq.SlNo AND er.ShiftId = @ShiftId AND Cast(er.Date as Date) = @Date
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
+        Eg.Name AS EquipmentModel,
+        COUNT(L.SlNo) AS Trips,
+        SUM(L.TotalQty) AS MT,
+        COUNT(DISTINCT L.LoadingMachineEquipmentId) AS EqCount,
+        SUM(DISTINCT ER.TotalWorkingHr) AS TotalHrs 
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.LoadingMachineEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblEquipmentGroup] Eg WITH(NOLOCK) ON Eq.EquipmentGroupId = Eg.SlNo
+    LEFT JOIN [Trans].[TblEquipmentReading] ER WITH(NOLOCK) 
+        ON ER.EquipmentId = Eq.SlNo 
+        AND ER.ShiftId = @ShiftId 
+        AND CAST(ER.Date AS DATE) = @Date
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
-
       AND L.MaterialId = 7 -- ROM COAL
-
+      AND Eq.ActivityId = 3 -- Added Loading Filter
     GROUP BY Eg.Name;
 
+    -------------------------------------------------------------------
     -- SECTION C.2: Loading Equipment (in Waste) Summary
-
+    -------------------------------------------------------------------
     SELECT
-
-        Eg.Name as EquipmentModel,
-
-        COUNT(L.SlNo) as Trips,
-
-        SUM(L.TotalQty) as BCM,
-
-         -- For "No's" (Count of Equipment active)
-
-        COUNT(DISTINCT L.LoadingMachineEquipmentId) as EqCount,
-
-        SUM(DISTINCT er.TotalWorkingHr) as TotalHrs
-
-    FROM [Trans].[TblLoading] L
-
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.LoadingMachineEquipmentId = Eq.SlNo
-
-    LEFT JOIN [Master].TblEquipmentGroup as Eg on Eq.EquipmentGroupId = Eg.SlNo
-
-    LEFT JOIN [Trans].[TblEquipmentReading] er ON er.EquipmentId = Eq.SlNo AND er.ShiftId = @ShiftId AND Cast(er.Date as Date) = @Date
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
+        Eg.Name AS EquipmentModel,
+        COUNT(L.SlNo) AS Trips,
+        SUM(L.TotalQty) AS BCM,
+        COUNT(DISTINCT L.LoadingMachineEquipmentId) AS EqCount,
+        SUM(DISTINCT ER.TotalWorkingHr) AS TotalHrs
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.LoadingMachineEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblEquipmentGroup] Eg WITH(NOLOCK) ON Eq.EquipmentGroupId = Eg.SlNo
+    LEFT JOIN [Trans].[TblEquipmentReading] ER WITH(NOLOCK) 
+        ON ER.EquipmentId = Eq.SlNo 
+        AND ER.ShiftId = @ShiftId 
+        AND CAST(ER.Date AS DATE) = @Date
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
-
       AND L.MaterialId <> 7 -- Waste
-
+      AND Eq.ActivityId = 3 -- Added Loading Filter
     GROUP BY Eg.Name;
 
-    -- SECTION D: Hauling Equipment (Coal)
+    -------------------------------------------------------------------
+    -- SECTION D.1: Hauling Equipment (Coal)
+    -------------------------------------------------------------------
     SELECT
-        ISNULL(Eg.Name, 'Unknown') as Equip,
-        COUNT(L.SlNo) as Trip,
-        SUM(L.TotalQty) as MT
-    FROM [Trans].[TblLoading] L
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.HaulerEquipmentId = Eq.SlNo
-    LEFT JOIN [Master].[TblEquipmentGroup] Eg ON Eq.EquipmentGroupId = Eg.SlNo
-    WHERE L.IsDelete=0 
-      AND Cast(L.[LoadingDate] as Date) = @Date
+        ISNULL(Eg.Name, 'Unknown') AS Equip,
+        COUNT(L.SlNo) AS Trip,
+        SUM(L.TotalQty) AS MT
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.HaulerEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblEquipmentGroup] Eg WITH(NOLOCK) ON Eq.EquipmentGroupId = Eg.SlNo
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
-      AND L.MaterialId = 7
+      AND L.MaterialId = 7 -- Coal
+      AND Eq.ActivityId = 4 -- Added Hauling Filter
     GROUP BY ISNULL(Eg.Name, 'Unknown');
 
-    -- SECTION D: Hauling Equipment (Waste)
+    -------------------------------------------------------------------
+    -- SECTION D.2: Hauling Equipment (Waste)
+    -------------------------------------------------------------------
     SELECT
-        ISNULL(Eg.Name, 'Unknown') as Equip,
-        COUNT(L.SlNo) as Trip,
-        SUM(L.TotalQty) as BCM
-    FROM [Trans].[TblLoading] L
-    LEFT JOIN [Master].[TblEquipment] as Eq on L.HaulerEquipmentId = Eq.SlNo
-    LEFT JOIN [Master].[TblEquipmentGroup] Eg ON Eq.EquipmentGroupId = Eg.SlNo
-    WHERE L.IsDelete=0 
-      AND Cast(L.[LoadingDate] as Date) = @Date
+        ISNULL(Eg.Name, 'Unknown') AS Equip,
+        COUNT(L.SlNo) AS Trip,
+        SUM(L.TotalQty) AS BCM
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblEquipment] Eq WITH(NOLOCK) ON L.HaulerEquipmentId = Eq.SlNo
+    LEFT JOIN [Master].[TblEquipmentGroup] Eg WITH(NOLOCK) ON Eq.EquipmentGroupId = Eg.SlNo
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
-      AND L.MaterialId <> 7
+      AND L.MaterialId <> 7 -- Waste
+      AND Eq.ActivityId = 4 -- Added Hauling Filter
     GROUP BY ISNULL(Eg.Name, 'Unknown');
 
-    -- SECTION E: Dump Wise (Coal)
-
+    -------------------------------------------------------------------
+    -- SECTION E.1: Dump Wise (Coal)
+    -------------------------------------------------------------------
     SELECT
-
-        de.Name as DumpWise,
-
-        COUNT(L.SlNo) as Trips,
-
-        SUM(L.TotalQty) as MT
-
-    FROM [Trans].[TblLoading] L
-
-    LEFT JOIN [Master].TblDestination as de on L.DestinationId = de.SlNo
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
+        De.Name AS DumpWise,
+        COUNT(L.SlNo) AS Trips,
+        SUM(L.TotalQty) AS MT
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblDestination] De WITH(NOLOCK) ON L.DestinationId = De.SlNo
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
+      AND L.MaterialId = 7 -- Coal
+    GROUP BY De.Name;
 
-      AND L.MaterialId = 7
-
-    GROUP BY de.Name;
-
-    -- SECTION E: Dump Wise (Waste)
-
+    -------------------------------------------------------------------
+    -- SECTION E.2: Dump Wise (Waste)
+    -------------------------------------------------------------------
     SELECT
-
-        de.Name as DumpWise,
-
-        COUNT(L.SlNo) as Trips,
-
-        SUM(L.TotalQty) as BCM
-
-    FROM [Trans].[TblLoading] L
-
-    LEFT JOIN [Master].TblDestination as de on L.DestinationId = de.SlNo
-
-    WHERE L.IsDelete=0 
-
-      AND Cast(L.[LoadingDate] as Date) = @Date
-
+        De.Name AS DumpWise,
+        COUNT(L.SlNo) AS Trips,
+        SUM(L.TotalQty) AS BCM
+    FROM [Trans].[TblLoading] L WITH(NOLOCK)
+    LEFT JOIN [Master].[TblDestination] De WITH(NOLOCK) ON L.DestinationId = De.SlNo
+    WHERE L.IsDelete = 0 
+      AND CAST(L.LoadingDate AS DATE) = @Date
       AND L.ShiftId = @ShiftId
+      AND L.MaterialId <> 7 -- Waste
+    GROUP BY De.Name;
 
-      AND L.MaterialId <> 7
+    -------------------------------------------------------------------
+    -- SECTION F: CRUSHING DETAILS
+    -------------------------------------------------------------------
+    SELECT 
+        C.SlNo,
+        P.Name AS EquipmentName,
+        C.RunningHr,
+        C.TotalQty,
+        0 AS Budget,
+        C.TotalQty AS Actual
+    FROM [Trans].[TblCrusher] C WITH(NOLOCK)
+    LEFT JOIN [Master].[TblPlant] P WITH(NOLOCK) ON C.PlantId = P.SlNo
+    WHERE C.Date = @Date AND C.ShiftId = @ShiftId;
 
-    GROUP BY de.Name;
+    -------------------------------------------------------------------
+    -- SECTION G: DEWATERING PUMP DETAILS
+    -------------------------------------------------------------------
+    SELECT 
+        R.SlNo,
+        E.EquipmentName AS Pump,
+        ISNULL(R.NetHMR, R.CHMR - R.OHMR) AS RunHr
+    FROM [Trans].[TblEquipmentReading] R WITH(NOLOCK)
+    JOIN [Master].[TblEquipment] E WITH(NOLOCK) ON R.EquipmentId = E.SlNo
+    WHERE Cast(R.Date as Date) = @Date 
+      AND R.ShiftId = @ShiftId
+      AND E.ActivityId = 10 -- Pump
+      AND R.IsDelete = 0;
 
 END
 

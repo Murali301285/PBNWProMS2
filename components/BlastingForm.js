@@ -28,8 +28,6 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
         BlastingPatchId: '', // Maps to DrillingPatchId
         NoofHoles: '', // ReadOnly
         AverageDepth: '', // ReadOnly
-        SMESupplierId: '',
-        SMEQty: '',
         MaxCharge: '',
         PPV: '',
         DeckHoles: '',
@@ -38,6 +36,10 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
         Remarks: '',
         TotalExplosiveUsed: 0
     });
+
+    const [entries, setEntries] = useState([
+        { refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }
+    ]);
 
     // Accessories State
     const [accessories, setAccessories] = useState([
@@ -96,16 +98,14 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                         ...prev,
                         Date: parsedDate, // Overwrite Date
                         BlastingPatchId: context.BlastingPatchId || '',
-                        SMESupplierId: context.SMESupplierId || '',
-                        SMEQty: '', // Reset
                         MaxCharge: '', // Reset
                         PPV: '', // Reset
                         DeckHoles: '', // Reset
                         WetHoles: '', // Reset
                         AirPressure: '', // Reset
-                        // Reset entry specific
                         TotalExplosiveUsed: 0, Remarks: ''
                     }));
+                    setEntries([{ refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }]);
                 }
             } catch (err) {
                 console.error("Initial context fetch failed", err);
@@ -134,16 +134,14 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                     ...prev,
                     // Date: prev.Date, // Keep User Selection
                     BlastingPatchId: context.BlastingPatchId || '',
-                    SMESupplierId: context.SMESupplierId || '',
-                    SMEQty: '', // Reset
                     MaxCharge: '', // Reset
                     PPV: '', // Reset
                     DeckHoles: '', // Reset
                     WetHoles: '', // Reset
                     AirPressure: '', // Reset
-                    // Reset entry specific
                     TotalExplosiveUsed: 0, Remarks: ''
                 }));
+                setEntries([{ refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }]);
 
                 // Focus logic - Patch ID
                 // Don't focus if already focused? 
@@ -154,10 +152,11 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                 setFormData(prev => ({
                     ...prev,
                     // Date: prev.Date, // Keep User Selection
-                    BlastingPatchId: '', SMESupplierId: '', SMEQty: '', MaxCharge: '',
+                    BlastingPatchId: '', MaxCharge: '',
                     PPV: '', DeckHoles: '', WetHoles: '', AirPressure: '',
                     TotalExplosiveUsed: 0, Remarks: ''
                 }));
+                setEntries([{ refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }]);
             }
 
         } catch (err) {
@@ -252,8 +251,6 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                 BlastingPatchId: initialData.BlastingPatchId || initialData.PatchId || '',
                 NoofHoles: initialData.NoofHoles || initialData.HolesCharged || '',
                 AverageDepth: initialData.AverageDepth || '',
-                SMESupplierId: initialData.SMESupplierId || '',
-                SMEQty: initialData.SMEQty || '',
                 MaxCharge: initialData.MaxChargeHole || initialData.MaxCharge || '',
                 PPV: initialData.PPV || '',
                 DeckHoles: initialData.NoofHolesDeckCharged || initialData.DeckHoles || '',
@@ -264,6 +261,19 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
             });
             if (initialData.accessories) {
                 setAccessories(initialData.accessories);
+            }
+            if (initialData.entries && initialData.entries.length > 0) {
+                setEntries(initialData.entries);
+            } else if (initialData.smeSuppliers && initialData.smeSuppliers.length > 0) {
+                // Legacy fallback mapping
+                setEntries([{
+                    refName: 'Legacy',
+                    noOfHoles: initialData.NoofHoles || '',
+                    remarks: '',
+                    smeSuppliers: initialData.smeSuppliers
+                }]);
+            } else {
+                setEntries([{ refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }]);
             }
         }
     }, [initialData]);
@@ -344,6 +354,53 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
         }
     };
 
+    // Entry Handlers
+    const addEntry = () => {
+        setEntries([...entries, { refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }]);
+    };
+
+    const deleteEntry = (entryIdx) => {
+        if (entries.length === 1) return;
+        if (window.confirm('Are you sure you want to remove this entire entry?')) {
+            const newEntries = entries.filter((_, i) => i !== entryIdx);
+            setEntries(newEntries);
+        }
+    };
+
+    const handleEntryChange = (entryIdx, field, value) => {
+        const newEntries = [...entries];
+        newEntries[entryIdx][field] = value;
+        setEntries(newEntries);
+        if (errors[`entry_${entryIdx}`] || errors.entries) {
+            setErrors(prev => { const e = { ...prev }; delete e[`entry_${entryIdx}`]; delete e.entries; return e; });
+        }
+    };
+
+    // SME Suppliers Handlers
+    const handleSmeChange = (entryIdx, smeIdx, field, value) => {
+        const newEntries = [...entries];
+        newEntries[entryIdx].smeSuppliers[smeIdx][field] = value;
+        setEntries(newEntries);
+        if (errors[`sme_${entryIdx}_${smeIdx}`] || errors.entries) {
+            setErrors(prev => { const e = { ...prev }; delete e[`sme_${entryIdx}_${smeIdx}`]; delete e.entries; return e; });
+        }
+    };
+
+    const addSmeRow = (entryIdx) => {
+        const newEntries = [...entries];
+        newEntries[entryIdx].smeSuppliers.push({ SMESupplierId: '', SMEQty: '', remarks: '' });
+        setEntries(newEntries);
+    };
+
+    const deleteSmeRow = (entryIdx, smeIdx) => {
+        const newEntries = [...entries];
+        if (newEntries[entryIdx].smeSuppliers.length === 1) return; // Keep at least one
+        if (window.confirm('Are you sure you want to remove this SME Supplier?')) {
+            newEntries[entryIdx].smeSuppliers = newEntries[entryIdx].smeSuppliers.filter((_, i) => i !== smeIdx);
+            setEntries(newEntries);
+        }
+    };
+
     // Accessories Handlers
     const handleAccChange = (index, field, value) => {
         const newAcc = [...accessories];
@@ -375,8 +432,37 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
     const validate = () => {
         const newErrors = {};
         if (!formData.BlastingPatchId) newErrors.BlastingPatchId = 'Required';
-        if (!formData.SMESupplierId) newErrors.SMESupplierId = 'Required';
-        if (!formData.SMEQty) newErrors.SMEQty = 'Required';
+
+        let entriesValid = true;
+        let totalEntryHoles = 0;
+
+        entries.forEach((entry, eIdx) => {
+            if (!entry.refName) {
+                entriesValid = false;
+                newErrors[`entry_${eIdx}`] = 'Ref Name is required';
+            }
+            if (!entry.noOfHoles) {
+                entriesValid = false;
+                newErrors[`entry_${eIdx}`] = 'No of Holes is required';
+            } else {
+                totalEntryHoles += Number(entry.noOfHoles);
+            }
+
+            entry.smeSuppliers.forEach((sme, sIdx) => {
+                if (!sme.SMESupplierId || !sme.SMEQty) {
+                    entriesValid = false;
+                    newErrors[`sme_${eIdx}_${sIdx}`] = 'Required';
+                }
+            });
+        });
+
+        if (!entriesValid) {
+            newErrors.entries = 'Please fill all mandatory fields in Entries and SME Suppliers.';
+        }
+
+        if (totalEntryHoles > Number(formData.NoofHoles || 0)) {
+            newErrors.entries = `Total Entry Holes (${totalEntryHoles}) cannot exceed Parent Holes (${formData.NoofHoles})`;
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -384,14 +470,28 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
 
     const handleSave = async () => {
         if (!validate()) {
-            toast.error("Please fill mandatory fields");
+            toast.error(errors.entries || "Please fill mandatory fields");
             return;
+        }
+
+        // Check for duplicates - Not straightforward with nested structure if they want to reuse supplier across entries.
+        // Assuming they can reuse supplier across DIFFERENT entries, but maybe not in the SAME entry.
+        for (const entry of entries) {
+            const supplierIds = entry.smeSuppliers.map(s => String(s.SMESupplierId));
+            const uniqueSupplierIds = new Set(supplierIds);
+            if (supplierIds.length > uniqueSupplierIds.size) {
+                if (!window.confirm('The same SME Supplier is added more than once in an entry. Do you want to proceed?')) {
+                    return;
+                }
+                break;
+            }
         }
 
         setLoading(true);
         try {
             const payload = {
                 ...formData,
+                entries: entries,
                 accessories: accessories.filter(a => a.SED || a.TotalBoosterUsed) // Filter empty rows
             };
 
@@ -416,8 +516,6 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                     BlastingPatchId: '',
                     NoofHoles: '',
                     AverageDepth: '',
-                    SMESupplierId: '',
-                    SMEQty: '',
                     MaxCharge: '',
                     PPV: '',
                     DeckHoles: '',
@@ -426,6 +524,7 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                     Remarks: '',
                     TotalExplosiveUsed: 0
                 }));
+                setEntries([{ refName: '', noOfHoles: '', remarks: '', smeSuppliers: [{ SMESupplierId: '', SMEQty: '', remarks: '' }] }]);
                 setAccessories([{ SED: '', TotalBoosterUsed: '', TotalNonelMeters: '', TotalTLDMeters: '' }]);
                 fetchTableData(); // Refresh table
 
@@ -531,10 +630,13 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
                             onChange={(option, actionMeta) => {
                                 if (actionMeta.action === 'select-option' || actionMeta.action === 'clear') {
                                     if (option) {
+                                        const samePatches = drillingPatches.filter(p => p.DrillingPatchId === option.DrillingPatchId);
+                                        const totalHoles = samePatches.reduce((sum, p) => sum + (parseFloat(p.NoofHoles) || 0), 0);
+
                                         setFormData(prev => ({
                                             ...prev,
                                             BlastingPatchId: option.DrillingPatchId,
-                                            NoofHoles: option.NoofHoles || '',
+                                            NoofHoles: totalHoles || '',
                                             AverageDepth: option.AverageDepth ? Number(option.AverageDepth).toFixed(2) : ''
                                         }));
                                         if (errors.BlastingPatchId) {
@@ -615,64 +717,145 @@ export default function BlastingForm({ initialData = null, mode = 'create' }) {
 
 
 
-                {/* --- Row 2 --- */}
-                {/* No of Holes: C1 */}
-                {/* --- Row 2 --- */}
-                {/* No of Holes: Col 1 */}
-                <div className={css.fieldGroup} style={{ gridColumn: '1 / span 1' }}>
+                {/* No of Holes: Col 4 */}
+                <div className={css.fieldGroup} style={{ gridColumn: '4 / span 1' }}>
                     <label className={css.label}>No of Holes</label>
                     <input
                         className={`${css.input} ${css.readOnly}`}
-                        value={formData.NoofHoles}
+                        value={formData.NoofHoles || ''}
                         readOnly
                     />
                 </div>
 
-                {/* Avg Depth: C2 */}
-                {/* Avg Depth: Col 2 */}
-                <div className={css.fieldGroup} style={{ gridColumn: '2 / span 1' }}>
+                {/* Avg Depth: Col 5 */}
+                <div className={css.fieldGroup} style={{ gridColumn: '5 / span 1' }}>
                     <label className={css.label}>Avg Depth</label>
                     <input
                         className={`${css.input} ${css.readOnly}`}
-                        value={formData.AverageDepth}
+                        value={formData.AverageDepth || ''}
                         readOnly
                     />
                 </div>
 
-                {/* SME Supplier: C3 */}
-                {/* SME Supplier: Col 3-4 (Span 2) */}
-                <div className={css.fieldGroup} style={{ gridColumn: '3 / span 2' }}>
-                    <label className={css.label}>
-                        SME Supplier<span className={css.required}>*</span>
-                        {errors.SMESupplierId && <span className={css.errorLabel}>value is missing</span>}
-                    </label>
-                    <div className={errors.SMESupplierId ? css.errorInput : ''} style={{ borderRadius: 4, border: errors.SMESupplierId ? '1px solid #ef4444' : 'none' }}>
-                        <SearchableSelect
-                            options={suppliers}
-                            value={formData.SMESupplierId}
-                            onChange={(e) => handleChange('SMESupplierId', e.target.value)}
-                            placeholder="Select Supplier"
-                            className={css.compactInput}
-                            ref={smeSupplierRef}
-                        />
+                {/* SME Entries Section */}
+                <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '10px', gap: '20px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                            Total Holes : <span style={{ color: '#2563eb' }}>{entries.reduce((sum, e) => sum + (Number(e.noOfHoles) || 0), 0)}</span>
+                        </div>
+                        <button type="button" className={css.addBtn} onClick={addEntry} style={{ marginTop: 0, padding: '6px 16px', backgroundColor: '#4f46e5', color: 'white' }}>
+                            <Plus size={16} style={{ marginRight: 4 }} /> Add Entry
+                        </button>
                     </div>
-                </div>
 
-                {/* SME Qty: C4 */}
-                {/* SME Qty: Col 5 */}
-                <div className={css.fieldGroup} style={{ gridColumn: '5 / span 1' }}>
-                    <label className={css.label}>
-                        SME Qty (KG)<span className={css.required}>*</span>
-                        {errors.SMEQty && <span className={css.errorLabel}>value is missing</span>}
-                    </label>
-                    <input
-                        type="number"
-                        step="0.001"
-                        className={`${css.input} ${errors.SMEQty ? css.errorInput : ''}`}
-                        value={formData.SMEQty}
-                        onChange={e => handleChange('SMEQty', e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, 5)}
-                    />
+                    {entries.map((entry, eIdx) => (
+                        <div key={eIdx} style={{ border: '2px solid #4f46e5', padding: '15px', marginBottom: '20px', borderRadius: '4px', position: 'relative' }}>
+                            {/* Entry Header Fields */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '15px', marginBottom: '15px' }}>
+                                <div className={css.fieldGroup}>
+                                    <label className={css.label}>Ref Name<span className={css.required}>*</span></label>
+                                    <input 
+                                        className={`${css.input} ${errors[`entry_${eIdx}`] && !entry.refName ? css.errorInput : ''}`}
+                                        value={entry.refName} 
+                                        onChange={e => handleEntryChange(eIdx, 'refName', e.target.value)} 
+                                        style={{ border: errors[`entry_${eIdx}`] && !entry.refName ? '1px solid #ef4444' : '1px solid #dc2626' }}
+                                    />
+                                </div>
+                                <div className={css.fieldGroup}>
+                                    <label className={css.label}>No of Holes<span className={css.required}>*</span></label>
+                                    <input 
+                                        type="number" 
+                                        className={`${css.input} ${errors[`entry_${eIdx}`] && !entry.noOfHoles ? css.errorInput : ''}`}
+                                        value={entry.noOfHoles} 
+                                        onChange={e => handleEntryChange(eIdx, 'noOfHoles', e.target.value)} 
+                                        style={{ border: errors[`entry_${eIdx}`] && !entry.noOfHoles ? '1px solid #ef4444' : '1px solid #dc2626' }}
+                                    />
+                                </div>
+                                <div className={css.fieldGroup}>
+                                    <label className={css.label}>Remarks</label>
+                                    <input 
+                                        className={css.input} 
+                                        value={entry.remarks} 
+                                        onChange={e => handleEntryChange(eIdx, 'remarks', e.target.value)} 
+                                        style={{ border: '1px solid #dc2626' }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Entry Delete Button */}
+                            {entries.length > 1 && (
+                                <button type="button" onClick={() => deleteEntry(eIdx)} style={{ position: 'absolute', top: '-12px', right: '-12px', background: '#ef4444', color: 'white', borderRadius: '50%', padding: '4px', border: 'none', cursor: 'pointer' }}>
+                                    <Trash2 size={14} />
+                                </button>
+                            )}
+
+                            {/* Inner SME Table */}
+                            <div className={css.dataTableSection} style={{ marginTop: '10px' }}>
+                                <div className={css.tableTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <span>SME Supplier Details <span className={css.required}>*</span></span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                        <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                                            Total SME Qty : <span style={{ color: '#2563eb' }}>{Number(entry.smeSuppliers.reduce((sum, row) => sum + (parseFloat(row.SMEQty) || 0), 0).toFixed(3))} kg</span>
+                                        </div>
+                                        <button type="button" className={css.addBtn} onClick={() => addSmeRow(eIdx)} style={{ marginTop: 0, padding: '4px 12px' }}>
+                                            <Plus size={14} style={{ marginRight: 4 }} /> Add SME Supplier
+                                        </button>
+                                    </div>
+                                </div>
+                                <table className={css.accTable}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: '30%' }}>SME Supplier</th>
+                                            <th style={{ width: '20%' }}>SME Qty (KG)</th>
+                                            <th style={{ width: '30%' }}>Remarks</th>
+                                            <th style={{ width: '20%', textAlign: 'center' }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {entry.smeSuppliers.map((row, sIdx) => (
+                                            <tr key={sIdx}>
+                                                <td>
+                                                    <div className={errors[`sme_${eIdx}_${sIdx}`] && !row.SMESupplierId ? css.errorInput : ''} style={{ borderRadius: 4, border: errors[`sme_${eIdx}_${sIdx}`] && !row.SMESupplierId ? '1px solid #ef4444' : 'none' }}>
+                                                        <SearchableSelect
+                                                            options={suppliers}
+                                                            value={row.SMESupplierId}
+                                                            onChange={(e) => handleSmeChange(eIdx, sIdx, 'SMESupplierId', e.target.value)}
+                                                            placeholder="Select Supplier"
+                                                            className={css.compactInput}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        step="0.001"
+                                                        className={`${css.input} ${errors[`sme_${eIdx}_${sIdx}`] && !row.SMEQty ? css.errorInput : ''}`}
+                                                        value={row.SMEQty || ''}
+                                                        onChange={e => handleSmeChange(eIdx, sIdx, 'SMEQty', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className={css.input}
+                                                        value={row.remarks || ''}
+                                                        onChange={e => handleSmeChange(eIdx, sIdx, 'remarks', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <button type="button" className={css.deleteBtn} onClick={() => deleteSmeRow(eIdx, sIdx)}>
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
 

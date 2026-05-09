@@ -186,10 +186,10 @@ export default function TentativeProductionPage() {
             ws.getRow(1).height = 15; // Empty padding row
 
             ws.mergeCells('B2:K2');
-            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+            setCell(ws.getCell('B2'), (process.env.NEXT_PUBLIC_REPORT_HEADING_1 || "THRIVENI SAINIK MINING PRIVATE LIMITED"), { bold: true, align: 'center', border: false, fontSize: 16 });
 
             ws.mergeCells('B3:K3');
-            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+            setCell(ws.getCell('B3'), (process.env.NEXT_PUBLIC_REPORT_HEADING_2 || "PAKRI BARWADIH COAL MINING PROJECT"), { bold: true, align: 'center', border: false, fontSize: 13 });
 
             ws.mergeCells('B4:K4');
             setCell(ws.getCell('B4'), "TENTATIVE PRODUCTION QTY", { bold: true, align: 'center', border: false, underline: true, fontSize: 12 });

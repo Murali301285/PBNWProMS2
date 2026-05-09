@@ -1,37 +1,30 @@
+require('dotenv').config({ path: '.env.local' });
 const sql = require('mssql');
 
-const config = {
-    user: 'sa',
-    password: 'Chennai@42',
-    server: 'localhost',
-    port: 1433,
-    database: 'ProMS2_1602',
+const dbConfig = {
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER || 'localhost',
+    database: process.env.DB_DATABASE,
     options: {
-        encrypt: false,
-        trustServerCertificate: true
-    }
+        encrypt: true,
+        trustServerCertificate: true,
+    },
 };
 
-async function checkSchema() {
+async function run() {
     try {
-        await sql.connect(config);
-        console.log("Connected to DB");
-
-        const query = `
+        await sql.connect(dbConfig);
+        const result = await sql.query(`
             SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE 
             FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_NAME IN ('TblBlasting', 'TblSMESupplier', 'TblLocation', 'TblMaterial')
-            ORDER BY TABLE_NAME, COLUMN_NAME;
-        `;
-
-        const result = await sql.query(query);
+            WHERE TABLE_NAME LIKE 'TblBlasting%'
+        `);
         console.table(result.recordset);
-
+        process.exit(0);
     } catch (err) {
-        console.error("Error:", err);
-    } finally {
-        await sql.close();
+        console.error(err);
+        process.exit(1);
     }
 }
-
-checkSchema();
+run();

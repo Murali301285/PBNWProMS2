@@ -50,6 +50,61 @@ export async function GET(request, { params }) {
         `);
         data.accessories = accRes.recordset;
 
+        // SME Suppliers & Entries Grouping
+        const smeRes = await pool.request().query(`
+            SELECT * FROM [Trans].[TblBlastingSME] WHERE BlastingId = ${id} AND IsDelete = 0
+        `);
+        
+        // Rebuild nested entries
+        const flatSMEs = smeRes.recordset;
+        const entryMap = new Map();
+        
+        flatSMEs.forEach(row => {
+            const entryKey = `${row.RefName}_${row.EntryNoOfHoles}_${row.EntryRemarks}`;
+            if (!entryMap.has(entryKey)) {
+                entryMap.set(entryKey, {
+                    id: Math.random(),
+                    refName: row.RefName || '',
+                    noOfHoles: row.EntryNoOfHoles || '',
+                    remarks: row.EntryRemarks || '',
+                    smeSuppliers: []
+                });
+            }
+            if (row.SMESupplierId) {
+                entryMap.get(entryKey).smeSuppliers.push({
+                    id: Math.random(),
+                    SMESupplierId: row.SMESupplierId,
+                    SMEQty: row.SMEQty,
+                    remarks: row.SMERemarks || ''
+                });
+            }
+        });
+
+        // Legacy support: If entryMap is empty but we have data (from legacy without RefName)
+        if (entryMap.size === 0 && flatSMEs.length > 0) {
+            data.entries = [{
+                id: Math.random(),
+                refName: 'Legacy',
+                noOfHoles: data.parent.NoofHoles || '',
+                remarks: '',
+                smeSuppliers: flatSMEs.map(r => ({
+                    id: Math.random(),
+                    SMESupplierId: r.SMESupplierId,
+                    SMEQty: r.SMEQty,
+                    remarks: r.SMERemarks || ''
+                }))
+            }];
+        } else {
+            // Check if any entry has empty suppliers, provide an empty row
+            data.entries = Array.from(entryMap.values()).map(e => {
+                if (e.smeSuppliers.length === 0) {
+                    e.smeSuppliers = [{ id: Math.random(), SMESupplierId: '', SMEQty: '', remarks: '' }];
+                }
+                return e;
+            });
+        }
+
+
         return NextResponse.json({ success: true, data });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -74,8 +129,8 @@ export async function PUT(request, { params }) {
                 UPDATE [Trans].[TblBlasting] SET
                     Date = '${body.Date}',
                     BlastingPatchId = '${body.BlastingPatchId}',
-                    SMESupplierId = ${body.SMESupplierId},
-                    SMEQty = ${body.SMEQty || 0},
+                    SMESupplierId = NULL,
+                    SMEQty = NULL,
                     MaxChargeHole = ${body.MaxCharge || 0},
                     PPV = ${body.PPV || 0},
                     NoofHolesDeckCharged = ${body.DeckHoles || 0},
@@ -118,6 +173,59 @@ export async function PUT(request, { params }) {
                             0
                         )
                     `);
+                }
+            }
+
+            // 3. Update SME Suppliers
+            await transaction.request().query(`
+                UPDATE [Trans].[TblBlastingSME] SET IsDelete = 1 WHERE BlastingId = ${id}
+            `);
+
+            if (body.entries && body.entries.length > 0) {
+                for (const entry of body.entries) {
+                    if (!entry.smeSuppliers || entry.smeSuppliers.length === 0) {
+                        await transaction.request().query(`
+                            INSERT INTO [Trans].[TblBlastingSME] (
+                                BlastingId, SMESupplierId, SMEQty, 
+                                RefName, EntryNoOfHoles, EntryRemarks, SMERemarks,
+                                CreatedDate, CreatedBy, IsDelete
+                            ) VALUES (
+                                ${id}, 
+                                NULL, 
+                                0, 
+                                '${entry.refName || ''}',
+                                ${entry.noOfHoles || 0},
+                                '${entry.remarks || ''}',
+                                '',
+                                GETDATE(), 
+                                ${userId}, 
+                                0
+                            )
+                        `);
+                    } else {
+                        for (const sme of entry.smeSuppliers) {
+                            if (!sme.SMESupplierId && !entry.refName) continue;
+                            
+                            await transaction.request().query(`
+                                INSERT INTO [Trans].[TblBlastingSME] (
+                                    BlastingId, SMESupplierId, SMEQty, 
+                                    RefName, EntryNoOfHoles, EntryRemarks, SMERemarks,
+                                    CreatedDate, CreatedBy, IsDelete
+                                ) VALUES (
+                                    ${id}, 
+                                    ${sme.SMESupplierId ? sme.SMESupplierId : 'NULL'}, 
+                                    ${sme.SMEQty || 0}, 
+                                    '${entry.refName || ''}',
+                                    ${entry.noOfHoles || 0},
+                                    '${entry.remarks || ''}',
+                                    '${sme.remarks || ''}',
+                                    GETDATE(), 
+                                    ${userId}, 
+                                    0
+                                )
+                            `);
+                        }
+                    }
                 }
             }
 

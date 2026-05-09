@@ -125,10 +125,10 @@ export default function DailyProgressPage() {
             ws.getRow(1).height = 15;
 
             ws.mergeCells('B2:O2');
-            setCell(ws.getCell('B2'), "THRIVENI SAINIK MINING PRIVATE LIMITED", { bold: true, align: 'center', border: false, fontSize: 16 });
+            setCell(ws.getCell('B2'), (process.env.NEXT_PUBLIC_REPORT_HEADING_1 || "THRIVENI SAINIK MINING PRIVATE LIMITED"), { bold: true, align: 'center', border: false, fontSize: 16 });
 
             ws.mergeCells('B3:O3');
-            setCell(ws.getCell('B3'), "PAKRI BARWADIH COAL MINING PROJECT", { bold: true, align: 'center', border: false, fontSize: 13 });
+            setCell(ws.getCell('B3'), (process.env.NEXT_PUBLIC_REPORT_HEADING_2 || "PAKRI BARWADIH COAL MINING PROJECT"), { bold: true, align: 'center', border: false, fontSize: 13 });
 
             ws.mergeCells('B4:O4');
             setCell(ws.getCell('B4'), "DAILY PROGRESS REPORT", { bold: true, align: 'center', border: false, underline: true, fontSize: 12 });

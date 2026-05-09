@@ -17,7 +17,7 @@ export async function GET(request) {
                 B.Date,
                 B.BlastingPatchId,
                 B.SMESupplierId,
-                B.SMEQty,
+                COALESCE(SMEData.TotalSMEQty, B.SMEQty) as SMEQty,
                 B.MaxChargeHole as MaxCharge,
                 B.PPV,
                 B.NoofHolesDeckCharged as HolesCharged,
@@ -30,11 +30,21 @@ export async function GET(request) {
                 B.UpdatedBy,
                 B.UpdatedDate,
                 B.IsDelete,
-                SS.Name as SMESupplierName,
+                COALESCE(SMEData.SMESupplierName, SS.Name) as SMESupplierName,
                 U1.EmpName as CreatedByName,
                 U2.EmpName as UpdatedByName
             FROM [Trans].[TblBlasting] B
             LEFT JOIN [Master].[TblSMESupplier] SS ON B.SMESupplierId = SS.SlNo
+            LEFT JOIN (
+                SELECT 
+                    BlastingId,
+                    STRING_AGG(CAST(S.Name AS NVARCHAR(MAX)), ', ') AS SMESupplierName,
+                    SUM(BS.SMEQty) AS TotalSMEQty
+                FROM [Trans].[TblBlastingSME] BS
+                LEFT JOIN [Master].[TblSMESupplier] S ON BS.SMESupplierId = S.SlNo
+                WHERE BS.IsDelete = 0
+                GROUP BY BlastingId
+            ) AS SMEData ON B.SlNo = SMEData.BlastingId
             LEFT JOIN [Master].[TblUser_New] U1 ON B.CreatedBy = U1.SlNo
             LEFT JOIN [Master].[TblUser_New] U2 ON B.UpdatedBy = U2.SlNo
             WHERE B.IsDelete = 0

@@ -3,7 +3,7 @@ import { executeQuery } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
 import { MASTER_CONFIG } from '@/lib/masterConfig';
-import { encryptPassword } from '@/lib/auth';
+import { encryptPassword, decryptPassword } from '@/lib/auth';
 
 export async function POST(req) {
     let body = null;
@@ -77,7 +77,15 @@ export async function POST(req) {
             } else {
                 query += ` WHERE IsDelete = 0 ORDER BY SlNo ASC`;
             }
-            const result = await executeQuery(query, queryParams);
+            let result = await executeQuery(query, queryParams);
+
+            if (table === 'TblUser_New') {
+                result = result.map(record => ({
+                    ...record,
+                    Password: record.Password ? decryptPassword(record.Password) : ''
+                }));
+            }
+
             return NextResponse.json(result);
         }
 
