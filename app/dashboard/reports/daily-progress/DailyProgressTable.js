@@ -4,8 +4,51 @@ const DailyProgressTable = ({ data, date }) => {
     // Parse date if it's in ISO format to be more readable
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
-        const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-'); // DD/MM/YYYY
+        
+        // If already in DD-MMM-YYYY format (e.g. "01-May-2026"), return it directly
+        if (typeof dateStr === 'string' && /^\d{2}-[A-Za-z]{3}-\d{4}$/.test(dateStr)) {
+            return dateStr;
+        }
+
+        let year, month, day;
+        
+        if (dateStr instanceof Date) {
+            year = dateStr.getFullYear();
+            month = dateStr.getMonth() + 1;
+            day = dateStr.getDate();
+        } else {
+            const cleanStr = String(dateStr).trim().split('T')[0]; // Remove time portion if ISO
+            const parts = cleanStr.split(/[-/]/); // Split by - or /
+            
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    // YYYY-MM-DD
+                    [year, month, day] = parts;
+                } else if (parts[2].length === 4) {
+                    // DD-MM-YYYY
+                    [day, month, year] = parts;
+                } else {
+                    const d = new Date(dateStr);
+                    if (isNaN(d.getTime())) return dateStr;
+                    year = d.getFullYear();
+                    month = d.getMonth() + 1;
+                    day = d.getDate();
+                }
+            } else {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return dateStr;
+                year = d.getFullYear();
+                month = d.getMonth() + 1;
+                day = d.getDate();
+            }
+        }
+
+        const dayStr = String(day).padStart(2, '0');
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const monthStr = monthNames[parseInt(month, 10) - 1] || 'Jan';
+        const yearStr = String(year);
+
+        return `${dayStr}-${monthStr}-${yearStr}`;
     };
 
     const displayDate = data?.headerInfo?.Date ? formatDate(data.headerInfo.Date) : formatDate(date);

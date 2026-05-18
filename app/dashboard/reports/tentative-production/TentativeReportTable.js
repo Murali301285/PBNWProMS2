@@ -54,15 +54,53 @@ export default function TentativeReportTable({ data, loading }) {
     const coalRehandlingTotal = calculateRehandlingTotal(coalRehandling);
 
     // Format Date Helpers (dd/mm/yyyy)
-    const formatDate = (d) => {
-        if (!d) return '';
-        // Assuming d is YYYY-MM-DD or similar standard
-        const dateObj = new Date(d);
-        if (isNaN(dateObj.getTime())) return d;
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month, 10) - 1]}-${year}`;
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        
+        // If already in DD-MMM-YYYY format (e.g. "01-May-2026"), return it directly
+        if (typeof dateStr === 'string' && /^\d{2}-[A-Za-z]{3}-\d{4}$/.test(dateStr)) {
+            return dateStr;
+        }
+
+        let year, month, day;
+        
+        if (dateStr instanceof Date) {
+            year = dateStr.getFullYear();
+            month = dateStr.getMonth() + 1;
+            day = dateStr.getDate();
+        } else {
+            const cleanStr = String(dateStr).trim().split('T')[0]; // Remove time portion if ISO
+            const parts = cleanStr.split(/[-/]/); // Split by - or /
+            
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    // YYYY-MM-DD
+                    [year, month, day] = parts;
+                } else if (parts[2].length === 4) {
+                    // DD-MM-YYYY
+                    [day, month, year] = parts;
+                } else {
+                    const d = new Date(dateStr);
+                    if (isNaN(d.getTime())) return dateStr;
+                    year = d.getFullYear();
+                    month = d.getMonth() + 1;
+                    day = d.getDate();
+                }
+            } else {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return dateStr;
+                year = d.getFullYear();
+                month = d.getMonth() + 1;
+                day = d.getDate();
+            }
+        }
+
+        const dayStr = String(day).padStart(2, '0');
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const monthStr = monthNames[parseInt(month, 10) - 1] || 'Jan';
+        const yearStr = String(year);
+
+        return `${dayStr}-${monthStr}-${yearStr}`;
     };
 
     const fmt = (val) => (val !== undefined && val !== null) ? Number(val).toLocaleString('en-IN') : '0';

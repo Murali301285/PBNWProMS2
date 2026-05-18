@@ -51,8 +51,16 @@ export default function DailyProgressPage() {
         const { production, drilling, blasting, crusher, headerInfo } = reportData;
         let displayDate = date;
         if (displayDate && displayDate.includes('-')) {
-            const [y, m, d] = displayDate.split('-');
-            displayDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
+            const parts = displayDate.split('-');
+            if (parts[0].length === 4) {
+                // YYYY-MM-DD
+                const [y, m, d] = parts;
+                displayDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
+            } else if (parts[2].length === 4) {
+                // DD-MM-YYYY
+                const [d, m, y] = parts;
+                displayDate = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m, 10) - 1]}-${y}`;
+            }
         } else {
             displayDate = headerInfo?.Date || '-';
         }
