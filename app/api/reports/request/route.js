@@ -2,12 +2,17 @@ import { executeQuery } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { generateReportBackground } from '@/lib/report-generator';
 import { cookies } from 'next/headers';
+import { authenticateUser } from '@/lib/auth';
 
 export async function POST(req) {
     try {
         const { reportType, fromDate, toDate, requestedBy } = await req.json();
 
-        // 1. Insert Request
+        // 1. Authenticate User from Cookie JWT
+        const user = await authenticateUser(req);
+        const userId = user ? user.id : (requestedBy || 1);
+
+        // 2. Insert Request
         const result = await executeQuery(`
             INSERT INTO [Trans].[TblReportRequest] (ReportType, Criteria, Status, RequestedBy, RequestedDate)
             OUTPUT INSERTED.SlNo
@@ -15,7 +20,7 @@ export async function POST(req) {
         `, [
             { name: 'ReportType', value: reportType },
             { name: 'Criteria', value: JSON.stringify({ fromDate, toDate }) },
-            { name: 'RequestedBy', value: requestedBy || 1 }, // Default to admin if not passed
+            { name: 'RequestedBy', value: userId },
         ]);
 
         const requestId = result[0].SlNo;

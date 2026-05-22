@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import DataTable from '@/components/DataTable'; // Reusing DataTable
 import ReportTable from '@/components/reports/ReportTable'; // Reusing ReportTable for View
 import { toast } from 'sonner';
-import { Download, Eye, Clock, AlertCircle, CheckCircle, RefreshCw, ArrowLeft, FileText } from 'lucide-react';
+import { Download, Eye, Clock, AlertCircle, CheckCircle, RefreshCw, ArrowLeft, FileText, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 import styles from './GeneratedReports.module.css';
 
@@ -15,6 +15,31 @@ export default function GeneratedReports() {
     const [loading, setLoading] = useState(true);
     const [viewData, setViewData] = useState(null); // Data for viewing
     const [viewMeta, setViewMeta] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null); // State for delete modal
+
+    const handleConfirmClear = (req) => {
+        setDeleteConfirm(req);
+    };
+
+    const handleClear = async (id) => {
+        setDeleteConfirm(null);
+        const toastId = toast.loading('Clearing record...');
+        try {
+            const res = await fetch(`/api/reports/status/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast.success('Record cleared successfully', { id: toastId });
+                fetchRequests();
+            } else {
+                toast.error(result.message || 'Failed to clear record', { id: toastId });
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to clear record', { id: toastId });
+        }
+    };
 
     const fetchRequests = async () => {
         setLoading(true);
@@ -179,7 +204,7 @@ export default function GeneratedReports() {
 
     // Columns for the Request List
     const requestColumns = [
-        { header: 'ID', accessor: 'SlNo', width: '60px' },
+        { header: 'Sl.No.', accessor: 'SlNo', width: '60px' },
         { header: 'Report Type', accessor: 'ReportType', width: '150px' },
         {
             header: 'Criteria',
@@ -227,13 +252,22 @@ export default function GeneratedReports() {
             render: (row) => (
                 <div className={styles.actions}>
                     {row.Status === 'FAILED' ? (
-                        <button
-                            onClick={() => handleViewError(row)}
-                            className="flex items-center gap-2 px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-semibold hover:bg-red-200"
-                            title="View Error Details"
-                        >
-                            <FileText size={14} /> View Error
-                        </button>
+                        <>
+                            <button
+                                onClick={() => handleViewError(row)}
+                                className="flex items-center gap-2 px-3 py-1 bg-red-100 text-red-600 rounded text-xs font-semibold hover:bg-red-200"
+                                title="View Error Details"
+                            >
+                                <FileText size={14} /> View Error
+                            </button>
+                            <button
+                                onClick={() => handleConfirmClear(row)}
+                                className={`${styles.iconBtn} ${styles.clearBtn}`}
+                                title="Clear Record"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </>
                     ) : (
                         <>
                             <button
@@ -251,6 +285,13 @@ export default function GeneratedReports() {
                                 title="Download Excel"
                             >
                                 <Download size={16} />
+                            </button>
+                            <button
+                                onClick={() => handleConfirmClear(row)}
+                                className={`${styles.iconBtn} ${styles.clearBtn}`}
+                                title="Clear Record"
+                            >
+                                <Trash2 size={16} />
                             </button>
                         </>
                     )}
@@ -340,7 +381,8 @@ export default function GeneratedReports() {
                     columns={requestColumns}
                     data={requests}
                     loading={loading}
-                    showSerialNo={false}
+                    showSerialNo={true}
+                    defaultSort={{ key: 'RequestedDate', direction: 'desc' }}
                 />
             </div>
 
@@ -368,6 +410,51 @@ export default function GeneratedReports() {
                                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalHeader}>
+                            <AlertCircle size={24} />
+                            <h3>Clear Report Record</h3>
+                        </div>
+                        <div className={styles.modalBody}>
+                            Are you sure you want to clear this report record? This action will remove the record from your dashboard.
+                            <div className={styles.modalDetailBox}>
+                                <div className={styles.modalDetailItem}>
+                                    <span className={styles.modalDetailLabel}>Report Type:</span>
+                                    <span className={styles.modalDetailValue}>{deleteConfirm.ReportType}</span>
+                                </div>
+                                <div className={styles.modalDetailItem}>
+                                    <span className={styles.modalDetailLabel}>Requested On:</span>
+                                    <span className={styles.modalDetailValue}>{deleteConfirm.RequestedDate}</span>
+                                </div>
+                                <div className={styles.modalDetailItem}>
+                                    <span className={styles.modalDetailLabel}>Status:</span>
+                                    <span className={`${styles.statusBadge} ${deleteConfirm.Status === 'COMPLETED' ? styles.statusCompleted : deleteConfirm.Status === 'FAILED' ? styles.statusFailed : styles.statusPending}`}>
+                                        {deleteConfirm.Status}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className={styles.modalActions}>
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className={styles.cancelBtn}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleClear(deleteConfirm.SlNo)}
+                                className={styles.confirmDeleteBtn}
+                            >
+                                Clear Record
                             </button>
                         </div>
                     </div>

@@ -21,6 +21,10 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
     const [hasMore, setHasMore] = useState(true);
     const [tableLoading, setTableLoading] = useState(false);
 
+    // Duplicate Check State
+    const [duplicateDetails, setDuplicateDetails] = useState(null);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
     // Masters
     const [shifts, setShifts] = useState([]);
     const [operators, setOperators] = useState([]); // Shift In Charge
@@ -324,6 +328,42 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
         return () => clearTimeout(timer);
     }, [formData.Date, formData.ShiftId]); // Refresh table when Date/Shift changes
 
+    // Reactive Duplicate Check on Date, Shift, or Plant change
+    useEffect(() => {
+        const checkDuplicateReactively = async () => {
+            if (!formData.Date || !formData.ShiftId || !formData.PlantId) {
+                return;
+            }
+            try {
+                const res = await fetch('/api/transaction/crusher/check-duplicate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        Date: formData.Date,
+                        ShiftId: formData.ShiftId,
+                        PlantId: formData.PlantId,
+                        ExcludeSlNo: initialData?.SlNo
+                    })
+                });
+                const data = await res.json();
+                if (data.success && data.exists) {
+                    setDuplicateDetails(data.details);
+                    setShowDuplicateModal(true);
+                } else {
+                    setDuplicateDetails(null);
+                }
+            } catch (err) {
+                console.error("Failed reactively checking duplicate:", err);
+            }
+        };
+
+        const timer = setTimeout(() => {
+            checkDuplicateReactively();
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [formData.Date, formData.ShiftId, formData.PlantId, initialData]);
+
     // Calculations
     useEffect(() => {
         // Production Qty = BeltScaleCHMR - BeltScaleOHMR
@@ -624,21 +664,28 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
         setLoading(true);
 
         try {
-            if (mode === 'create') {
-                try {
-                    const dupRes = await fetch('/api/transaction/crusher/check-duplicate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ Date: formData.Date, ShiftId: formData.ShiftId, PlantId: formData.PlantId, EquipmentId: formData.EquipmentId })
-                    });
-                    const dupData = await dupRes.json();
-                    if (dupData.exists) {
-                        toast.error("Duplicate Entry!");
-                        setLoading(false);
-                        isSavingRef.current = false;
-                        return;
-                    }
-                } catch (e) { console.error(e); }
+            try {
+                const dupRes = await fetch('/api/transaction/crusher/check-duplicate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        Date: formData.Date,
+                        ShiftId: formData.ShiftId,
+                        PlantId: formData.PlantId,
+                        ExcludeSlNo: initialData?.SlNo
+                    })
+                });
+                const dupData = await dupRes.json();
+                if (dupData.success && dupData.exists) {
+                    setDuplicateDetails(dupData.details);
+                    setShowDuplicateModal(true);
+                    toast.error("Duplicate Entry!");
+                    setLoading(false);
+                    isSavingRef.current = false;
+                    return;
+                }
+            } catch (e) {
+                console.error("Duplicate check error on save:", e);
             }
 
             const url = mode === 'create' ? '/api/transaction/crusher/create' : `/api/transaction/crusher/${initialData.SlNo}`;
@@ -1046,6 +1093,69 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
                     </div>
                 )}
             </div>
+
+            {/* Premium Duplicate Alert Modal Overlay */}
+            {showDuplicateModal && duplicateDetails && (
+                <div className={css.modalOverlay}>
+                    <div className={css.modalCard}>
+                        <div className={css.modalHeader}>
+                            <div className={css.warningIcon}>⚠️</div>
+                            <h2>Already Entry Found</h2>
+                        </div>
+                        <div className={css.modalBody}>
+                            <p className={css.modalSubTitle}>
+                                A duplicate record already exists in the system for this combination. Please check the details below:
+                            </p>
+                            <div className={css.detailsGrid}>
+                                <div className={css.detailItem}>
+                                    <span className={css.detailLabel}>Date</span>
+                                    <span className={css.detailValue}>
+                                        {duplicateDetails.date ? new Date(duplicateDetails.date).toLocaleDateString('en-IN', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric'
+                                        }) : 'N/A'}
+                                    </span>
+                                </div>
+                                <div className={css.detailItem}>
+                                    <span className={css.detailLabel}>Shift</span>
+                                    <span className={css.detailValue}>{duplicateDetails.shift || 'N/A'}</span>
+                                </div>
+                                <div className={css.detailItem}>
+                                    <span className={css.detailLabel}>Plant</span>
+                                    <span className={css.detailValue}>{duplicateDetails.plant || 'N/A'}</span>
+                                </div>
+                                <div className={css.detailItem}>
+                                    <span className={css.detailLabel}>Entered By</span>
+                                    <span className={css.detailValue}>{duplicateDetails.enteredBy || 'N/A'}</span>
+                                </div>
+                                <div className={css.detailItem}>
+                                    <span className={css.detailLabel}>Entered On</span>
+                                    <span className={css.detailValue}>
+                                        {duplicateDetails.enteredOn ? new Date(duplicateDetails.enteredOn).toLocaleDateString('en-IN', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit',
+                                            hour12: true
+                                        }) : 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className={css.modalFooter}>
+                            <button 
+                                onClick={() => setShowDuplicateModal(false)} 
+                                className={css.modalCloseBtn}
+                            >
+                                Check & Correct Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

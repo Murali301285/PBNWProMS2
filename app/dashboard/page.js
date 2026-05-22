@@ -65,6 +65,23 @@ function formatNumber(num) {
     return new Intl.NumberFormat('en-IN').format(num);
 }
 
+function getFinancialYearLabel(dateStr) {
+    if (!dateStr) return 'FY';
+    const parts = dateStr.split('-');
+    if (parts.length < 2) return 'FY';
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    let startYear, endYear;
+    if (month >= 4) {
+        startYear = year;
+        endYear = year + 1;
+    } else {
+        startYear = year - 1;
+        endYear = year;
+    }
+    return `FY(${startYear}-${String(endYear).slice(-2)})`;
+}
+
 export default function Dashboard() {
     const [activeDetail, setActiveDetail] = useState(null);
     const scrollRef = useRef(null);
@@ -382,7 +399,9 @@ export default function Dashboard() {
                                         <span className={styles.subValue}>{formatNumber(section.data.avg)}</span>
                                     </div>
                                     <div className={styles.subValueItem}>
-                                        <span className={styles.subValueLabel}>Year</span>
+                                        <span className={styles.subValueLabel} title={getFinancialYearLabel(dateRange.to)}>
+                                            {getFinancialYearLabel(dateRange.to)}
+                                        </span>
                                         <span className={styles.subValue}>{formatNumber(section.data.ytd)}</span>
                                     </div>
                                 </div>
@@ -420,7 +439,7 @@ export default function Dashboard() {
                                         <th>FTD</th>
                                         <th>MTD</th>
                                         <th>Avg</th>
-                                        <th>YTD</th>
+                                        <th>{getFinancialYearLabel(dateRange.to)}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

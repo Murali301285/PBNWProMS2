@@ -164,3 +164,146 @@
     display: flex;
     gap: 0.5rem;
 }
+
+.clearBtn {
+    color: #ef4444; /* red-500 */
+}
+
+.clearBtn:hover {
+    background-color: #fee2e2; /* red-100 */
+}
+
+/* Glassmorphism modal */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4); /* slate-900 / 40% */
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalContent {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 1rem;
+    padding: 1.75rem;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #ef4444; /* red-500 */
+}
+
+.modalHeader h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: #0f172a; /* slate-900 */
+}
+
+.modalBody {
+    color: #475569; /* slate-600 */
+    font-size: 0.925rem;
+    line-height: 1.5;
+}
+
+.modalDetailBox {
+    background: rgba(241, 245, 249, 0.6);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.modalDetailItem {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.modalDetailLabel {
+    font-weight: 600;
+    color: #64748b; /* slate-500 */
+}
+
+.modalDetailValue {
+    font-weight: 500;
+    color: #1e293b; /* slate-800 */
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.cancelBtn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    background-color: white;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cancelBtn:hover {
+    background-color: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.confirmDeleteBtn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+    background-color: #ef4444;
+    border: 1px solid #ef4444;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.confirmDeleteBtn:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    box-shadow: 0 6px 8px -1px rgba(220, 38, 38, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

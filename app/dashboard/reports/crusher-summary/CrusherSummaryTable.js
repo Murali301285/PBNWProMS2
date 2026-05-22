@@ -2,6 +2,23 @@
 import React from 'react';
 import styles from './CrusherSummary.module.css';
 
+function getCrusherYtdHeader(dateStr) {
+    if (!dateStr) return 'Production YTD';
+    const parts = dateStr.split('-');
+    if (parts.length < 2) return 'Production YTD';
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    let startYear, endYear;
+    if (month >= 4) {
+        startYear = year;
+        endYear = year + 1;
+    } else {
+        startYear = year - 1;
+        endYear = year;
+    }
+    return `Production YTD ${String(startYear).slice(-2)}-${String(endYear).slice(-2)}`;
+}
+
 export default function CrusherSummaryTable({ data, meta, date }) {
     if (!data || data.length === 0) return (
         <div className="p-5 text-center text-gray-500">
@@ -78,7 +95,7 @@ export default function CrusherSummaryTable({ data, meta, date }) {
                                 <th className="bg-blue-100">Cum Production FTD</th>
                                 <th className="bg-blue-100">Cum TPH FTD</th>
                                 <th className="bg-green-100">Cum Production FTM</th>
-                                <th className="bg-yellow-100">Production YTD 25-26</th>
+                                <th className="bg-yellow-100">{getCrusherYtdHeader(date)}</th>
                             </tr>
                         </thead>
                         <tbody>

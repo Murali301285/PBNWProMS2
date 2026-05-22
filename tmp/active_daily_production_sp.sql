@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE [dbo].[PMS2_New_Sp_DailyProductionReport]
+CREATE   PROCEDURE [dbo].[PMS2_New_Sp_DailyProductionReport]
     @Date DATE
 AS
 BEGIN

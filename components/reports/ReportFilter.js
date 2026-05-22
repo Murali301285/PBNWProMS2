@@ -59,6 +59,17 @@ export default function ReportFilter({
 
                 // Trigger Async Request
                 try {
+                    let userId = 1;
+                    try {
+                        const meRes = await fetch('/api/auth/me');
+                        const meData = await meRes.json();
+                        if (meData?.user?.id) {
+                            userId = meData.user.id;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch auth me in ReportFilter', e);
+                    }
+
                     const res = await fetch('/api/reports/request', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -66,7 +77,7 @@ export default function ReportFilter({
                             reportType, // passed from parent
                             fromDate,
                             toDate,
-                            requestedBy: 1 // TODO: Get from Auth
+                            requestedBy: userId
                         })
                     });
                     const result = await res.json();

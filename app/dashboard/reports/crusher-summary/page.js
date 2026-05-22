@@ -171,13 +171,25 @@ export default function CrusherSummaryPage() {
             const fmtHr = '#,##0.00';
             const fmtInt = '#,##0';
 
+            const yearVal = new Date(date).getFullYear();
+            const monthVal = new Date(date).getMonth() + 1;
+            let startYearVal, endYearVal;
+            if (monthVal >= 4) {
+                startYearVal = yearVal;
+                endYearVal = yearVal + 1;
+            } else {
+                startYearVal = yearVal - 1;
+                endYearVal = yearVal;
+            }
+            const crusherYtdHeader = `Production YTD ${String(startYearVal).slice(-2)}-${String(endYearVal).slice(-2)}`;
+
             // 3. Table 1 Headers
             const headerRow1 = ws.getRow(7);
             headerRow1.height = 30;
             const header1 = [
                 "Sl.No.", "Details", "Running Hour Actuals for the day",
                 ...shiftNames,
-                "Cum Production FTD", "Cum TPH FTD", "Cum Production FTM", "Production YTD 25-26"
+                "Cum Production FTD", "Cum TPH FTD", "Cum Production FTM", crusherYtdHeader
             ];
 
             header1.forEach((h, i) => {
