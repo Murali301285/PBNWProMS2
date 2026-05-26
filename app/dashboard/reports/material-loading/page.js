@@ -7,6 +7,7 @@ import MaterialLoadingFilterModal from '@/components/reports/MaterialLoadingFilt
 import { toast } from 'sonner';
 import { Filter } from 'lucide-react';
 import styles from '@/components/reports/ReportFilter.module.css';
+import { formatReportDate } from '@/lib/date-utils';
 
 /**
  * Material Loading Detailed Report
@@ -81,7 +82,16 @@ export default function MaterialLoadingReport() {
             const result = await res.json();
 
             if (result.success) {
-                setData(result.data);
+                const formattedData = result.data.map(row => {
+                    const newRow = { ...row };
+                    Object.keys(newRow).forEach(key => {
+                        if (key.toLowerCase() === 'date') {
+                            newRow[key] = formatReportDate(newRow[key]);
+                        }
+                    });
+                    return newRow;
+                });
+                setData(formattedData);
                 toast.success(`Loaded ${result.data.length} records`);
             } else {
                 toast.error(result.message || 'Failed to fetch report');

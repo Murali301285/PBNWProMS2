@@ -6,6 +6,7 @@ import { Search, Loader2, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import WaterTankerTable from './WaterTankerTable';
 import styles from './WaterTankerReport.module.css';
+import { formatReportDate } from '@/lib/date-utils';
 
 export default function WaterTankerReport() {
     const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
@@ -65,7 +66,16 @@ export default function WaterTankerReport() {
             const result = await res.json();
 
             if (result.success) {
-                setData(result.data);
+                const formattedData = result.data.map(row => {
+                    const newRow = { ...row };
+                    Object.keys(newRow).forEach(key => {
+                        if (key.toLowerCase() === 'date') {
+                            newRow[key] = formatReportDate(newRow[key]);
+                        }
+                    });
+                    return newRow;
+                });
+                setData(formattedData);
                 if (result.data.length === 0) toast.info("No records found");
             } else {
                 toast.error(result.message || 'Failed to fetch report');
@@ -256,7 +266,11 @@ export default function WaterTankerReport() {
                     if (col.accessor === 'Date' && val) {
                         const d = new Date(val);
                         if (!isNaN(d.getTime())) {
-                            val = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').replace(/\//g, '-');
+                            const day = d.getDate().toString().padStart(2, '0');
+                            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                            const month = monthNames[d.getMonth()];
+                            const year = d.getFullYear();
+                            val = `${day} - ${month} - ${year}`;
                         }
                     }
 

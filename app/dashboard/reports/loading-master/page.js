@@ -5,6 +5,7 @@ import ReportFilter from '@/components/reports/ReportFilter';
 import ReportTable from '@/components/reports/ReportTable';
 import LoadingMasterFilterModal from '@/components/reports/LoadingMasterFilterModal';
 import { toast } from 'sonner';
+import { formatReportDate } from '@/lib/date-utils';
 
 export default function LoadingMasterReportPage() {
     const [reportData, setReportData] = useState([]);
@@ -93,7 +94,16 @@ export default function LoadingMasterReportPage() {
                 if (data.message) {
                     toast.success(data.message);
                 } else {
-                    setReportData(data);
+                    const formattedData = data.map(row => {
+                        const newRow = { ...row };
+                        Object.keys(newRow).forEach(key => {
+                            if (key.toLowerCase() === 'date') {
+                                newRow[key] = formatReportDate(newRow[key]);
+                            }
+                        });
+                        return newRow;
+                    });
+                    setReportData(formattedData);
                     // Extract Conversion Factor from the first record if available
                     if (data.length > 0 && data[0].ConversionFactor) {
                         setConversionFactor(data[0].ConversionFactor);
@@ -271,7 +281,7 @@ export default function LoadingMasterReportPage() {
                              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                              const month = monthNames[d.getMonth()];
                              const year = d.getFullYear();
-                             val = `${day}-${month}-${year}`;
+                             val = `${day} - ${month} - ${year}`;
                          }
                     }
 
