@@ -137,12 +137,15 @@ export default function GeneratedReports() {
                 return;
             }
 
-            // Map Date values directly to dd - MMM - yyyy format
-            const data = rawData.map(row => {
+            // Map Date values directly to dd - MMM - yyyy format and set SlNo/Sl.No to start from 1
+            const data = rawData.map((row, index) => {
                 const newRow = { ...row };
                 Object.keys(newRow).forEach(key => {
                     if (key.toLowerCase() === 'date') {
                         newRow[key] = formatReportDate(newRow[key]);
+                    }
+                    if (key.toLowerCase() === 'slno' || key === 'Sl.No') {
+                        newRow[key] = index + 1;
                     }
                 });
                 return newRow;
@@ -170,12 +173,15 @@ export default function GeneratedReports() {
                 return;
             }
 
-            // Map Date values directly to dd - MMM - yyyy format
-            const data = rawData.map(row => {
+            // Map Date values directly to dd - MMM - yyyy format and set SlNo/Sl.No to start from 1
+            const data = rawData.map((row, index) => {
                 const newRow = { ...row };
                 Object.keys(newRow).forEach(key => {
                     if (key.toLowerCase() === 'date') {
                         newRow[key] = formatReportDate(newRow[key]);
+                    }
+                    if (key.toLowerCase() === 'slno' || key === 'Sl.No') {
+                        newRow[key] = index + 1;
                     }
                 });
                 return newRow;
