@@ -7,7 +7,7 @@ import MaterialLoadingFilterModal from '@/components/reports/MaterialLoadingFilt
 import { toast } from 'sonner';
 import { Filter } from 'lucide-react';
 import styles from '@/components/reports/ReportFilter.module.css';
-import { formatReportDate } from '@/lib/date-utils';
+import { formatReportDate, sortReportData } from '@/lib/date-utils';
 
 /**
  * Material Loading Detailed Report
@@ -82,7 +82,8 @@ export default function MaterialLoadingReport() {
             const result = await res.json();
 
             if (result.success) {
-                const formattedData = result.data.map(row => {
+                const sorted = sortReportData(result.data, 'Date', 'ShiftName');
+                const formattedData = sorted.map(row => {
                     const newRow = { ...row };
                     Object.keys(newRow).forEach(key => {
                         if (key.toLowerCase() === 'date') {

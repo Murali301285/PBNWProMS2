@@ -5,7 +5,7 @@ const config = {
     password: 'Chennai@42',
     server: 'localhost',
     port: 1433,
-    database: 'ProMS2_1602',
+    database: 'ProMS2_2026',
     options: {
         encrypt: false,
         trustServerCertificate: true
@@ -15,18 +15,13 @@ const config = {
 async function checkShifts() {
     try {
         await sql.connect(config);
-        console.log("Connected to DB");
-
-        const result = await sql.query(`
-            SELECT SlNo, ShiftName
-            FROM Master.TblShift WITH(NOLOCK)
-        `);
+        const result = await sql.query`SELECT * FROM [Master].TblShift`;
+        console.log('Shifts:');
         console.table(result.recordset);
-
+        process.exit(0);
     } catch (err) {
-        console.error("Error:", err);
-    } finally {
-        await sql.close();
+        console.error('Error:', err.message);
+        process.exit(1);
     }
 }
 

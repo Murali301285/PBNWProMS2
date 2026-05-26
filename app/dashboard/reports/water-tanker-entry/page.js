@@ -6,7 +6,7 @@ import { Search, Loader2, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import WaterTankerTable from './WaterTankerTable';
 import styles from './WaterTankerReport.module.css';
-import { formatReportDate } from '@/lib/date-utils';
+import { formatReportDate, sortReportData } from '@/lib/date-utils';
 
 export default function WaterTankerReport() {
     const getLocalISO = (d) => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
@@ -66,7 +66,8 @@ export default function WaterTankerReport() {
             const result = await res.json();
 
             if (result.success) {
-                const formattedData = result.data.map(row => {
+                const sorted = sortReportData(result.data, 'Date', 'ShiftName');
+                const formattedData = sorted.map(row => {
                     const newRow = { ...row };
                     Object.keys(newRow).forEach(key => {
                         if (key.toLowerCase() === 'date') {

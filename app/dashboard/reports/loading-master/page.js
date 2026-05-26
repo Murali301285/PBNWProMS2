@@ -5,7 +5,7 @@ import ReportFilter from '@/components/reports/ReportFilter';
 import ReportTable from '@/components/reports/ReportTable';
 import LoadingMasterFilterModal from '@/components/reports/LoadingMasterFilterModal';
 import { toast } from 'sonner';
-import { formatReportDate } from '@/lib/date-utils';
+import { formatReportDate, sortReportData } from '@/lib/date-utils';
 
 export default function LoadingMasterReportPage() {
     const [reportData, setReportData] = useState([]);
@@ -94,7 +94,8 @@ export default function LoadingMasterReportPage() {
                 if (data.message) {
                     toast.success(data.message);
                 } else {
-                    const formattedData = data.map(row => {
+                    const sorted = sortReportData(data, 'Date', 'Shift');
+                    const formattedData = sorted.map(row => {
                         const newRow = { ...row };
                         Object.keys(newRow).forEach(key => {
                             if (key.toLowerCase() === 'date') {
