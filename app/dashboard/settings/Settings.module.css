@@ -60,6 +60,7 @@
     color: var(--foreground);
     font-size: 0.9rem;
     outline: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input:focus {
@@ -68,7 +69,6 @@
     box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
     transform: scale(1.02);
     z-index: 5;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input:hover {
@@ -84,6 +84,7 @@
     color: var(--foreground);
     font-size: 0.9rem;
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .checkboxLabel {

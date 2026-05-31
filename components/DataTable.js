@@ -282,9 +282,27 @@ export default function DataTable({
         XLSX.writeFile(wb, `${cleanFileName}_${dateStr}.xlsx`);
     };
 
+    const lastVisibleStickyIndex = useMemo(() => {
+        let lastIdx = -1;
+        for (let i = (stickyLeft || 0) - 1; i >= 0; i--) {
+            const col = columns[i];
+            if (!col) continue;
+            if (col.accessor === 'SlNo' && !showSerialNo) continue;
+            if (columnVisibility[col.accessor] === false) continue;
+            lastIdx = i;
+            break;
+        }
+        return lastIdx;
+    }, [columns, stickyLeft, showSerialNo, columnVisibility]);
+
     const getLeftOffset = (index) => {
         let offset = 0;
-        for (let i = 0; i < index; i++) offset += (columns[i].width ? parseInt(columns[i].width) : 100);
+        for (let i = 0; i < index; i++) {
+            const col = columns[i];
+            if (col.accessor === 'SlNo' && !showSerialNo) continue;
+            if (columnVisibility[col.accessor] === false) continue;
+            offset += (col.width ? parseInt(col.width) : 100);
+        }
         return offset;
     }
 
@@ -475,7 +493,7 @@ export default function DataTable({
                                             zIndex: isAction ? 41 : (isSticky ? 40 : 30),
                                             backgroundColor: isFiltered ? '#fef9c3' : (isSticky ? (stickyBgColor || '#f8fafc') : (isAction ? '#f8fafc' : undefined)),
                                             borderBottom: isFiltered ? '2px solid #eab308' : undefined,
-                                            boxShadow: isSticky ? '2px 0 5px -2px rgba(0,0,0,0.1)' : (isAction ? '-2px 0 5px -2px rgba(0,0,0,0.1)' : undefined)
+                                            boxShadow: (isSticky && index === lastVisibleStickyIndex) ? '2px 0 5px -2px rgba(0,0,0,0.15)' : (isAction ? '-2px 0 5px -2px rgba(0,0,0,0.1)' : undefined)
                                         }}
                                     >
                                         <div className="flex items-center justify-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -530,36 +548,54 @@ export default function DataTable({
                                                     </div>
                                                     <div className={styles.filterList}>
                                                         {(() => {
-                                                            let options = uniqueValues[col.accessor] || [];
+                                                            let options = (uniqueValues[col.accessor] || []).map(val => {
+                                                                let displayVal = val;
+                                                                if (col.render) {
+                                                                    try {
+                                                                        const rendered = col.render({ [col.accessor]: val }, 0);
+                                                                        if (rendered !== null && typeof rendered !== 'object' && typeof rendered !== 'function') {
+                                                                            displayVal = rendered;
+                                                                        } else if (typeof val === 'boolean') {
+                                                                            displayVal = val ? 'Active' : 'Inactive';
+                                                                        }
+                                                                    } catch (e) { }
+                                                                } else if (typeof val === 'boolean') {
+                                                                    displayVal = val ? 'Active' : 'Inactive';
+                                                                }
+                                                                return { value: val, display: String(displayVal) };
+                                                            });
 
                                                             // 1. Filter by Search
                                                             if (activeFilterSearch) {
-                                                                options = options.filter(v =>
-                                                                    String(v).toLowerCase().includes(activeFilterSearch.toLowerCase())
+                                                                const lowerSearch = activeFilterSearch.toLowerCase();
+                                                                options = options.filter(opt =>
+                                                                    opt.display.toLowerCase().includes(lowerSearch)
                                                                 );
                                                             }
 
-                                                            // 2. Sort: Selected First, then Alpha
+                                                            // 2. Sort: Selected First, then Alpha on Display Value
                                                             const selectedSet = columnFilters[col.accessor] || new Set();
                                                             options.sort((a, b) => {
-                                                                const aSelected = selectedSet.has(a);
-                                                                const bSelected = selectedSet.has(b);
+                                                                const aSelected = selectedSet.has(a.value);
+                                                                const bSelected = selectedSet.has(b.value);
                                                                 if (aSelected && !bSelected) return -1;
                                                                 if (!aSelected && bSelected) return 1;
-                                                                return String(a).localeCompare(String(b));
+                                                                return a.display.localeCompare(b.display);
                                                             });
 
                                                             if (!options || options.length === 0) return <span className="text-gray-400 italic p-2">No options</span>;
 
-                                                            return options.map(val => (
-                                                                <label key={val} className={styles.filterItem}>
+                                                            return options.map(opt => (
+                                                                <label key={opt.value} className={styles.filterItem}>
                                                                     <input
                                                                         type="checkbox"
-                                                                        checked={columnFilters[col.accessor]?.has(val) || false}
-                                                                        onChange={() => toggleFilter(col.accessor, val)}
+                                                                        checked={columnFilters[col.accessor]?.has(opt.value) || false}
+                                                                        onChange={() => toggleFilter(col.accessor, opt.value)}
                                                                         onClick={e => e.stopPropagation()}
                                                                     />
-                                                                    <span className="truncate" title={val} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{val}</span>
+                                                                    <span className="truncate" title={opt.display}>
+                                                                        {opt.display}
+                                                                    </span>
                                                                 </label>
                                                             ));
                                                         })()}
@@ -597,7 +633,7 @@ export default function DataTable({
                                                     left: isSticky ? leftOffset : undefined,
                                                     backgroundColor: isSticky ? (stickyBgColor || (rIdx % 2 === 0 ? '#f8fafc' : 'white')) : (col.accessor === 'actions' ? (rIdx % 2 === 0 ? '#f8fafc' : 'white') : undefined),
                                                     zIndex: col.accessor === 'actions' ? 10 : (isSticky ? 5 : 1),
-                                                    boxShadow: isSticky ? '2px 0 5px -2px rgba(0,0,0,0.1)' : (col.accessor === 'actions' ? '-2px 0 5px -2px rgba(0,0,0,0.1)' : undefined)
+                                                    boxShadow: (isSticky && cIdx === lastVisibleStickyIndex) ? '2px 0 5px -2px rgba(0,0,0,0.15)' : (col.accessor === 'actions' ? '-2px 0 5px -2px rgba(0,0,0,0.1)' : undefined)
                                                 }}
                                             >
                                                 <div className={styles.cellContent}>
@@ -625,7 +661,7 @@ export default function DataTable({
                     />
                 )
             }
-        </div >
+        </div>
     );
 }
 

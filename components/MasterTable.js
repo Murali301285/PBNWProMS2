@@ -390,6 +390,7 @@ export default function MasterTable({ config, title }) {
                 // Enable sorting for all columns unless explicitly disabled
                 // User requirement: "Add Sorting filter to all the columns... (like toggles, Isactive)"
                 sortable: isObj && col.sortable !== undefined ? col.sortable : true,
+                width: isObj && col.width ? col.width : undefined,
                 render: (row) => {
                     // Support displayField for API-joined columns
                     const useDisplayField = isObj && col.displayField;
@@ -522,6 +523,7 @@ export default function MasterTable({ config, title }) {
                     fileName={title}
                     defaultSort={{ key: config.idField || 'SlNo', direction: 'asc' }}
                     customHeight="627px"
+                    stickyLeft={config.stickyLeft || 0}
                 />
             </div>
 
@@ -529,6 +531,7 @@ export default function MasterTable({ config, title }) {
                 isOpen={isEditing}
                 onClose={() => setIsEditing(false)}
                 title={editId ? 'Edit Record' : 'Add New Record'}
+                size={config.table === '[Master].[TblEquipment]' ? '750px' : undefined}
             >
                 <DynamicForm
                     columns={config.columns.map(col => {
@@ -601,7 +604,7 @@ export default function MasterTable({ config, title }) {
                 }}
                 config={{ ...config, title }}
             />
-        </div >
+        </div>
     );
 }
 

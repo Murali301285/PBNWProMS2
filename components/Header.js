@@ -172,7 +172,27 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
                         <span className={styles.envTag}>{dbInfo.Environment}</span>
                     </div>
                 )}
+                {process.env.APP_ENV === 'Testing' && (
+                    <div style={{
+                        backgroundColor: '#fef08a',
+                        color: '#dc2626',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
+                        marginLeft: '12px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        border: '1px solid #fde047',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}>
+                        Testing
+                    </div>
+                )}
             </div>
+
 
             <div className={styles.searchBar} ref={searchRef}>
                 <Search size={18} className={styles.searchIcon} />

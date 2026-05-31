@@ -1156,6 +1156,6 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
                     </div>
                 </div>
             )}
-        </div >
+        </div>
     );
 }

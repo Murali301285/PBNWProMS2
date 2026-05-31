@@ -455,6 +455,6 @@ export default function OperatorPerformanceHaulingReport() {
                 stickyBgColor="#e0f2fe"
                 onExportExcel={handleExportExcel}
             />
-        </div >
+        </div>
     );
 }

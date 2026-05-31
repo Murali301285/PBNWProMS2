@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import TransactionTable from './TransactionTable';
 import SearchableSelect from './SearchableSelect';
 import styles from './TransactionForm.module.css'; // Reusing styles
+import Modal from '@/components/Modal/Modal';
 
 export default function MaterialRehandlingForm({ initialData = null, isEdit = false }) {
     const router = useRouter();
@@ -14,6 +15,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
     const [pageLoading, setPageLoading] = useState(true);
     const [user, setUser] = useState(null); // Added User State
     const [isContextLocked, setIsContextLocked] = useState(true); // Locking State (Default True for strictness)
+    const [showAlertModal, setShowAlertModal] = useState(false);
 
     // Explicit Module Type
     const moduleType = 'material-rehandling';
@@ -424,13 +426,23 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                             const upd = {
                                 ...prev,
                                 MangQtyTrip: res.data.ManagementQtyTrip ?? '',
-                                NTPCQtyTrip: res.data.NTPCQtyTrip ?? ''
+                                NTPCQtyTrip: res.data.NTPCQtyTrip ?? '',
+                                Unit: res.data.UnitId ? String(res.data.UnitId) : prev.Unit
                             };
                             calculateTotals(upd);
                             return upd;
                         });
                     } else if (res.success && res.data === null) {
-                        toast.error("No Qty Mapping is found.", { duration: 3000 });
+                        setFormData(prev => {
+                            const upd = {
+                                ...prev,
+                                MangQtyTrip: '',
+                                NTPCQtyTrip: ''
+                            };
+                            calculateTotals(upd);
+                            return upd;
+                        });
+                        setShowAlertModal(true);
                     }
                 });
         }
@@ -911,7 +923,8 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                     </div>
 
                 </div>
-                {/* Transaction Table Section */}
+            </form>
+            {/* Transaction Table Section */}
                 <div className={styles.tableSection} style={{ marginTop: '30px', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
                     <TransactionTable
                         title="Recent Transactions"
@@ -977,7 +990,53 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                         </div>
                     )}
                 </div>
-            </form>
+            {/* Warning Alert Modal Overlay */}
+            <Modal 
+                isOpen={showAlertModal} 
+                onClose={() => setShowAlertModal(false)} 
+                title="Warning"
+                size="420px"
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        padding: '16px',
+                        borderRadius: '50%',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <h4 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--foreground)', marginBottom: '10px' }}>
+                        No Load Factor Qty is found
+                    </h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', opacity: 0.8, lineHeight: '1.5', marginBottom: '24px' }}>
+                        The selected combination of hauler and material does not have a mapped capacity in the Equipment Master table.
+                    </p>
+                    <button 
+                        type="button"
+                        onClick={() => setShowAlertModal(false)}
+                        style={{
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 24px',
+                            borderRadius: '10px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                        onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                    >
+                        Acknowledge
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 }

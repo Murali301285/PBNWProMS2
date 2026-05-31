@@ -8,12 +8,14 @@ import { toast } from 'sonner';
 import TransactionTable from './TransactionTable';
 import SearchableSelect from './SearchableSelect';
 import styles from './TransactionForm.module.css';
+import Modal from '@/components/Modal/Modal';
 
 export default function InternalTransferForm({ initialData = null, isEdit = false }) {
     const router = useRouter();
     console.log("!!! VERSION_CHECK_FINAL: InternalTransferForm Loaded !!!");
     const [isLoading, setIsLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
+    const [showAlertModal, setShowAlertModal] = useState(false);
 
     // Dropdown Options State
     const [options, setOptions] = useState({
@@ -339,18 +341,21 @@ export default function InternalTransferForm({ initialData = null, isEdit = fals
                             const upd = {
                                 ...prev,
                                 QtyTrip: res.data.Qty, // Mapped Qty
-                                // NTPC removed
+                                Unit: res.data.UnitId ?? prev.Unit
                             };
                             calculateTotals(upd);
                             return upd;
                         });
                     } else if (res.success && res.data === null) {
-                        // No Mapping Found - Show Error
-                        // User requested "pop up modal". Using a persistent toast for now as it acts like a pop-up alert in this UI.
-                        toast.error("No Qty Mapping is found for this material group and Material. Please check Master/Qty-Trip Mapping page.", {
-                            duration: 5000,
-                            style: { border: '2px solid red', background: '#fff0f0' }
+                        setFormData(prev => {
+                            const upd = {
+                                ...prev,
+                                QtyTrip: ''
+                            };
+                            calculateTotals(upd);
+                            return upd;
                         });
+                        setShowAlertModal(true);
                     }
                 });
         }
@@ -853,8 +858,9 @@ export default function InternalTransferForm({ initialData = null, isEdit = fals
                         <input type="text" name="Remarks" value={formData.Remarks || ''} onChange={handleChange} onKeyDown={handleEnter} className={styles.input} placeholder="Optional remarks..." />
                     </div>
                 </div>
+            </form>
 
-                <div className={styles.tableSection} style={{ marginTop: '12px' }}>
+            <div className={styles.tableSection} style={{ marginTop: '12px' }}>
                     <h3 className={styles.tableHeader}>Recent Transactions</h3>
                     <TransactionTable
                         config={{
@@ -886,7 +892,53 @@ export default function InternalTransferForm({ initialData = null, isEdit = fals
                         userRole="Admin"
                     />
                 </div>
-            </form >
-        </div >
+            {/* Warning Alert Modal Overlay */}
+            <Modal 
+                isOpen={showAlertModal} 
+                onClose={() => setShowAlertModal(false)} 
+                title="Warning"
+                size="420px"
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        padding: '16px',
+                        borderRadius: '50%',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <h4 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--foreground)', marginBottom: '10px' }}>
+                        No Load Factor Qty is found
+                    </h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', opacity: 0.8, lineHeight: '1.5', marginBottom: '24px' }}>
+                        The selected combination of hauler and material does not have a mapped capacity in the Equipment Master table.
+                    </p>
+                    <button 
+                        type="button"
+                        onClick={() => setShowAlertModal(false)}
+                        style={{
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 24px',
+                            borderRadius: '10px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                        onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                    >
+                        Acknowledge
+                    </button>
+                </div>
+            </Modal>
+        </div>
     );
 }

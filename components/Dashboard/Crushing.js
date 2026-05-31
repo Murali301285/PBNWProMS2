@@ -775,7 +775,7 @@ export default function Crushing() {
                         })()}
                     </div>
                 </section>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }

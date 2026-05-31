@@ -1,5 +1,6 @@
 /* 🔒 LOCKED MODULE: DO NOT EDIT WITHOUT CONFIRMATION */
 import { NextResponse } from 'next/server';
+import { executeQuery, sql } from '@/lib/db';
 
 import { authenticateUser } from '@/lib/auth';
 

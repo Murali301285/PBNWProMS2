@@ -231,16 +231,32 @@
     padding: 6px 8px !important;
     cursor: pointer;
     font-size: 12px;
-    color: #334155;
+    color: #0f172a !important;
     border-radius: 4px;
     user-select: none;
     width: 100% !important;
     box-sizing: border-box !important;
 }
 
+.filterItem input[type="checkbox"] {
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    cursor: pointer;
+    flex-shrink: 0;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 .filterItem span {
     text-align: left !important;
     flex: 1 !important;
+    color: #0f172a !important;
+    font-size: 13px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .filterItem:hover {

@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import styles from './Modal.module.css';
 
-export default function Modal({ isOpen, onClose, title, children }) {
+export default function Modal({ isOpen, onClose, title, size, children }) {
     const modalRef = useRef(null);
 
     // Close on Escape key
@@ -34,7 +34,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
     return (
         <div className={styles.backdrop} onClick={handleBackdropClick}>
-            <div className={styles.modal} ref={modalRef}>
+            <div className={styles.modal} style={size ? { maxWidth: size } : {}} ref={modalRef}>
                 <div className={styles.header}>
                     <h3 className={styles.title}>{title}</h3>
                     <button className={styles.closeBtn} onClick={onClose}>
