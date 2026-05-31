@@ -13,8 +13,8 @@ export async function POST(request) {
         const body = await request.json();
         const userId = session.id;
 
-        // Query: Fetch configuration fields AND 'Type'
-        let query = `
+        // Base query fields
+        const selectClause = `
             SELECT TOP 1
                 t.SlNo,
                 t.Date,
@@ -37,16 +37,24 @@ export async function POST(request) {
 
         const params = [{ name: 'userId', type: sql.Int, value: userId }];
 
+        // 1. Try Date Specific Match first
+        let query = selectClause;
         if (body.Date) {
             // Check Specific Date
             query += ` AND CAST(t.Date AS DATE) = @date`;
             params.push({ name: 'date', type: sql.Date, value: body.Date });
         }
-
-        // Sorting: Always latest created (or SlNo)
         query += ` ORDER BY t.SlNo DESC`;
 
-        const data = await executeQuery(query, params);
+        let data = await executeQuery(query, params);
+
+        // 2. Fallback to Absolute Latest entered by this User if date specific yielded nothing
+        if (body.Date && data.length === 0) {
+            console.log("⚠️ No electrical entry found for Date. Executing User History Fallover...");
+            const fallbackQuery = selectClause + ` ORDER BY t.SlNo DESC`;
+            const fallbackParams = [{ name: 'userId', type: sql.Int, value: userId }];
+            data = await executeQuery(fallbackQuery, fallbackParams);
+        }
 
         return NextResponse.json({ data: data[0] || null });
 

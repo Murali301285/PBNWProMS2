@@ -436,12 +436,12 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
             const opData = await opRes.json();
             const ops = Array.isArray(opData) ? opData : [];
             setOperators(ops
-                .filter(o => o.SubCategoryId === 1 && o.IsActive && !o.IsDelete)
-                .map(o => ({ id: String(o.SlNo), name: `${o.OperatorName} (${o.OperatorId || ''})` }))
+                .filter(o => o.SubCategoryId === 1 && !o.IsDelete)
+                .map(o => ({ id: String(o.SlNo), name: `${o.OperatorName} (${o.OperatorId || ''})`, IsActive: o.IsActive }))
             );
 
             const plantData = await plantRes.json();
-            setPlants(Array.isArray(plantData) ? plantData.map(p => ({ id: String(p.SlNo), name: p.Name })) : []);
+            setPlants(Array.isArray(plantData) ? plantData.filter(p => !p.IsDelete).map(p => ({ id: String(p.SlNo), name: p.Name, IsActive: p.IsActive })) : []);
 
             const unitData = await unitRes.json();
             const unitList = Array.isArray(unitData) ? unitData.map(u => ({ id: u.SlNo, name: u.Name })) : [];
@@ -452,8 +452,8 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
             const equipData = await equipRes.json();
             const equips = Array.isArray(equipData) ? equipData : [];
             setHaulers(equips
-                .filter(e => e.ActivityId === 4 && e.IsActive && !e.IsDelete)
-                .map(e => ({ id: String(e.SlNo), name: e.EquipmentName }))
+                .filter(e => e.ActivityId === 4 && !e.IsDelete)
+                .map(e => ({ id: String(e.SlNo), name: e.EquipmentName, IsActive: e.IsActive }))
             );
 
             const bdData = await bdRes.json();

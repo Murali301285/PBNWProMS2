@@ -84,6 +84,7 @@ export default function InternalTransferForm({ initialData = null, isEdit = fals
                                 nameField: 'Name',
                                 valueField: 'SlNo',
                                 additionalColumns: extra, // Support extra cols
+                                includeInactive: true, // Load all master statuses (active & inactive)
                                 ...filter
                             })
                         }).then(r => r.json());

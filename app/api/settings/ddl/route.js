@@ -20,6 +20,8 @@ export async function POST(req) {
         if (additionalColumns && Array.isArray(additionalColumns)) {
             additionalColumns.forEach(col => cols.push(col));
         }
+        // Safely select IsActive if column exists, default to 1 otherwise
+        cols.push(`(CASE WHEN COL_LENGTH('${fullTableName}', 'IsActive') IS NOT NULL THEN IsActive ELSE 1 END) as IsActive`);
 
         let query = `
             SELECT ${cols.join(', ')}

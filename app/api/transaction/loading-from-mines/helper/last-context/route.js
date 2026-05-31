@@ -74,11 +74,9 @@ export async function POST(req) {
         if (result.recordset.length > 0) {
             data = result.recordset[0];
             console.log("✅ Found Context for Date:", date);
-        } else if (!ShiftId) {
-            // 2. Fallback to History (Last Entry Ever) - ONLY if Strict Shift is NOT enabled
-            console.log("⚠️ No entry for Date. Fetching Latest History...");
-            // Clear Date param for history query if reused? No, create new clean query or just run history string
-            // Actually request object inputs stick. 
+        } else {
+            // 2. Fallback to History (Last Entry Ever)
+            console.log("⚠️ No entry for Date/Shift. Fetching Latest History...");
 
             // Safest: New Request/Query for History
             const pool2 = await getDbConnection(); // reuse pool

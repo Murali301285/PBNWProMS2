@@ -137,6 +137,7 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                                 nameField: 'Name',
                                 valueField: 'SlNo',
                                 additionalColumns: extra,
+                                includeInactive: true, // Load all master statuses (active & inactive)
                                 ...filter
                             })
                         }).then(r => r.json());

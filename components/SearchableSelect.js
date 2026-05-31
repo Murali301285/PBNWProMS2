@@ -333,27 +333,62 @@ const SearchableSelect = forwardRef(({
                     </div>
                     <div ref={listRef}>
                         {filteredOptions.length > 0 ? (
-                            filteredOptions.map((opt, index) => (
-                                <div
-                                    key={opt.id}
-                                    className={styles.option}
-                                    style={{
-                                        padding: '8px 12px', cursor: 'pointer',
-                                        background: index === highlightindex ? 'var(--primary)' : 'transparent',
-                                        color: index === highlightindex ? 'var(--primary-foreground)' : 'var(--foreground)',
-                                        fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                                    }}
-                                    onMouseDown={(e) => {
-                                        // Prevent input blur to keep focus flow logic intact, or just ensuring execute before blur
-                                        e.preventDefault();
-                                        handleSelect(opt);
-                                    }}
-                                    onMouseEnter={() => setHighlightIndex(index)}
-                                >
-                                    <span>{opt.name}</span>
-                                    {isSelected(opt.id) && <Check size={14} />}
-                                </div>
-                            ))
+                            filteredOptions.map((opt, index) => {
+                                const isInactive = opt.IsActive !== undefined && (opt.IsActive === 0 || opt.IsActive === false || opt.IsActive === '0');
+                                const isHighlighted = index === highlightindex;
+                                const itemBg = isInactive ? 'transparent' : (isHighlighted ? 'var(--primary)' : 'transparent');
+                                const itemColor = isInactive ? '#94a3b8' : (isHighlighted ? 'var(--primary-foreground)' : 'var(--foreground)');
+                                const itemCursor = isInactive ? 'not-allowed' : 'pointer';
+                                const itemOpacity = isInactive ? 0.6 : 1;
+
+                                return (
+                                    <div
+                                        key={opt.id}
+                                        className={styles.option}
+                                        style={{
+                                            padding: '8px 12px', 
+                                            cursor: itemCursor,
+                                            background: itemBg,
+                                            color: itemColor,
+                                            opacity: itemOpacity,
+                                            fontSize: '0.9rem', 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center'
+                                        }}
+                                        onMouseDown={(e) => {
+                                            // Prevent input blur to keep focus flow logic intact
+                                            e.preventDefault();
+                                            if (!isInactive) {
+                                                handleSelect(opt);
+                                            }
+                                        }}
+                                        onMouseEnter={() => {
+                                            if (!isInactive) {
+                                                setHighlightIndex(index);
+                                            }
+                                        }}
+                                    >
+                                        <span>
+                                            {opt.name}
+                                            {isInactive && (
+                                                <span style={{ 
+                                                    fontSize: '0.75rem', 
+                                                    background: 'rgba(239, 68, 68, 0.1)', 
+                                                    color: '#ef4444', 
+                                                    padding: '2px 6px', 
+                                                    borderRadius: '4px', 
+                                                    marginLeft: '8px',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    Inactive
+                                                </span>
+                                            )}
+                                        </span>
+                                        {isSelected(opt.id) && <Check size={14} />}
+                                    </div>
+                                );
+                            })
                         ) : (
                             <div style={{ padding: '12px', textAlign: 'center', opacity: 0.5, fontSize: '0.85rem' }}>No results found</div>
                         )}

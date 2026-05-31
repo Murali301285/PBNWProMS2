@@ -13,11 +13,8 @@ export async function POST(request) {
         const body = await request.json();
         const { Date: reqDate } = body;
 
-        // Logic: Get last entry for this user on the SPECIFIC DATE
-        // If no date provided, maybe fallback to overall last? Or just return nothing?
-        // User asked for "once date changed -> check". So Date is crucial.
-
-        let query = `
+        // Base query fields
+        const selectClause = `
             SELECT TOP 1
                 Date,
                 DrillingPatchId,
@@ -36,14 +33,23 @@ export async function POST(request) {
 
         const params = [{ name: 'userId', type: sql.Int, value: session.id }];
 
+        // 1. Try Date Specific Match first
+        let query = selectClause;
         if (reqDate) {
             query += ` AND CAST(Date AS DATE) = @date`;
             params.push({ name: 'date', type: sql.Date, value: reqDate });
         }
-
         query += ` ORDER BY CreatedDate DESC`;
 
-        const data = await executeQuery(query, params);
+        let data = await executeQuery(query, params);
+
+        // 2. Fallback to Absolute Latest entered by this User if date specific yielded nothing
+        if (reqDate && data.length === 0) {
+            console.log("⚠️ No drilling entry found for Date. Executing User History Fallover...");
+            const fallbackQuery = selectClause + ` ORDER BY CreatedDate DESC`;
+            const fallbackParams = [{ name: 'userId', type: sql.Int, value: session.id }];
+            data = await executeQuery(fallbackQuery, fallbackParams);
+        }
 
         return NextResponse.json(data[0] || {});
 

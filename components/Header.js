@@ -26,6 +26,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
     // const [profileModalOpen, setProfileModalOpen] = useState(false); // Removed
     const [dbInfo, setDbInfo] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
+    const [appEnv, setAppEnv] = useState('');
 
     // ... (Keep existing search logic)
     const [searchData, setSearchData] = useState([]);
@@ -38,6 +39,20 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
 
     // ... (Keep existing useEffects)
     useEffect(() => {
+        // Fetch Runtime App Environment
+        async function fetchAppEnv() {
+            try {
+                const res = await fetch('/api/setup/app-env');
+                if (res.ok) {
+                    const data = await res.json();
+                    setAppEnv(data.env || '');
+                }
+            } catch (e) {
+                console.error("Env fetch failed", e);
+            }
+        }
+        fetchAppEnv();
+
         // Fetch Search Data
         async function fetchSearchData() {
             try {
@@ -172,7 +187,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
                         <span className={styles.envTag}>{dbInfo.Environment}</span>
                     </div>
                 )}
-                {process.env.APP_ENV === 'Testing' && (
+                {appEnv === 'Testing' && (
                     <div style={{
                         backgroundColor: '#fef08a',
                         color: '#dc2626',
