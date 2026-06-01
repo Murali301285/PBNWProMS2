@@ -11,7 +11,47 @@ export async function GET(request) {
             return NextResponse.json({ success: false, message: 'Missing parameters' }, { status: 400 });
         }
 
-        // 1. Fetch Equipment load factors and Material Name
+        // 1. Fetch Material Info first to have the fallback UnitId ready
+        const matQuery = `
+            SELECT MaterialName, UnitId 
+            FROM [Master].[TblMaterial] 
+            WHERE SlNo = @materialId AND IsDelete = 0 AND IsActive = 1
+        `;
+        const matRes = await executeQuery(matQuery, [{ name: 'materialId', type: sql.Int, value: materialId }]);
+
+        if (!matRes || matRes.length === 0) {
+            return NextResponse.json({ success: false, message: 'Material not found or inactive' });
+        }
+        const mat = matRes[0];
+        const fallbackUnitId = mat.UnitId;
+
+        // 2. HIGHEST PRIORITY: Check Individual Equipment Load Factor Override Mapping
+        const mappingQuery = `
+            SELECT ManagementQtyTrip, NTPCQtyTrip 
+            FROM [Master].[TblEquipmentLoadFactorMapping] 
+            WHERE EquipmentId = @haulerId AND MaterialId = @materialId AND IsDelete = 0 AND IsActive = 1
+        `;
+        const mappingRes = await executeQuery(mappingQuery, [
+            { name: 'haulerId', type: sql.Int, value: haulerId },
+            { name: 'materialId', type: sql.Int, value: materialId }
+        ]);
+
+        if (mappingRes && mappingRes.length > 0) {
+            const row = mappingRes[0];
+            if (row.ManagementQtyTrip !== null || row.NTPCQtyTrip !== null) {
+                return NextResponse.json({
+                    success: true,
+                    data: {
+                        ManagementQtyTrip: row.ManagementQtyTrip,
+                        NTPCQtyTrip: row.NTPCQtyTrip,
+                        Qty: row.ManagementQtyTrip, // Generic fallback
+                        UnitId: fallbackUnitId
+                    }
+                });
+            }
+        }
+
+        // 3. SECOND PRIORITY: Fallback to dynamic column matching on TblEquipment based on Material name
         const eqQuery = `
             SELECT 
                 OBUnitId, OBLoadFactor, 
@@ -23,34 +63,18 @@ export async function GET(request) {
             FROM [Master].[TblEquipment] 
             WHERE SlNo = @haulerId AND IsDelete = 0 AND IsActive = 1
         `;
-
-        const matQuery = `
-            SELECT MaterialName, UnitId 
-            FROM [Master].[TblMaterial] 
-            WHERE SlNo = @materialId AND IsDelete = 0 AND IsActive = 1
-        `;
-
-        const [eqRes, matRes] = await Promise.all([
-            executeQuery(eqQuery, [{ name: 'haulerId', type: sql.Int, value: haulerId }]),
-            executeQuery(matQuery, [{ name: 'materialId', type: sql.Int, value: materialId }])
-        ]);
+        const eqRes = await executeQuery(eqQuery, [{ name: 'haulerId', type: sql.Int, value: haulerId }]);
 
         if (!eqRes || eqRes.length === 0) {
             return NextResponse.json({ success: false, message: 'Hauler Equipment not found or inactive' });
         }
 
-        if (!matRes || matRes.length === 0) {
-            return NextResponse.json({ success: false, message: 'Material not found or inactive' });
-        }
-
         const eq = eqRes[0];
-        const mat = matRes[0];
         const matName = (mat.MaterialName || '').trim().toUpperCase();
-        const fallbackUnitId = mat.UnitId;
 
-        // 2. Match the Material Name to determine the corresponding load factor & unit from Equipment table
         let factor = null;
         let unitId = null;
+
         if (matName.includes('OB') || matName.includes('BURDEN')) {
             factor = eq.OBLoadFactor;
             unitId = eq.OBUnitId;
@@ -67,29 +91,25 @@ export async function GET(request) {
             factor = eq.CoalLoadFactor;
             unitId = eq.CoalUnitId;
         } else {
-            // No explicit load factor mapped for this material
             factor = null;
             unitId = null;
         }
 
-        // Fallback to material's own default UnitId if equipment-specific field is NULL/0
         if (!unitId || unitId === 0) {
             unitId = fallbackUnitId;
         }
 
-        // 3. Return the matched factor for both management and ntpc trip quantities
         if (factor !== null && factor !== undefined) {
             return NextResponse.json({
                 success: true,
                 data: {
                     ManagementQtyTrip: factor,
                     NTPCQtyTrip: factor,
-                    Qty: factor, // Generic fallback for InternalTransfer Form
+                    Qty: factor,
                     UnitId: unitId
                 }
             });
         } else {
-            // No load factor configured or is NULL
             return NextResponse.json({ success: true, data: null });
         }
 
