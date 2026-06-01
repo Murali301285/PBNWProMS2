@@ -19,12 +19,13 @@ export async function GET(request) {
             ORDER BY EuipmentID ASC
         `;
 
-        // Fetch active non-deleted materials
+        // Fetch active non-deleted materials with unit details
         const matQuery = `
-            SELECT SlNo, MaterialName 
-            FROM [Master].[TblMaterial] 
-            WHERE IsDelete = 0 AND IsActive = 1 
-            ORDER BY [Order] ASC, MaterialName ASC
+            SELECT m.SlNo, m.MaterialName, m.UnitId, u.Name as UnitName
+            FROM [Master].[TblMaterial] m
+            LEFT JOIN [Master].[TblUnit] u ON m.UnitId = u.SlNo
+            WHERE m.IsDelete = 0 AND m.IsActive = 1 
+            ORDER BY m.[Order] ASC, m.MaterialName ASC
         `;
 
         // Fetch active mapping configurations

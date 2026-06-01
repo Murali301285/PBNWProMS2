@@ -241,15 +241,19 @@ export default function EquipmentReadingForm({ isEdit = false, initialData = nul
                 const ddlOptions = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
                 const fetchDDL = (body) => fetch('/api/settings/ddl', { ...ddlOptions, body: JSON.stringify({ ...body, includeInactive: true }) }).then(r => r.json());
 
+                // Fetch Categories dynamically to resolve IDs cross-instance safely
+                const cats = await fetchDDL({ table: 'OperatorCategory', nameField: 'Name', valueField: 'SlNo' });
+                const shiftInchargeCatId = cats.find(c => c.name.toLowerCase() === 'shift incharge')?.id || 1;
+                const operatorCatId = cats.find(c => c.name.toLowerCase() === 'operator')?.id || 2;
+
                 const [shifts, relays, activities, equipments, opIncharge, opDriver, sectors, patches, methods] = await Promise.all([
                     fetchDDL({ table: 'shift', nameField: 'ShiftName', valueField: 'SlNo', additionalColumns: ['FromTime', 'ToTime'] }),
                     fetchDDL({ table: 'relay', nameField: 'Name', valueField: 'SlNo' }),
                     fetchDDL({ table: 'activity', nameField: 'Name', valueField: 'SlNo', additionalColumns: ['IsDetail'] }),
                     fetchDDL({ table: 'equipment', nameField: 'EquipmentName', valueField: 'SlNo', additionalColumns: ['ActivityId'] }),
-                    // Operators: SubCat 1 (Incharge), SubCat 2 (Driver)
-                    // V18.2: Use 'SlNo' (PK) for value. V18.3: Fetch 'OperatorId' (Code) for display.
-                    fetchDDL({ table: 'operator', nameField: 'OperatorName', valueField: 'SlNo', filter: { SubCategoryId: 1 }, additionalColumns: ['OperatorId'] }),
-                    fetchDDL({ table: 'operator', nameField: 'OperatorName', valueField: 'SlNo', filter: { SubCategoryId: 2 }, additionalColumns: ['OperatorId'] }),
+                    // Operators: Category 'Shift Incharge' vs 'Operator'
+                    fetchDDL({ table: 'operator', nameField: 'OperatorName', valueField: 'SlNo', filter: { CategoryId: shiftInchargeCatId }, additionalColumns: ['OperatorId'] }),
+                    fetchDDL({ table: 'operator', nameField: 'OperatorName', valueField: 'SlNo', filter: { CategoryId: operatorCatId }, additionalColumns: ['OperatorId'] }),
 
                     fetchDDL({ table: 'sector', nameField: 'SectorName', valueField: 'SlNo' }),
                     fetchDDL({ table: 'patch', nameField: 'Name', valueField: 'SlNo' }),

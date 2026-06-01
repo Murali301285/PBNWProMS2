@@ -412,13 +412,14 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
     // Masters Loading
     const loadMasters = async () => {
         try {
-            const [shiftRes, opRes, plantRes, unitRes, equipRes, bdRes] = await Promise.all([
+            const [shiftRes, opRes, plantRes, unitRes, equipRes, bdRes, catRes] = await Promise.all([
                 fetch('/api/master/shift'),
                 fetch('/api/master/operator'),
                 fetch('/api/master/plant'),
                 fetch('/api/master/unit'),
                 fetch('/api/master/equipment'),
-                fetch('/api/master/bd-reason', { cache: 'no-store' }) // Force fresh data
+                fetch('/api/master/bd-reason', { cache: 'no-store' }), // Force fresh data
+                fetch('/api/master/OperatorCategory')
             ]);
 
             const shiftData = await shiftRes.json();
@@ -435,8 +436,13 @@ export default function CrusherForm({ initialData = null, mode = 'create' }) {
 
             const opData = await opRes.json();
             const ops = Array.isArray(opData) ? opData : [];
+
+            const catData = await catRes.json();
+            const cats = Array.isArray(catData) ? catData : [];
+            const shiftInchargeCatId = cats.find(c => c.Name.toLowerCase() === 'shift incharge')?.SlNo || 1;
+
             setOperators(ops
-                .filter(o => o.SubCategoryId === 1 && !o.IsDelete)
+                .filter(o => o.CategoryId === shiftInchargeCatId && !o.IsDelete)
                 .map(o => ({ id: String(o.SlNo), name: `${o.OperatorName} (${o.OperatorId || ''})`, IsActive: o.IsActive }))
             );
 

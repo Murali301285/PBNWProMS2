@@ -148,9 +148,13 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                     }
                 };
 
+                // Fetch Categories dynamically to resolve IDs cross-instance safely
+                const cats = await fetchDDL('OperatorCategory', { nameField: 'Name' });
+                const shiftInchargeCatId = cats.find(c => c.name.toLowerCase() === 'shift incharge')?.id || 1;
+
                 const [shifts, incharges, relays, sources, dests, mats, haulers, loaders, units, mapRes] = await Promise.all([
                     fetchDDL('shift', { nameField: 'ShiftName' }),
-                    fetchDDL('operator', { nameField: 'OperatorName', filter: { SubCategoryId: 1 } }, ['OperatorId']),
+                    fetchDDL('operator', { nameField: 'OperatorName', filter: { CategoryId: shiftInchargeCatId } }, ['OperatorId']),
                     fetchDDL('relay'),
                     fetchDDL('source'),
                     fetchDDL('destination'),
@@ -1011,11 +1015,26 @@ export default function MaterialRehandlingForm({ initialData = null, isEdit = fa
                     }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     </div>
-                    <h4 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--foreground)', marginBottom: '10px' }}>
-                        No Load Factor Qty is found
+                    <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--foreground)', marginBottom: '12px' }}>
+                        Load Factor Not Found
                     </h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', opacity: 0.8, lineHeight: '1.5', marginBottom: '24px' }}>
-                        The selected combination of hauler and material does not have a mapped capacity in the Equipment Master table.
+                    <div style={{
+                        background: 'var(--muted)',
+                        border: '1px dashed var(--border)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        marginBottom: '16px',
+                        width: '100%'
+                    }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', opacity: 0.6, display: 'block', textTransform: 'uppercase', marginBottom: '4px' }}>
+                            Navigation Path
+                        </span>
+                        <span style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--primary)' }}>
+                            Master &gt; Qty Trip Mapping
+                        </span>
+                    </div>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--secondary-foreground)', opacity: 0.8, lineHeight: '1.5', marginBottom: '24px' }}>
+                        Please configure the missing load factor mapping using the path above. Recheck and update the details if required.
                     </p>
                     <button 
                         type="button"

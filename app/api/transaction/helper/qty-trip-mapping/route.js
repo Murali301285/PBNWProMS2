@@ -25,7 +25,21 @@ export async function GET(request) {
         const mat = matRes[0];
         const fallbackUnitId = mat.UnitId;
 
-        // 2. HIGHEST PRIORITY: Check Individual Equipment Load Factor Override Mapping
+        // 2. Fetch Equipment Group & Unit from TblEquipment
+        const eqQuery = `
+            SELECT EquipmentGroupId, UnitId 
+            FROM [Master].[TblEquipment] 
+            WHERE SlNo = @haulerId AND IsDelete = 0 AND IsActive = 1
+        `;
+        const eqRes = await executeQuery(eqQuery, [{ name: 'haulerId', type: sql.Int, value: haulerId }]);
+
+        if (!eqRes || eqRes.length === 0) {
+            return NextResponse.json({ success: false, message: 'Hauler Equipment not found or inactive' });
+        }
+        const eq = eqRes[0];
+        const finalUnitId = eq.UnitId || fallbackUnitId;
+
+        // 3. Check Individual Equipment Load Factor Mapping
         const mappingQuery = `
             SELECT ManagementQtyTrip, NTPCQtyTrip 
             FROM [Master].[TblEquipmentLoadFactorMapping] 
@@ -36,80 +50,60 @@ export async function GET(request) {
             { name: 'materialId', type: sql.Int, value: materialId }
         ]);
 
+        let matchedRow = null;
+
         if (mappingRes && mappingRes.length > 0) {
             const row = mappingRes[0];
             if (row.ManagementQtyTrip !== null || row.NTPCQtyTrip !== null) {
-                return NextResponse.json({
-                    success: true,
-                    data: {
-                        ManagementQtyTrip: row.ManagementQtyTrip,
-                        NTPCQtyTrip: row.NTPCQtyTrip,
-                        Qty: row.ManagementQtyTrip, // Generic fallback
-                        UnitId: fallbackUnitId
-                    }
-                });
+                matchedRow = row;
             }
         }
 
-        // 3. SECOND PRIORITY: Fallback to dynamic column matching on TblEquipment based on Material name
-        const eqQuery = `
-            SELECT 
-                OBUnitId, OBLoadFactor, 
-                TopSoilUnitId, TopSoilLoadFactor, 
-                CoalUnitId, CoalLoadFactor, 
-                ROMCoalUnitId, ROMCoalLoadFactor, 
-                CrushedCoalUnitId, CrushedCoalLoadFactor,
-                TripQty
-            FROM [Master].[TblEquipment] 
-            WHERE SlNo = @haulerId AND IsDelete = 0 AND IsActive = 1
-        `;
-        const eqRes = await executeQuery(eqQuery, [{ name: 'haulerId', type: sql.Int, value: haulerId }]);
-
-        if (!eqRes || eqRes.length === 0) {
-            return NextResponse.json({ success: false, message: 'Hauler Equipment not found or inactive' });
+        // 4. Fallback to Equipment Group Mapping if no individual mapping
+        if (!matchedRow && eq.EquipmentGroupId) {
+            const groupMappingQuery = `
+                SELECT ManagementQtyTrip, NTPCQtyTrip 
+                FROM [Master].[TblQtyTripMapping] 
+                WHERE EquipmentGroupId = @groupId AND MaterialId = @materialId AND IsDelete = 0 AND IsActive = 1
+            `;
+            const groupMappingRes = await executeQuery(groupMappingQuery, [
+                { name: 'groupId', type: sql.Int, value: eq.EquipmentGroupId },
+                { name: 'materialId', type: sql.Int, value: materialId }
+            ]);
+            if (groupMappingRes && groupMappingRes.length > 0) {
+                const row = groupMappingRes[0];
+                if (row.ManagementQtyTrip !== null || row.NTPCQtyTrip !== null) {
+                    matchedRow = row;
+                }
+            }
         }
 
-        const eq = eqRes[0];
-        const matName = (mat.MaterialName || '').trim().toUpperCase();
+        // 5. Apply fallbacks and return
+        if (matchedRow) {
+            let mQty = matchedRow.ManagementQtyTrip;
+            let nQty = matchedRow.NTPCQtyTrip;
 
-        let factor = null;
-        let unitId = null;
+            // Rule: If ntpc qty not found then -> map the management qty to ntpc qty
+            if (nQty === null || nQty === undefined || nQty === '') {
+                nQty = mQty;
+            }
 
-        if (matName.includes('OB') || matName.includes('BURDEN')) {
-            factor = eq.OBLoadFactor;
-            unitId = eq.OBUnitId;
-        } else if (matName.includes('SOIL')) {
-            factor = eq.TopSoilLoadFactor;
-            unitId = eq.TopSoilUnitId;
-        } else if (matName === 'ROM COAL') {
-            factor = eq.ROMCoalLoadFactor;
-            unitId = eq.ROMCoalUnitId;
-        } else if (matName === 'CRUSHED COAL') {
-            factor = eq.CrushedCoalLoadFactor;
-            unitId = eq.CrushedCoalUnitId;
-        } else if (matName.includes('COAL')) {
-            factor = eq.CoalLoadFactor;
-            unitId = eq.CoalUnitId;
-        } else {
-            factor = null;
-            unitId = null;
-        }
+            // Rule: If management qty not found then -> trigger the modal (by returning data: null)
+            if (mQty === null || mQty === undefined || mQty === '') {
+                return NextResponse.json({ success: true, data: null });
+            }
 
-        if (!unitId || unitId === 0) {
-            unitId = fallbackUnitId;
-        }
-
-        if (factor !== null && factor !== undefined) {
             return NextResponse.json({
                 success: true,
                 data: {
-                    ManagementQtyTrip: factor,
-                    NTPCQtyTrip: factor,
-                    Qty: factor,
-                    UnitId: unitId
+                    ManagementQtyTrip: mQty,
+                    NTPCQtyTrip: nQty,
+                    Qty: mQty,
+                    UnitId: finalUnitId
                 }
             });
         } else {
+            // No mapping found at all -> trigger warning modal
             return NextResponse.json({ success: true, data: null });
         }
 
