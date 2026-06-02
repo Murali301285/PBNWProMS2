@@ -37,7 +37,7 @@ export async function GET(request) {
             return NextResponse.json({ success: false, message: 'Hauler Equipment not found or inactive' });
         }
         const eq = eqRes[0];
-        const finalUnitId = eq.UnitId || fallbackUnitId;
+        const finalUnitId = fallbackUnitId; // Dynamic: transaction unit must strictly be based on selected material
 
         // 3. Check Individual Equipment Load Factor Mapping
         const mappingQuery = `
