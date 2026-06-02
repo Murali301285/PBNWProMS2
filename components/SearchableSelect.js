@@ -41,11 +41,31 @@ const SearchableSelect = forwardRef(({
 
 
 
-    // Filter options based on search
+    // Helper to check if an option ID is currently selected
+    const isSelected = (id) => {
+        if (multiple) {
+            let currentVal = value;
+            if (typeof currentVal === 'string') {
+                currentVal = currentVal.includes(',') ? currentVal.split(',') : [currentVal];
+            }
+            return Array.isArray(currentVal) && currentVal.some(v => String(v).trim() === String(id));
+        }
+        return value == id;
+    };
+
+    // Filter options based on search and active status
     const safeOptions = Array.isArray(options) ? options : [];
-    const filteredOptions = safeOptions.filter(opt =>
-        opt.name && opt.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredOptions = safeOptions.filter(opt => {
+        const matchesSearch = opt.name && opt.name.toLowerCase().includes(search.toLowerCase());
+        if (!matchesSearch) return false;
+
+        const isInactive = opt.IsActive !== undefined && (opt.IsActive === 0 || opt.IsActive === false || opt.IsActive === '0');
+        if (isInactive) {
+            // Support historical mapping: only show inactive option if it is currently selected in the form
+            return isSelected(opt.id);
+        }
+        return true;
+    });
 
     // Get display label
     let selectedLabel = '';
@@ -207,18 +227,7 @@ const SearchableSelect = forwardRef(({
         }
     };
 
-    const isSelected = (id) => {
-        if (multiple) {
-            // V17.2: Robust comparison (treat everything as String)
-            // Also handle CSV string if passed despite Form parsing
-            let currentVal = value;
-            if (typeof currentVal === 'string') {
-                currentVal = currentVal.includes(',') ? currentVal.split(',') : [currentVal];
-            }
-            return Array.isArray(currentVal) && currentVal.some(v => String(v).trim() === String(id));
-        }
-        return value == id;
-    };
+
 
     const handleBlur = (e) => {
         // Close if focus moves outside the component
